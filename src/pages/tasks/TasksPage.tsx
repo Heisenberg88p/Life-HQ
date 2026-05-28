@@ -1,8 +1,8 @@
-import { useLifeHQStore } from '../../store';
+import { selectOpenTasks, selectTasks, useLifeHQStore } from '../../store';
 
 export function TasksPage() {
-  const tasks = useLifeHQStore((state) => state.tasks);
-  const openTasks = useLifeHQStore((state) => state.tasks.filter((task) => task.status !== 'done'));
+  const tasks = useLifeHQStore(selectTasks);
+  const openTasks = useLifeHQStore(selectOpenTasks);
 
   return (
     <section className="space-y-3">

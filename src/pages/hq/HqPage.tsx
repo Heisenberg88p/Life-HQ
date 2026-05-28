@@ -1,9 +1,9 @@
-import { useLifeHQStore } from '../../store';
+import { selectLifeAreas, selectMilestones, selectProjects, useLifeHQStore } from '../../store';
 
 export function HqPage() {
-  const lifeAreas = useLifeHQStore((state) => state.lifeAreas);
-  const projects = useLifeHQStore((state) => state.projects);
-  const milestones = useLifeHQStore((state) => state.milestones);
+  const lifeAreas = useLifeHQStore(selectLifeAreas);
+  const projects = useLifeHQStore(selectProjects);
+  const milestones = useLifeHQStore(selectMilestones);
 
   return (
     <section className="space-y-3">
