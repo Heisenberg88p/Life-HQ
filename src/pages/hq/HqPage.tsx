@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ProjectCard } from '../../components/hq/ProjectCard';
 import type { LifeArea } from '../../models/lifeArea';
 import type { Project } from '../../models/project';
 import {
@@ -9,6 +10,7 @@ import {
   selectMilestones,
   selectOpenTasks,
   selectPausedProjects,
+  selectTasks,
   selectPlannedProjects,
   selectRedTrafficLightProjects,
   useLifeHQStore,
@@ -74,25 +76,29 @@ function LifeAreaList({ lifeAreas }: { lifeAreas: LifeArea[] }) {
   );
 }
 
-function ProjectPreviewList({ projects, emptyText }: { projects: Project[]; emptyText: string }) {
+interface ProjectCardListProps {
+  projects: Project[];
+  lifeAreas: LifeArea[];
+  tasks: ReturnType<typeof selectTasks>;
+  milestones: ReturnType<typeof selectMilestones>;
+  emptyText: string;
+}
+
+function ProjectCardList({ projects, lifeAreas, tasks, milestones, emptyText }: ProjectCardListProps) {
   if (projects.length === 0) {
     return <EmptyState>{emptyText}</EmptyState>;
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {projects.map((project) => (
-        <div key={project.id} className="rounded-2xl border border-slate-700/50 bg-slate-900/30 px-4 py-3">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="font-medium text-slate-100">{project.name}</p>
-            <div className="flex flex-wrap gap-2 text-xs text-slate-300">
-              <span className="rounded-full bg-slate-800 px-2.5 py-1">{project.status}</span>
-              <span className="rounded-full bg-slate-800 px-2.5 py-1">{project.priority}</span>
-              <span className="rounded-full bg-slate-800 px-2.5 py-1">{project.trafficLightStatus}</span>
-            </div>
-          </div>
-          {project.description && <p className="mt-2 text-sm leading-6 text-slate-400">{project.description}</p>}
-        </div>
+        <ProjectCard
+          key={project.id}
+          project={project}
+          lifeArea={lifeAreas.find((lifeArea) => lifeArea.id === project.lifeAreaId)}
+          tasks={tasks}
+          milestones={milestones}
+        />
       ))}
     </div>
   );
@@ -107,6 +113,7 @@ export function HqPage() {
   const criticalProjects = useLifeHQStore(selectCriticalProjects);
   const redTrafficLightProjects = useLifeHQStore(selectRedTrafficLightProjects);
   const openTasks = useLifeHQStore(selectOpenTasks);
+  const tasks = useLifeHQStore(selectTasks);
   const milestones = useLifeHQStore(selectMilestones);
 
   return (
@@ -135,21 +142,21 @@ export function HqPage() {
           </HqSection>
 
           <HqSection title="Active Projects" description="Strategic initiatives that are currently moving forward.">
-            <ProjectPreviewList projects={activeProjects} emptyText="No active projects available yet." />
+            <ProjectCardList projects={activeProjects} lifeAreas={lifeAreas} tasks={tasks} milestones={milestones} emptyText="Keine aktiven Projekte vorhanden." />
           </HqSection>
 
           <HqSection title="Planned Projects" description="Potential initiatives prepared for a later execution window.">
-            <ProjectPreviewList projects={plannedProjects} emptyText="No planned projects available yet." />
+            <ProjectCardList projects={plannedProjects} lifeAreas={lifeAreas} tasks={tasks} milestones={milestones} emptyText="Keine geplanten Projekte vorhanden." />
           </HqSection>
         </div>
 
         <div className="space-y-4">
           <HqSection title="Critical Projects" description="Projects marked critical or carrying a red traffic-light signal.">
-            <ProjectPreviewList projects={criticalProjects} emptyText="No critical projects available yet." />
+            <ProjectCardList projects={criticalProjects} lifeAreas={lifeAreas} tasks={tasks} milestones={milestones} emptyText="Keine kritischen Projekte vorhanden." />
           </HqSection>
 
           <HqSection title="Paused Projects" description="Projects intentionally stopped or waiting for a later review.">
-            <ProjectPreviewList projects={pausedProjects} emptyText="No paused projects available yet." />
+            <ProjectCardList projects={pausedProjects} lifeAreas={lifeAreas} tasks={tasks} milestones={milestones} emptyText="Keine pausierten Projekte vorhanden." />
           </HqSection>
 
           <HqSection title="Strategic Signals" description="Small counters for future HQ context without building detail workflows yet.">
