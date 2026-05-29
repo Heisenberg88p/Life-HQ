@@ -7,8 +7,8 @@ import { PageContainer } from './components/PageContainer';
 
 export function AppShell() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-surface to-surface-soft text-slate-100">
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl bg-slate-950/20">
+    <div className="min-h-dvh overflow-x-hidden bg-gradient-to-b from-surface to-surface-soft text-slate-100">
+      <div className="mx-auto flex min-h-dvh w-full max-w-screen-2xl bg-slate-950/20">
         <DesktopNavigation />
 
         <div className="flex min-w-0 flex-1 flex-col">

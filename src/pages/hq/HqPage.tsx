@@ -6,11 +6,15 @@ export function HqPage() {
   const milestones = useLifeHQStore(selectMilestones);
 
   return (
-    <section className="space-y-3">
+    <section className="max-w-3xl space-y-4">
       <p className="text-xs uppercase tracking-[0.2em] text-muted">Strategic Overview</p>
-      <h2 className="text-2xl font-semibold">HQ</h2>
-      <p className="max-w-2xl text-sm text-slate-300">Placeholder for LifeHQ strategic dashboard surface.</p>
-      <div className="text-sm text-slate-300">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold sm:text-3xl">HQ</h2>
+        <p className="max-w-2xl text-sm leading-6 text-slate-300">
+          Placeholder for the strategic LifeHQ dashboard surface. This area remains intentionally simple while the responsive app layout is prepared.
+        </p>
+      </div>
+      <div className="rounded-2xl border border-slate-700/50 bg-slate-950/30 px-4 py-3 text-sm leading-6 text-slate-300">
         Store debug: {lifeAreas.length} life areas · {projects.length} projects · {milestones.length} milestones
       </div>
     </section>
