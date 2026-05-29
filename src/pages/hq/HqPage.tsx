@@ -20,13 +20,15 @@ interface SummaryMetricProps {
   label: string;
   value: number;
   tone?: 'default' | 'attention';
+  description?: string;
 }
 
-function SummaryMetric({ label, value, tone = 'default' }: SummaryMetricProps) {
+function SummaryMetric({ label, value, tone = 'default', description }: SummaryMetricProps) {
   return (
     <div className="rounded-2xl border border-slate-700/50 bg-slate-950/30 p-4">
       <p className="text-xs uppercase tracking-[0.18em] text-muted">{label}</p>
       <p className={tone === 'attention' ? 'mt-3 text-3xl font-semibold text-rose-200' : 'mt-3 text-3xl font-semibold text-slate-100'}>{value}</p>
+      {description && <p className="mt-2 text-xs leading-5 text-slate-500">{description}</p>}
     </div>
   );
 }
@@ -50,7 +52,11 @@ function HqSection({ title, description, children }: HqSectionProps) {
 }
 
 function EmptyState({ children }: { children: ReactNode }) {
-  return <p className="rounded-2xl border border-dashed border-slate-700/70 px-4 py-3 text-sm text-slate-500">{children}</p>;
+  return <p className="rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500">{children}</p>;
+}
+
+function SectionNote({ children }: { children: ReactNode }) {
+  return <p className="rounded-2xl border border-slate-700/40 bg-slate-950/20 px-4 py-3 text-sm leading-6 text-slate-400">{children}</p>;
 }
 
 function LifeAreaList({ lifeAreas }: { lifeAreas: LifeArea[] }) {
@@ -112,6 +118,8 @@ export function HqPage() {
   const completedProjects = useLifeHQStore(selectCompletedProjects);
   const criticalProjects = useLifeHQStore(selectCriticalProjects);
   const redTrafficLightProjects = useLifeHQStore(selectRedTrafficLightProjects);
+  const criticalPriorityProjects = criticalProjects.filter((project) => project.priority === 'critical');
+  const pausedProjectsWithReviewDate = pausedProjects.filter((project) => project.reviewDate);
   const openTasks = useLifeHQStore(selectOpenTasks);
   const tasks = useLifeHQStore(selectTasks);
   const milestones = useLifeHQStore(selectMilestones);
@@ -142,28 +150,62 @@ export function HqPage() {
           </HqSection>
 
           <HqSection title="Active Projects" description="Strategic initiatives that are currently moving forward.">
-            <ProjectCardList projects={activeProjects} lifeAreas={lifeAreas} tasks={tasks} milestones={milestones} emptyText="Keine aktiven Projekte vorhanden." />
+            <ProjectCardList
+              projects={activeProjects}
+              lifeAreas={lifeAreas}
+              tasks={tasks}
+              milestones={milestones}
+              emptyText="Noch keine aktiven Projekte. Dein HQ ist bereit, sobald du ein Projekt startest."
+            />
           </HqSection>
 
           <HqSection title="Planned Projects" description="Potential initiatives prepared for a later execution window.">
-            <ProjectCardList projects={plannedProjects} lifeAreas={lifeAreas} tasks={tasks} milestones={milestones} emptyText="Keine geplanten Projekte vorhanden." />
+            <ProjectCardList
+              projects={plannedProjects}
+              lifeAreas={lifeAreas}
+              tasks={tasks}
+              milestones={milestones}
+              emptyText="Keine geplanten Projekte. Spätere Initiativen können hier ruhig gesammelt werden."
+            />
           </HqSection>
         </div>
 
         <div className="space-y-4">
-          <HqSection title="Critical Projects" description="Projects marked critical or carrying a red traffic-light signal.">
-            <ProjectCardList projects={criticalProjects} lifeAreas={lifeAreas} tasks={tasks} milestones={milestones} emptyText="Keine kritischen Projekte vorhanden." />
+          <HqSection title="Critical Projects" description="Projects that deserve calm attention because priority is critical or the traffic light is red.">
+            <SectionNote>
+              {criticalProjects.length === 0
+                ? 'Keine kritischen Projekte. Aktuell gibt es keine roten strategischen Signale.'
+                : `${criticalPriorityProjects.length} mit kritischer Priorität · ${redTrafficLightProjects.length} mit roter Ampel. Projekte werden hier nur einmal geführt.`}
+            </SectionNote>
+            <ProjectCardList
+              projects={criticalProjects}
+              lifeAreas={lifeAreas}
+              tasks={tasks}
+              milestones={milestones}
+              emptyText="Keine kritischen Projekte. Aktuell gibt es keine roten strategischen Signale."
+            />
           </HqSection>
 
-          <HqSection title="Paused Projects" description="Projects intentionally stopped or waiting for a later review.">
-            <ProjectCardList projects={pausedProjects} lifeAreas={lifeAreas} tasks={tasks} milestones={milestones} emptyText="Keine pausierten Projekte vorhanden." />
+          <HqSection title="Paused Projects" description="Projects intentionally held outside active focus without being lost or completed.">
+            <SectionNote>
+              {pausedProjects.length === 0
+                ? 'Keine pausierten Projekte. Alle sichtbaren Projekte sind aktuell eingeordnet.'
+                : `${pausedProjects.length} bewusst pausiert · ${pausedProjectsWithReviewDate.length} mit Wiedervorlage.`}
+            </SectionNote>
+            <ProjectCardList
+              projects={pausedProjects}
+              lifeAreas={lifeAreas}
+              tasks={tasks}
+              milestones={milestones}
+              emptyText="Keine pausierten Projekte. Alle sichtbaren Projekte sind aktuell eingeordnet."
+            />
           </HqSection>
 
-          <HqSection title="Strategic Signals" description="Small counters for future HQ context without building detail workflows yet.">
+          <HqSection title="Strategic Signals" description="Quiet context signals for orientation, not a performance dashboard.">
             <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-              <SummaryMetric label="Completed" value={completedProjects.length} />
-              <SummaryMetric label="Red Signals" value={redTrafficLightProjects.length} tone="attention" />
-              <SummaryMetric label="Milestones" value={milestones.length} />
+              <SummaryMetric label="Completed" value={completedProjects.length} description="Closed strategic loops" />
+              <SummaryMetric label="Red Ampel" value={redTrafficLightProjects.length} tone="attention" description="Projects needing review" />
+              <SummaryMetric label="Milestones" value={milestones.length} description="Known project markers" />
             </div>
           </HqSection>
         </div>

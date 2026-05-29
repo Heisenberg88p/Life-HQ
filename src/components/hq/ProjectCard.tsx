@@ -54,11 +54,19 @@ function getNextMilestoneLabel(milestones: Milestone[]): string {
   return nextMilestone ? `Nächster Meilenstein: ${nextMilestone.title}` : 'Kein Meilenstein gesetzt';
 }
 
+function getStrategicSignalLabels(project: Project): string[] {
+  return [
+    project.priority === 'critical' ? 'Kritische Priorität' : undefined,
+    project.trafficLightStatus === 'red' ? 'Rote Ampel' : undefined,
+  ].filter((label): label is string => Boolean(label));
+}
+
 export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: ProjectCardProps) {
   const isPaused = project.status === 'paused';
   const isCritical = project.priority === 'critical' || project.trafficLightStatus === 'red';
   const projectTasks = tasks.filter((task) => task.projectId === project.id);
   const projectMilestones = milestones.filter((milestone) => milestone.projectId === project.id);
+  const strategicSignalLabels = getStrategicSignalLabels(project);
 
   return (
     <button
@@ -85,6 +93,16 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
           </div>
         </div>
 
+        {strategicSignalLabels.length > 0 && (
+          <div className="flex flex-wrap gap-2 text-xs text-rose-100">
+            {strategicSignalLabels.map((label) => (
+              <span key={label} className="rounded-full border border-rose-300/20 bg-rose-950/20 px-2.5 py-1">
+                {label}
+              </span>
+            ))}
+          </div>
+        )}
+
         <div className="grid gap-3 text-sm text-slate-300 sm:grid-cols-2">
           <div className="rounded-2xl border border-slate-700/40 bg-slate-950/25 px-3 py-2">
             <p className="text-xs uppercase tracking-[0.16em] text-muted">Ampel</p>
@@ -104,6 +122,7 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
           <p>{getOpenTaskLabel(projectTasks)}</p>
           <p>{getNextMilestoneLabel(projectMilestones)}</p>
           {isPaused && <p className="text-slate-400">Pausiert{project.pauseReason ? `: ${project.pauseReason}` : ''}</p>}
+          {isPaused && project.reviewDate && <p className="text-slate-400">Wiedervorlage: {project.reviewDate}</p>}
         </div>
       </div>
     </button>
