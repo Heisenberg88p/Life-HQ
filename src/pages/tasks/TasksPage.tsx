@@ -87,7 +87,7 @@ const defaultTaskDraft: TaskDraft = {
 };
 
 function createTaskId(): string {
-  return `t-${Date.now()}`;
+  return `t-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function getVisibleTasks(tasks: Task[], activeView: TaskView): Task[] {
@@ -282,6 +282,8 @@ export function TasksPage() {
 
         <button
           type="button"
+          aria-controls="task-create-form"
+          aria-expanded={isCreateOpen}
           onClick={() => setIsCreateOpen((current) => !current)}
           className="w-fit rounded-full border border-slate-200/20 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-white"
         >
@@ -290,7 +292,7 @@ export function TasksPage() {
       </div>
 
       {isCreateOpen && (
-        <form onSubmit={handleCreateTask} className="rounded-3xl border border-slate-700/50 bg-slate-900/30 p-5 sm:p-6">
+        <form id="task-create-form" onSubmit={handleCreateTask} className="rounded-3xl border border-slate-700/50 bg-slate-900/30 p-5 sm:p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-muted">Neue Aufgabe</p>
