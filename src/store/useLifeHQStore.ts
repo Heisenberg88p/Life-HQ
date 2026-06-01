@@ -57,7 +57,15 @@ export const useLifeHQStore = create<LifeHQState>((set) => ({
     set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
   deleteTask: (id: string) => set((state) => ({ tasks: state.tasks.filter((item) => item.id !== id) })),
   updateTaskStatus: (id: string, status: TaskStatus) =>
-    set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, status }) : item)) })),
+    set((state) => ({
+      tasks: state.tasks.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
+
+        return withUpdatedAt({ ...item, status, completedAt: status === 'done' ? now() : undefined });
+      }),
+    })),
   updateTaskPriority: (id: string, priority: Priority) =>
     set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, priority }) : item)) })),
   completeTask: (id: string) =>
