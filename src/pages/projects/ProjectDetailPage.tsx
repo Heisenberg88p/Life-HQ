@@ -1,10 +1,12 @@
 import { Link, useParams } from 'react-router-dom';
-import type { MilestoneStatus, Priority, ProjectStatus, TrafficLightStatus } from '../../models/common';
+import type { MilestoneStatus, Priority, ProjectStatus, TaskStatus, TrafficLightStatus } from '../../models/common';
 import type { Milestone } from '../../models/milestone';
+import type { Task } from '../../models/task';
 import {
   selectLifeAreaById,
   selectMilestonesByProjectId,
   selectProjectById,
+  selectTasksByProjectId,
   useLifeHQStore,
 } from '../../store';
 
@@ -35,6 +37,12 @@ const trafficLightStyles: Record<TrafficLightStatus, string> = {
 };
 
 const milestoneStatusLabels: Record<MilestoneStatus, string> = {
+  open: 'Offen',
+  in_progress: 'In Arbeit',
+  done: 'Erledigt',
+};
+
+const taskStatusLabels: Record<TaskStatus, string> = {
   open: 'Offen',
   in_progress: 'In Arbeit',
   done: 'Erledigt',
@@ -74,13 +82,25 @@ function getNextRelevantMilestoneLabel(milestones: Milestone[]): string {
   return nextMilestone ? nextMilestone.title : 'Kein offener Meilenstein';
 }
 
+function getOpenTaskLabel(tasks: Task[]): string {
+  const openTaskCount = tasks.filter((task) => task.status !== 'done').length;
+
+  if (openTaskCount === 0) {
+    return 'Keine offenen Aufgaben';
+  }
+
+  return openTaskCount === 1 ? '1 offene Aufgabe' : `${openTaskCount} offene Aufgaben`;
+}
+
 export function ProjectDetailPage() {
   const { projectId } = useParams();
   const project = useLifeHQStore(selectProjectById(projectId ?? ''));
   const lifeArea = useLifeHQStore(selectLifeAreaById(project?.lifeAreaId ?? ''));
   const milestones = useLifeHQStore(selectMilestonesByProjectId(project?.id ?? ''));
+  const tasks = useLifeHQStore(selectTasksByProjectId(project?.id ?? ''));
   const lifeAreaDisplayValue = getLifeAreaDisplayValue(project?.lifeAreaId, lifeArea?.name);
   const nextRelevantMilestoneLabel = getNextRelevantMilestoneLabel(milestones);
+  const openTaskLabel = getOpenTaskLabel(tasks);
 
   if (!project) {
     return (
@@ -139,6 +159,7 @@ export function ProjectDetailPage() {
           </div>
           <DetailField label="Zieltermin" value={project.targetDate ?? 'Kein Zieltermin'} />
           <DetailField label="Nächster Meilenstein" value={nextRelevantMilestoneLabel} />
+          <DetailField label="Offene Aufgaben" value={openTaskLabel} />
           {project.status === 'paused' && <DetailField label="Pausierungsgrund" value={project.pauseReason ?? 'Kein Grund hinterlegt'} />}
         </div>
       </section>
@@ -172,6 +193,42 @@ export function ProjectDetailPage() {
                 <p className="mt-3 text-xs uppercase tracking-[0.16em] text-muted">
                   Zieltermin: {milestone.targetDate ?? 'Kein Zieltermin'}
                 </p>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-3xl border border-slate-700/50 bg-slate-950/15 p-5 sm:p-6">
+        <div className="max-w-2xl">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted">Project Execution Context</p>
+          <h3 className="mt-2 text-lg font-semibold text-slate-100">Projektaufgaben</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Operative Bezugspunkte dieses Projekts. Sie bleiben kompakt und dienen hier nur der strategischen Einordnung.
+          </p>
+        </div>
+
+        {tasks.length === 0 ? (
+          <p className="mt-5 rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500">
+            Für dieses Projekt sind noch keine Aufgaben hinterlegt.
+          </p>
+        ) : (
+          <div className="mt-5 grid gap-2">
+            {tasks.map((task) => (
+              <article key={task.id} className="rounded-2xl border border-slate-700/40 bg-slate-950/20 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-slate-100">{task.title}</h4>
+                    <div className="flex flex-wrap gap-2 text-xs text-slate-300">
+                      <span className="rounded-full border border-slate-700/60 bg-slate-950/40 px-2.5 py-1">{taskStatusLabels[task.status]}</span>
+                      <span className="rounded-full border border-slate-700/60 bg-slate-950/40 px-2.5 py-1">Priorität: {priorityLabels[task.priority]}</span>
+                    </div>
+                  </div>
+                  <div className="text-xs leading-5 text-slate-500 sm:text-right">
+                    <p>Fälligkeit: {task.dueDate ?? 'Keine Fälligkeit'}</p>
+                    <p>Geplant: {task.plannedDate ?? 'Nicht geplant'}</p>
+                  </div>
+                </div>
               </article>
             ))}
           </div>
