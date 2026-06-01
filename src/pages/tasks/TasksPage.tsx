@@ -41,6 +41,13 @@ const priorityLabels: Record<Priority, string> = {
   critical: 'Kritisch',
 };
 
+
+const statusStyles: Record<TaskStatus, string> = {
+  open: 'border-slate-700/60 bg-slate-950/40 text-slate-300',
+  in_progress: 'border-sky-300/30 bg-sky-950/20 text-sky-100',
+  done: 'border-emerald-300/20 bg-emerald-950/15 text-emerald-100',
+};
+
 function getVisibleTasks(tasks: Task[], activeView: TaskView): Task[] {
   switch (activeView) {
     case 'today':
@@ -81,13 +88,22 @@ interface TaskCardProps {
 
 function TaskCard({ task, context, onStatusChange }: TaskCardProps) {
   const overdue = isTaskOverdue(task);
+  const isDone = task.status === 'done';
 
   return (
-    <article className={`rounded-2xl border p-4 ${overdue ? 'border-amber-300/30 bg-amber-950/10' : 'border-slate-700/50 bg-slate-950/20'}`}>
+    <article
+      className={`rounded-2xl border p-4 transition-colors ${
+        isDone
+          ? 'border-slate-700/30 bg-slate-950/10 opacity-75'
+          : overdue
+            ? 'border-amber-300/30 bg-amber-950/10'
+            : 'border-slate-700/50 bg-slate-950/20'
+      }`}
+    >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold text-slate-100">{task.title}</h3>
+            <h3 className={isDone ? 'text-sm font-semibold text-slate-400 line-through decoration-slate-600' : 'text-sm font-semibold text-slate-100'}>{task.title}</h3>
             {overdue && <span className="rounded-full border border-amber-300/30 bg-amber-950/20 px-2.5 py-1 text-xs text-amber-100">Überfällig</span>}
           </div>
           {task.description && <p className="text-sm leading-6 text-slate-400">{task.description}</p>}
@@ -95,7 +111,7 @@ function TaskCard({ task, context, onStatusChange }: TaskCardProps) {
         </div>
 
         <div className="flex flex-wrap gap-2 text-xs text-slate-300 lg:justify-end">
-          <span className="rounded-full border border-slate-700/60 bg-slate-950/40 px-2.5 py-1">{statusLabels[task.status]}</span>
+          <span className={`rounded-full border px-2.5 py-1 ${statusStyles[task.status]}`}>{statusLabels[task.status]}</span>
           <span className={task.priority === 'critical' ? 'rounded-full border border-rose-300/30 bg-rose-950/25 px-2.5 py-1 text-rose-100' : 'rounded-full border border-slate-700/60 bg-slate-950/40 px-2.5 py-1'}>
             Priorität: {priorityLabels[task.priority]}
           </span>
@@ -105,18 +121,35 @@ function TaskCard({ task, context, onStatusChange }: TaskCardProps) {
       <div className="mt-4 grid gap-3 text-xs text-slate-500 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
         <p>Fälligkeit: {task.dueDate ?? 'Keine Fälligkeit'}</p>
         <p>Geplant: {task.plannedDate ?? 'Nicht geplant'}</p>
-        <label className="flex flex-col gap-1 text-slate-400">
-          Status ändern
-          <select
-            value={task.status}
-            onChange={(event) => onStatusChange(task.id, event.target.value as TaskStatus)}
-            className="rounded-xl border border-slate-700/70 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors hover:border-slate-500"
-          >
-            <option value="open">Offen</option>
-            <option value="in_progress">In Arbeit</option>
-            <option value="done">Erledigt</option>
-          </select>
-        </label>
+        <div className="flex flex-wrap gap-2 lg:justify-end" aria-label={`Status für ${task.title} ändern`}>
+          {task.status !== 'open' && (
+            <button
+              type="button"
+              onClick={() => onStatusChange(task.id, 'open')}
+              className="rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+            >
+              Wieder öffnen
+            </button>
+          )}
+          {task.status !== 'in_progress' && (
+            <button
+              type="button"
+              onClick={() => onStatusChange(task.id, 'in_progress')}
+              className="rounded-xl border border-sky-300/20 bg-sky-950/10 px-3 py-2 text-xs font-medium text-sky-100 transition-colors hover:border-sky-300/40"
+            >
+              In Arbeit
+            </button>
+          )}
+          {task.status !== 'done' && (
+            <button
+              type="button"
+              onClick={() => onStatusChange(task.id, 'done')}
+              className="rounded-xl border border-emerald-300/20 bg-emerald-950/10 px-3 py-2 text-xs font-medium text-emerald-100 transition-colors hover:border-emerald-300/40"
+            >
+              Erledigen
+            </button>
+          )}
+        </div>
       </div>
     </article>
   );
