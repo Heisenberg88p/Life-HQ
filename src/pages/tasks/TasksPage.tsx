@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { getWeekDays, isSameDay } from '../../logic/dateLogic';
+import { useEffect, useMemo, useState } from 'react';
+import { getNextWeekDays, getWeekDays, isSameDay } from '../../logic/dateLogic';
 import type { FormEvent } from 'react';
 import type { Priority, TaskStatus } from '../../models/common';
 import type { LifeArea } from '../../models/lifeArea';
@@ -16,11 +16,13 @@ import {
   getOpenTasks,
   getOverdueTasks,
   getTasksForCurrentWeek,
+  getTasksForLater,
+  getTasksForNextWeek,
   getTasksForToday,
   isTaskOverdue,
 } from '../../logic/taskLogic';
 
-type TaskView = 'today' | 'week' | 'overdue' | 'open' | 'done';
+type TaskView = 'today' | 'week' | 'nextWeek' | 'later' | 'overdue' | 'open' | 'done';
 
 type TaskDraft = {
   title: string;
@@ -31,9 +33,16 @@ type TaskDraft = {
   plannedDate: string;
 };
 
+type TaskDateDraft = {
+  plannedDate: string;
+  dueDate: string;
+};
+
 const taskViews: Array<{ id: TaskView; label: string; description: string }> = [
   { id: 'today', label: 'Heute', description: 'Geplante Schritte für den aktuellen Tag.' },
   { id: 'week', label: 'Diese Woche', description: 'Geplante Aufgaben innerhalb der aktuellen Woche.' },
+  { id: 'nextWeek', label: 'Nächste Woche', description: 'Geplante Aufgaben der kommenden Woche.' },
+  { id: 'later', label: 'Später', description: 'Offene Aufgaben nach Ende der nächsten Woche.' },
   { id: 'overdue', label: 'Überfällig', description: 'Fällige Aufgaben, die noch nicht erledigt sind.' },
   { id: 'open', label: 'Offen', description: 'Alles, was offen oder in Arbeit ist.' },
   { id: 'done', label: 'Erledigte Aufgaben', description: 'Abgeschlossene operative Schritte.' },
@@ -55,6 +64,8 @@ const priorityLabels: Record<Priority, string> = {
 const emptyStateMessages: Record<TaskView, string> = {
   today: 'Für heute sind keine Aufgaben geplant.',
   week: 'Für diese Woche sind noch keine Aufgaben geplant.',
+  nextWeek: 'Für nächste Woche sind noch keine Aufgaben geplant.',
+  later: 'Keine später geplanten Aufgaben.',
   overdue: 'Keine überfälligen Aufgaben.',
   open: 'Keine offenen Aufgaben.',
   done: 'Noch keine erledigten Aufgaben.',
@@ -128,6 +139,13 @@ const defaultTaskDraft: TaskDraft = {
   plannedDate: '',
 };
 
+function getTaskDateDraft(task: Task): TaskDateDraft {
+  return {
+    plannedDate: task.plannedDate ?? '',
+    dueDate: task.dueDate ?? '',
+  };
+}
+
 function createTaskId(): string {
   return `t-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -138,6 +156,10 @@ function getVisibleTasks(tasks: Task[], activeView: TaskView): Task[] {
       return sortTasksForPlanning(getTasksForToday(tasks));
     case 'week':
       return sortTasksForPlanning(getTasksForCurrentWeek(tasks));
+    case 'nextWeek':
+      return sortTasksForPlanning(getTasksForNextWeek(tasks));
+    case 'later':
+      return sortTasksForPlanning(getTasksForLater(tasks));
     case 'overdue':
       return sortOverdueTasks(getOverdueTasks(tasks));
     case 'done':
@@ -201,6 +223,40 @@ function TaskCard({
 }: TaskCardProps) {
   const overdue = isTaskOverdue(task);
   const isDone = task.status === 'done';
+  const [dateDraft, setDateDraft] = useState<TaskDateDraft>(() => getTaskDateDraft(task));
+
+  useEffect(() => {
+    setDateDraft(getTaskDateDraft(task));
+  }, [task.dueDate, task.plannedDate]);
+
+  const hasDateDraftChanges =
+    dateDraft.plannedDate !== (task.plannedDate ?? '') || dateDraft.dueDate !== (task.dueDate ?? '');
+
+  function updateDateDraft(patch: Partial<TaskDateDraft>) {
+    setDateDraft((current) => ({ ...current, ...patch }));
+  }
+
+  function resetDateDraft() {
+    setDateDraft(getTaskDateDraft(task));
+  }
+
+  function saveDateDraft() {
+    if (dateDraft.plannedDate !== (task.plannedDate ?? '')) {
+      if (dateDraft.plannedDate) {
+        onSetPlannedDate(task.id, dateDraft.plannedDate);
+      } else {
+        onClearPlannedDate(task.id);
+      }
+    }
+
+    if (dateDraft.dueDate !== (task.dueDate ?? '')) {
+      if (dateDraft.dueDate) {
+        onSetDueDate(task.id, dateDraft.dueDate);
+      } else {
+        onClearDueDate(task.id);
+      }
+    }
+  }
 
   return (
     <article
@@ -279,14 +335,8 @@ function TaskCard({
             <span>Geplantes Datum</span>
             <input
               type="date"
-              value={task.plannedDate ?? ''}
-              onChange={(event) => {
-                if (event.target.value) {
-                  onSetPlannedDate(task.id, event.target.value);
-                } else {
-                  onClearPlannedDate(task.id);
-                }
-              }}
+              value={dateDraft.plannedDate}
+              onChange={(event) => updateDateDraft({ plannedDate: event.target.value })}
               className="w-full rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs text-slate-100 outline-none transition-colors focus:border-slate-400"
             />
           </label>
@@ -294,18 +344,30 @@ function TaskCard({
             <span>Fälligkeit</span>
             <input
               type="date"
-              value={task.dueDate ?? ''}
-              onChange={(event) => {
-                if (event.target.value) {
-                  onSetDueDate(task.id, event.target.value);
-                } else {
-                  onClearDueDate(task.id);
-                }
-              }}
+              value={dateDraft.dueDate}
+              onChange={(event) => updateDateDraft({ dueDate: event.target.value })}
               className="w-full rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs text-slate-100 outline-none transition-colors focus:border-slate-400"
             />
           </label>
           <div className="flex flex-wrap gap-2 lg:justify-end">
+            {hasDateDraftChanges && (
+              <>
+                <button
+                  type="button"
+                  onClick={saveDateDraft}
+                  className="rounded-xl border border-emerald-300/20 bg-emerald-950/15 px-3 py-2 text-xs font-medium text-emerald-100 transition-colors hover:border-emerald-300/40"
+                >
+                  Änderungen speichern
+                </button>
+                <button
+                  type="button"
+                  onClick={resetDateDraft}
+                  className="rounded-xl border border-slate-700/70 bg-slate-950/20 px-3 py-2 text-xs font-medium text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
+                >
+                  Änderungen abbrechen
+                </button>
+              </>
+            )}
             <button
               type="button"
               onClick={() => onPlanToday(task.id)}
@@ -364,6 +426,10 @@ interface TaskPlanningActions {
   onClearDueDate: (taskId: string) => void;
 }
 
+interface WeekTaskSectionProps extends TaskListProps {
+  weekDays: string[];
+}
+
 function TaskList({ tasks, projects, lifeAreas, actions }: TaskListProps) {
   return (
     <div className="mt-5 grid gap-3">
@@ -379,8 +445,7 @@ function TaskList({ tasks, projects, lifeAreas, actions }: TaskListProps) {
   );
 }
 
-function WeekTaskSection({ tasks, projects, lifeAreas, actions }: TaskListProps) {
-  const weekDays = getWeekDays();
+function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: WeekTaskSectionProps) {
   const unplannedTasks = sortTasksForPlanning(tasks.filter((task) => !task.plannedDate && task.status !== 'done'));
   const overdueTasks = sortOverdueTasks(getOverdueTasks(tasks));
 
@@ -625,7 +690,7 @@ export function TasksPage() {
       )}
 
       <div className="rounded-3xl border border-slate-700/50 bg-slate-950/20 p-3">
-        <div className="grid gap-2 md:grid-cols-5">
+        <div className="grid gap-2 md:grid-cols-4 xl:grid-cols-7">
           {taskViews.map((view) => (
             <button
               key={view.id}
@@ -655,7 +720,9 @@ export function TasksPage() {
         </div>
 
         {activeView === 'week' ? (
-          <WeekTaskSection tasks={tasks} projects={projects} lifeAreas={lifeAreas} actions={taskPlanningActions} />
+          <WeekTaskSection tasks={tasks} projects={projects} lifeAreas={lifeAreas} actions={taskPlanningActions} weekDays={getWeekDays()} />
+        ) : activeView === 'nextWeek' ? (
+          <WeekTaskSection tasks={tasks} projects={projects} lifeAreas={lifeAreas} actions={taskPlanningActions} weekDays={getNextWeekDays()} />
         ) : visibleTasks.length === 0 ? (
           <p className="mt-5 rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500">
             {emptyStateMessages[activeView]}

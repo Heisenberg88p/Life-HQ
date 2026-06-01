@@ -56,6 +56,38 @@ export function getWeekDays(date: string | Date = new Date()): string[] {
   });
 }
 
+function addDays(date: string | Date, days: number): string {
+  const targetDate = toUtcDate(date);
+  targetDate.setUTCDate(targetDate.getUTCDate() + days);
+
+  return normalizeDate(targetDate);
+}
+
+export function getNextWeekDays(date: string | Date = new Date()): string[] {
+  return getWeekDays(addDays(getEndOfWeek(date), 1));
+}
+
+export function isNextWeek(date?: string | Date, referenceDate: string | Date = new Date()): boolean {
+  if (!date) {
+    return false;
+  }
+
+  const nextWeekDays = getNextWeekDays(referenceDate);
+  const normalizedDate = normalizeDate(date);
+
+  return normalizedDate >= nextWeekDays[0] && normalizedDate <= nextWeekDays[nextWeekDays.length - 1];
+}
+
+export function isAfterNextWeek(date?: string | Date, referenceDate: string | Date = new Date()): boolean {
+  if (!date) {
+    return false;
+  }
+
+  const nextWeekDays = getNextWeekDays(referenceDate);
+
+  return normalizeDate(date) > nextWeekDays[nextWeekDays.length - 1];
+}
+
 export function isSameDay(dateA?: string | Date, dateB?: string | Date): boolean {
   if (!dateA || !dateB) {
     return false;

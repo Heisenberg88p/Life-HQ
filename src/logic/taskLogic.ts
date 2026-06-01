@@ -1,6 +1,8 @@
 import type { Task } from '../models/task';
 import {
   getTodayDateString,
+  isAfterNextWeek,
+  isNextWeek,
   isOverdue,
   isSameDay,
   isThisWeek,
@@ -29,6 +31,14 @@ export function getTasksForThisWeek(tasks: Task[]): Task[] {
 
 export function getTasksForCurrentWeek(tasks: Task[]): Task[] {
   return getTasksForThisWeek(tasks);
+}
+
+export function getTasksForNextWeek(tasks: Task[]): Task[] {
+  return tasks.filter((task) => isNextWeek(task.plannedDate));
+}
+
+export function getTasksForLater(tasks: Task[]): Task[] {
+  return tasks.filter((task) => Boolean(task.plannedDate && isAfterNextWeek(task.plannedDate) && !isTaskDone(task)));
 }
 
 export function getOverdueTasks(tasks: Task[]): Task[] {
