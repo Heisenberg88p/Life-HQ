@@ -77,7 +77,6 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
       } ${isCritical ? 'border-l-4 border-l-rose-300/70' : 'border-l-4 border-l-slate-700/60'}`}
       aria-label={`Projekt ${project.name}`}
     >
-      {/* Project detail navigation will be implemented in a later build. */}
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-2">

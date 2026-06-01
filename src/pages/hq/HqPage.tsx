@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ProjectCard } from '../../components/hq/ProjectCard';
 import type { LifeArea } from '../../models/lifeArea';
 import type { Project } from '../../models/project';
@@ -88,9 +89,10 @@ interface ProjectCardListProps {
   tasks: ReturnType<typeof selectTasks>;
   milestones: ReturnType<typeof selectMilestones>;
   emptyText: string;
+  onProjectSelect: (projectId: string) => void;
 }
 
-function ProjectCardList({ projects, lifeAreas, tasks, milestones, emptyText }: ProjectCardListProps) {
+function ProjectCardList({ projects, lifeAreas, tasks, milestones, emptyText, onProjectSelect }: ProjectCardListProps) {
   if (projects.length === 0) {
     return <EmptyState>{emptyText}</EmptyState>;
   }
@@ -104,6 +106,7 @@ function ProjectCardList({ projects, lifeAreas, tasks, milestones, emptyText }: 
           lifeArea={lifeAreas.find((lifeArea) => lifeArea.id === project.lifeAreaId)}
           tasks={tasks}
           milestones={milestones}
+          onClick={onProjectSelect}
         />
       ))}
     </div>
@@ -111,6 +114,7 @@ function ProjectCardList({ projects, lifeAreas, tasks, milestones, emptyText }: 
 }
 
 export function HqPage() {
+  const navigate = useNavigate();
   const lifeAreas = useLifeHQStore(selectLifeAreas);
   const activeProjects = useLifeHQStore(selectActiveProjects);
   const plannedProjects = useLifeHQStore(selectPlannedProjects);
@@ -123,6 +127,10 @@ export function HqPage() {
   const openTasks = useLifeHQStore(selectOpenTasks);
   const tasks = useLifeHQStore(selectTasks);
   const milestones = useLifeHQStore(selectMilestones);
+
+  const openProjectDetail = (projectId: string) => {
+    navigate(`/projects/${projectId}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -156,6 +164,7 @@ export function HqPage() {
               tasks={tasks}
               milestones={milestones}
               emptyText="Noch keine aktiven Projekte. Dein HQ ist bereit, sobald du ein Projekt startest."
+              onProjectSelect={openProjectDetail}
             />
           </HqSection>
 
@@ -166,6 +175,7 @@ export function HqPage() {
               tasks={tasks}
               milestones={milestones}
               emptyText="Keine geplanten Projekte. Spätere Initiativen können hier ruhig gesammelt werden."
+              onProjectSelect={openProjectDetail}
             />
           </HqSection>
         </div>
@@ -183,6 +193,7 @@ export function HqPage() {
               tasks={tasks}
               milestones={milestones}
               emptyText="Keine kritischen Projekte. Aktuell gibt es keine roten strategischen Signale."
+              onProjectSelect={openProjectDetail}
             />
           </HqSection>
 
@@ -198,6 +209,7 @@ export function HqPage() {
               tasks={tasks}
               milestones={milestones}
               emptyText="Keine pausierten Projekte. Alle sichtbaren Projekte sind aktuell eingeordnet."
+              onProjectSelect={openProjectDetail}
             />
           </HqSection>
 
