@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { mockHistoryEntries, mockLifeAreas, mockMilestones, mockProjects, mockTasks } from '../data/mockData';
+import { getTodayDateString, getTomorrowDateString, normalizeDate } from '../logic/dateLogic';
 import type { Priority, ProjectStatus, TrafficLightStatus, TaskStatus, MilestoneStatus } from '../models/common';
 import type { LifeArea } from '../models/lifeArea';
 import type { Milestone } from '../models/milestone';
@@ -70,6 +71,26 @@ export const useLifeHQStore = create<LifeHQState>((set) => ({
     set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, priority }) : item)) })),
   completeTask: (id: string) =>
     set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, status: 'done', completedAt: now() }) : item)) })),
+  setTaskPlannedDate: (id: string, plannedDate: string | Date) =>
+    set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, plannedDate: normalizeDate(plannedDate) }) : item)) })),
+  scheduleTaskForToday: (id: string) =>
+    set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, plannedDate: getTodayDateString() }) : item)) })),
+  scheduleTaskForTomorrow: (id: string) =>
+    set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, plannedDate: getTomorrowDateString() }) : item)) })),
+  clearTaskPlannedDate: (id: string) =>
+    set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, plannedDate: undefined }) : item)) })),
+  setTaskDueDate: (id: string, dueDate: string | Date) =>
+    set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, dueDate: normalizeDate(dueDate) }) : item)) })),
+  clearTaskDueDate: (id: string) =>
+    set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, dueDate: undefined }) : item)) })),
+  updateTaskDates: (id: string, dates: { plannedDate?: string | Date; dueDate?: string | Date }) =>
+    set((state) => ({
+      tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({
+        ...item,
+        plannedDate: dates.plannedDate === undefined ? item.plannedDate : normalizeDate(dates.plannedDate),
+        dueDate: dates.dueDate === undefined ? item.dueDate : normalizeDate(dates.dueDate),
+      }) : item)),
+    })),
 
   addMilestone: (milestone: Milestone) => set((state) => ({ milestones: [...state.milestones, milestone] })),
   updateMilestone: (id: string, patch: Partial<Milestone>) =>

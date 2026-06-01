@@ -23,6 +23,13 @@ export function getTodayDateString(): string {
   return normalizeDate(new Date());
 }
 
+export function getTomorrowDateString(): string {
+  const tomorrow = toUtcDate(getTodayDateString());
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+
+  return normalizeDate(tomorrow);
+}
+
 export function getStartOfWeek(date: string | Date = new Date()): string {
   const normalizedDate = toUtcDate(date);
   const dayOfWeek = normalizedDate.getUTCDay();
@@ -66,10 +73,7 @@ export function isTomorrow(date?: string | Date): boolean {
     return false;
   }
 
-  const tomorrow = toUtcDate(getTodayDateString());
-  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-
-  return isSameDay(date, tomorrow);
+  return isSameDay(date, getTomorrowDateString());
 }
 
 export function isPastDate(date?: string | Date, referenceDate: string | Date = new Date()): boolean {

@@ -9,4 +9,11 @@ export interface TaskSlice {
   updateTaskStatus: (id: string, status: TaskStatus) => void;
   updateTaskPriority: (id: string, priority: Priority) => void;
   completeTask: (id: string) => void;
+  setTaskPlannedDate: (id: string, plannedDate: string | Date) => void;
+  scheduleTaskForToday: (id: string) => void;
+  scheduleTaskForTomorrow: (id: string) => void;
+  clearTaskPlannedDate: (id: string) => void;
+  setTaskDueDate: (id: string, dueDate: string | Date) => void;
+  clearTaskDueDate: (id: string) => void;
+  updateTaskDates: (id: string, dates: { plannedDate?: string | Date; dueDate?: string | Date }) => void;
 }
