@@ -41,11 +41,30 @@ const priorityLabels: Record<Priority, string> = {
   critical: 'Kritisch',
 };
 
+const emptyStateMessages: Record<TaskView, string> = {
+  today: 'Für heute sind keine Aufgaben geplant.',
+  week: 'Für diese Woche sind noch keine Aufgaben geplant.',
+  overdue: 'Keine überfälligen Aufgaben.',
+  open: 'Keine offenen Aufgaben.',
+  done: 'Noch keine erledigten Aufgaben.',
+};
 
 const statusStyles: Record<TaskStatus, string> = {
   open: 'border-slate-700/60 bg-slate-950/40 text-slate-300',
   in_progress: 'border-sky-300/30 bg-sky-950/20 text-sky-100',
   done: 'border-emerald-300/20 bg-emerald-950/15 text-emerald-100',
+};
+
+interface TaskContextInfo {
+  label: string;
+  detail?: string;
+  tone: 'project' | 'lifeArea' | 'unassigned';
+}
+
+const contextStyles: Record<TaskContextInfo['tone'], string> = {
+  project: 'border-sky-300/20 bg-sky-950/10 text-sky-100',
+  lifeArea: 'border-emerald-300/20 bg-emerald-950/10 text-emerald-100',
+  unassigned: 'border-slate-700/60 bg-slate-950/30 text-slate-400',
 };
 
 function getVisibleTasks(tasks: Task[], activeView: TaskView): Task[] {
@@ -64,25 +83,37 @@ function getVisibleTasks(tasks: Task[], activeView: TaskView): Task[] {
   }
 }
 
-function getTaskContext(task: Task, projects: Project[], lifeAreas: LifeArea[]): string {
+function getTaskContext(task: Task, projects: Project[], lifeAreas: LifeArea[]): TaskContextInfo {
   const project = task.projectId ? projects.find((item) => item.id === task.projectId) : undefined;
   const projectLifeArea = project?.lifeAreaId ? lifeAreas.find((item) => item.id === project.lifeAreaId) : undefined;
   const directLifeArea = task.lifeAreaId ? lifeAreas.find((item) => item.id === task.lifeAreaId) : undefined;
 
   if (project) {
-    return projectLifeArea ? `${project.name} · ${projectLifeArea.name}` : project.name;
+    return {
+      label: `Projekt: ${project.name}`,
+      detail: projectLifeArea ? `Bereich: ${projectLifeArea.name}` : undefined,
+      tone: 'project',
+    };
   }
 
   if (directLifeArea) {
-    return directLifeArea.name;
+    return {
+      label: `Bereich: ${directLifeArea.name}`,
+      detail: 'Direkt dem Lebensbereich zugeordnet',
+      tone: 'lifeArea',
+    };
   }
 
-  return 'Ohne Zuordnung';
+  return {
+    label: 'Ohne Zuordnung',
+    detail: 'Kein Projekt- oder Lebensbereichskontext gesetzt',
+    tone: 'unassigned',
+  };
 }
 
 interface TaskCardProps {
   task: Task;
-  context: string;
+  context: TaskContextInfo;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
 }
 
@@ -96,7 +127,7 @@ function TaskCard({ task, context, onStatusChange }: TaskCardProps) {
         isDone
           ? 'border-slate-700/30 bg-slate-950/10 opacity-75'
           : overdue
-            ? 'border-amber-300/30 bg-amber-950/10'
+            ? 'border-amber-300/30 border-l-4 border-l-amber-300/50 bg-amber-950/10'
             : 'border-slate-700/50 bg-slate-950/20'
       }`}
     >
@@ -107,7 +138,10 @@ function TaskCard({ task, context, onStatusChange }: TaskCardProps) {
             {overdue && <span className="rounded-full border border-amber-300/30 bg-amber-950/20 px-2.5 py-1 text-xs text-amber-100">Überfällig</span>}
           </div>
           {task.description && <p className="text-sm leading-6 text-slate-400">{task.description}</p>}
-          <p className="text-xs uppercase tracking-[0.16em] text-muted">{context}</p>
+          <div className={`w-fit rounded-xl border px-3 py-2 text-xs ${contextStyles[context.tone]}`}>
+            <p className="font-medium">{context.label}</p>
+            {context.detail && <p className="mt-1 text-[0.7rem] text-slate-400">{context.detail}</p>}
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2 text-xs text-slate-300 lg:justify-end">
@@ -119,7 +153,9 @@ function TaskCard({ task, context, onStatusChange }: TaskCardProps) {
       </div>
 
       <div className="mt-4 grid gap-3 text-xs text-slate-500 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
-        <p>Fälligkeit: {task.dueDate ?? 'Keine Fälligkeit'}</p>
+        <p className={overdue ? 'font-medium text-amber-100' : undefined}>
+          Fälligkeit: {task.dueDate ?? 'Keine Fälligkeit'}{overdue ? ' · überfällig' : ''}
+        </p>
         <p>Geplant: {task.plannedDate ?? 'Nicht geplant'}</p>
         <div className="flex flex-wrap gap-2 lg:justify-end" aria-label={`Status für ${task.title} ändern`}>
           {task.status !== 'open' && (
@@ -219,7 +255,7 @@ export function TasksPage() {
 
         {visibleTasks.length === 0 ? (
           <p className="mt-5 rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500">
-            Keine Aufgaben in dieser Ansicht. Dein operativer Fokus ist hier aktuell frei.
+            {emptyStateMessages[activeView]}
           </p>
         ) : (
           <div className="mt-5 grid gap-3">
