@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import type { Priority, TaskStatus } from '../../models/common';
 import type { LifeArea } from '../../models/lifeArea';
 import type { Project } from '../../models/project';
@@ -19,6 +20,15 @@ import {
 } from '../../logic/taskLogic';
 
 type TaskView = 'today' | 'week' | 'overdue' | 'open' | 'done';
+
+type TaskDraft = {
+  title: string;
+  priority: Priority;
+  projectId: string;
+  lifeAreaId: string;
+  dueDate: string;
+  plannedDate: string;
+};
 
 const taskViews: Array<{ id: TaskView; label: string; description: string }> = [
   { id: 'today', label: 'Heute', description: 'Geplante Schritte für den aktuellen Tag.' },
@@ -66,6 +76,19 @@ const contextStyles: Record<TaskContextInfo['tone'], string> = {
   lifeArea: 'border-emerald-300/20 bg-emerald-950/10 text-emerald-100',
   unassigned: 'border-slate-700/60 bg-slate-950/30 text-slate-400',
 };
+
+const defaultTaskDraft: TaskDraft = {
+  title: '',
+  priority: 'medium',
+  projectId: '',
+  lifeAreaId: '',
+  dueDate: '',
+  plannedDate: '',
+};
+
+function createTaskId(): string {
+  return `t-${Date.now()}`;
+}
 
 function getVisibleTasks(tasks: Task[], activeView: TaskView): Task[] {
   switch (activeView) {
@@ -193,13 +216,56 @@ function TaskCard({ task, context, onStatusChange }: TaskCardProps) {
 
 export function TasksPage() {
   const [activeView, setActiveView] = useState<TaskView>('today');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [taskDraft, setTaskDraft] = useState<TaskDraft>(defaultTaskDraft);
+  const [createError, setCreateError] = useState<string | undefined>();
   const tasks = useLifeHQStore(selectTasks);
   const projects = useLifeHQStore(selectProjects);
   const lifeAreas = useLifeHQStore(selectLifeAreas);
+  const addTask = useLifeHQStore((state) => state.addTask);
   const updateTaskStatus = useLifeHQStore((state) => state.updateTaskStatus);
 
   const visibleTasks = useMemo(() => getVisibleTasks(tasks, activeView), [activeView, tasks]);
   const activeViewMeta = taskViews.find((view) => view.id === activeView) ?? taskViews[0];
+
+  function updateTaskDraft(patch: Partial<TaskDraft>) {
+    setTaskDraft((current) => ({ ...current, ...patch }));
+    setCreateError(undefined);
+  }
+
+  function resetTaskDraft() {
+    setTaskDraft(defaultTaskDraft);
+    setCreateError(undefined);
+  }
+
+  function handleCreateTask(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const title = taskDraft.title.trim();
+
+    if (!title) {
+      setCreateError('Bitte gib einen Aufgabentitel ein.');
+      return;
+    }
+
+    const createdAt = new Date().toISOString();
+    const projectId = taskDraft.projectId || undefined;
+
+    addTask({
+      id: createTaskId(),
+      title,
+      status: 'open',
+      priority: taskDraft.priority,
+      dueDate: taskDraft.dueDate || undefined,
+      plannedDate: taskDraft.plannedDate || undefined,
+      projectId,
+      lifeAreaId: projectId ? undefined : taskDraft.lifeAreaId || undefined,
+      createdAt,
+      updatedAt: createdAt,
+    });
+
+    resetTaskDraft();
+  }
 
   return (
     <section className="space-y-6">
@@ -216,12 +282,120 @@ export function TasksPage() {
 
         <button
           type="button"
-          disabled
-          className="w-fit cursor-not-allowed rounded-full border border-slate-700/60 bg-slate-950/40 px-4 py-2 text-sm font-medium text-slate-500"
+          onClick={() => setIsCreateOpen((current) => !current)}
+          className="w-fit rounded-full border border-slate-200/20 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-white"
         >
-          Neue Aufgabe vorbereiten
+          Neue Aufgabe
         </button>
       </div>
+
+      {isCreateOpen && (
+        <form onSubmit={handleCreateTask} className="rounded-3xl border border-slate-700/50 bg-slate-900/30 p-5 sm:p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted">Neue Aufgabe</p>
+              <h3 className="mt-2 text-lg font-semibold text-slate-100">Schnellen nächsten Schritt erfassen</h3>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                Lege nur den Titel fest oder ergänze optional Priorität, Zuordnung und einfache Datumsfelder.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                resetTaskDraft();
+                setIsCreateOpen(false);
+              }}
+              className="w-fit rounded-xl border border-slate-700/70 bg-slate-950/30 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+            >
+              Abbrechen
+            </button>
+          </div>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,2fr)_1fr_1fr]">
+            <label className="space-y-2 text-sm text-slate-300 lg:col-span-3">
+              <span className="text-xs uppercase tracking-[0.16em] text-muted">Titel</span>
+              <input
+                value={taskDraft.title}
+                onChange={(event) => updateTaskDraft({ title: event.target.value })}
+                placeholder="Was ist der nächste konkrete Schritt?"
+                className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/40 px-4 py-3 text-sm text-slate-100 outline-none transition-colors placeholder:text-slate-600 focus:border-slate-400"
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-300">
+              <span className="text-xs uppercase tracking-[0.16em] text-muted">Priorität</span>
+              <select
+                value={taskDraft.priority}
+                onChange={(event) => updateTaskDraft({ priority: event.target.value as Priority })}
+                className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/40 px-4 py-3 text-sm text-slate-100 outline-none transition-colors focus:border-slate-400"
+              >
+                {Object.entries(priorityLabels).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-300">
+              <span className="text-xs uppercase tracking-[0.16em] text-muted">Projekt</span>
+              <select
+                value={taskDraft.projectId}
+                onChange={(event) => updateTaskDraft({ projectId: event.target.value, lifeAreaId: event.target.value ? '' : taskDraft.lifeAreaId })}
+                className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/40 px-4 py-3 text-sm text-slate-100 outline-none transition-colors focus:border-slate-400"
+              >
+                <option value="">Kein Projekt</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>{project.name}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-300">
+              <span className="text-xs uppercase tracking-[0.16em] text-muted">Lebensbereich</span>
+              <select
+                value={taskDraft.lifeAreaId}
+                onChange={(event) => updateTaskDraft({ lifeAreaId: event.target.value })}
+                disabled={Boolean(taskDraft.projectId)}
+                className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/40 px-4 py-3 text-sm text-slate-100 outline-none transition-colors focus:border-slate-400 disabled:cursor-not-allowed disabled:text-slate-600"
+              >
+                <option value="">Kein Lebensbereich</option>
+                {lifeAreas.map((lifeArea) => (
+                  <option key={lifeArea.id} value={lifeArea.id}>{lifeArea.name}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-300">
+              <span className="text-xs uppercase tracking-[0.16em] text-muted">Fälligkeit</span>
+              <input
+                type="date"
+                value={taskDraft.dueDate}
+                onChange={(event) => updateTaskDraft({ dueDate: event.target.value })}
+                className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/40 px-4 py-3 text-sm text-slate-100 outline-none transition-colors focus:border-slate-400"
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-slate-300">
+              <span className="text-xs uppercase tracking-[0.16em] text-muted">Geplant</span>
+              <input
+                type="date"
+                value={taskDraft.plannedDate}
+                onChange={(event) => updateTaskDraft({ plannedDate: event.target.value })}
+                className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/40 px-4 py-3 text-sm text-slate-100 outline-none transition-colors focus:border-slate-400"
+              />
+            </label>
+          </div>
+
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {createError ? <p className="text-sm text-amber-100">{createError}</p> : <p className="text-sm text-slate-500">Status startet als offen, Priorität standardmäßig mittel.</p>}
+            <button
+              type="submit"
+              className="w-fit rounded-full border border-emerald-300/20 bg-emerald-950/20 px-4 py-2 text-sm font-medium text-emerald-100 transition-colors hover:border-emerald-300/40"
+            >
+              Aufgabe erstellen
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className="rounded-3xl border border-slate-700/50 bg-slate-950/20 p-3">
         <div className="grid gap-2 md:grid-cols-5">
