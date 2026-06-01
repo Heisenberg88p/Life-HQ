@@ -60,6 +60,47 @@ const emptyStateMessages: Record<TaskView, string> = {
   done: 'Noch keine erledigten Aufgaben.',
 };
 
+const prioritySortOrder: Record<Priority, number> = {
+  critical: 0,
+  high: 1,
+  medium: 2,
+  low: 3,
+};
+
+function compareTasksByPlanningWeight(taskA: Task, taskB: Task): number {
+  if (taskA.status === 'done' && taskB.status !== 'done') {
+    return 1;
+  }
+
+  if (taskA.status !== 'done' && taskB.status === 'done') {
+    return -1;
+  }
+
+  const priorityDifference = prioritySortOrder[taskA.priority] - prioritySortOrder[taskB.priority];
+
+  if (priorityDifference !== 0) {
+    return priorityDifference;
+  }
+
+  return taskA.title.localeCompare(taskB.title);
+}
+
+function sortTasksForPlanning(tasks: Task[]): Task[] {
+  return [...tasks].sort(compareTasksByPlanningWeight);
+}
+
+function sortOverdueTasks(tasks: Task[]): Task[] {
+  return [...tasks].sort((taskA, taskB) => {
+    const dueDateDifference = (taskA.dueDate ?? '').localeCompare(taskB.dueDate ?? '');
+
+    if (dueDateDifference !== 0) {
+      return dueDateDifference;
+    }
+
+    return compareTasksByPlanningWeight(taskA, taskB);
+  });
+}
+
 const statusStyles: Record<TaskStatus, string> = {
   open: 'border-slate-700/60 bg-slate-950/40 text-slate-300',
   in_progress: 'border-sky-300/30 bg-sky-950/20 text-sky-100',
@@ -94,16 +135,16 @@ function createTaskId(): string {
 function getVisibleTasks(tasks: Task[], activeView: TaskView): Task[] {
   switch (activeView) {
     case 'today':
-      return getTasksForToday(tasks);
+      return sortTasksForPlanning(getTasksForToday(tasks));
     case 'week':
-      return getTasksForCurrentWeek(tasks);
+      return sortTasksForPlanning(getTasksForCurrentWeek(tasks));
     case 'overdue':
-      return getOverdueTasks(tasks);
+      return sortOverdueTasks(getOverdueTasks(tasks));
     case 'done':
-      return getDoneTasks(tasks);
+      return sortTasksForPlanning(getDoneTasks(tasks));
     case 'open':
     default:
-      return getOpenTasks(tasks);
+      return sortTasksForPlanning(getOpenTasks(tasks));
   }
 }
 
@@ -340,8 +381,8 @@ function TaskList({ tasks, projects, lifeAreas, actions }: TaskListProps) {
 
 function WeekTaskSection({ tasks, projects, lifeAreas, actions }: TaskListProps) {
   const weekDays = getWeekDays();
-  const unplannedTasks = tasks.filter((task) => !task.plannedDate && task.status !== 'done');
-  const overdueTasks = getOverdueTasks(tasks);
+  const unplannedTasks = sortTasksForPlanning(tasks.filter((task) => !task.plannedDate && task.status !== 'done'));
+  const overdueTasks = sortOverdueTasks(getOverdueTasks(tasks));
 
   return (
     <div className="mt-5 space-y-5">
@@ -354,7 +395,7 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions }: TaskListProps)
 
       <div className="space-y-3">
         {weekDays.map((day, index) => {
-          const dayTasks = tasks.filter((task) => isSameDay(task.plannedDate, day));
+          const dayTasks = sortTasksForPlanning(tasks.filter((task) => isSameDay(task.plannedDate, day)));
 
           return (
             <section key={day} className="rounded-2xl border border-slate-800/80 bg-slate-950/20 p-4">
