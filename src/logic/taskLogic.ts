@@ -1,5 +1,10 @@
 import type { Task } from '../models/task';
-import { getTodayDateString, isBeforeToday, isSameDay, isWithinCurrentWeek } from './dateLogic';
+import {
+  getTodayDateString,
+  isOverdue,
+  isSameDay,
+  isThisWeek,
+} from './dateLogic';
 
 export function isTaskDone(task: Task): boolean {
   return task.status === 'done';
@@ -10,7 +15,7 @@ export function isTaskOpen(task: Task): boolean {
 }
 
 export function isTaskOverdue(task: Task): boolean {
-  return Boolean(task.dueDate && isBeforeToday(task.dueDate) && !isTaskDone(task));
+  return isOverdue(task.dueDate, isTaskDone(task));
 }
 
 export function getTasksForToday(tasks: Task[]): Task[] {
@@ -18,8 +23,12 @@ export function getTasksForToday(tasks: Task[]): Task[] {
   return tasks.filter((task) => isSameDay(task.plannedDate, today));
 }
 
+export function getTasksForThisWeek(tasks: Task[]): Task[] {
+  return tasks.filter((task) => isThisWeek(task.plannedDate));
+}
+
 export function getTasksForCurrentWeek(tasks: Task[]): Task[] {
-  return tasks.filter((task) => isWithinCurrentWeek(task.plannedDate));
+  return getTasksForThisWeek(tasks);
 }
 
 export function getOverdueTasks(tasks: Task[]): Task[] {
@@ -30,8 +39,16 @@ export function getOpenTasks(tasks: Task[]): Task[] {
   return tasks.filter(isTaskOpen);
 }
 
-export function getDoneTasks(tasks: Task[]): Task[] {
+export function getCompletedTasks(tasks: Task[]): Task[] {
   return tasks.filter(isTaskDone);
+}
+
+export function getDoneTasks(tasks: Task[]): Task[] {
+  return getCompletedTasks(tasks);
+}
+
+export function getTasksWithoutPlannedDate(tasks: Task[]): Task[] {
+  return tasks.filter((task) => !task.plannedDate);
 }
 
 export function getTasksByProjectId(tasks: Task[], projectId: string): Task[] {

@@ -85,6 +85,8 @@ export const mockTasks: Task[] = [
   { id: 't-3', title: 'Schedule recovery window', status: 'in_progress', priority: 'medium', plannedDate: '2026-06-03', projectId: 'p-1', lifeAreaId: 'la-1', createdAt: now, updatedAt: now },
   { id: 't-4', title: 'Document portfolio positioning questions', status: 'open', priority: 'high', plannedDate: '2026-06-10', projectId: 'p-2', lifeAreaId: 'la-2', createdAt: now, updatedAt: now },
   { id: 't-5', title: 'Archive health check notes', status: 'done', priority: 'low', projectId: 'p-4', lifeAreaId: 'la-1', completedAt: now, createdAt: now, updatedAt: now },
+  { id: 't-6', title: 'Review weekly nutrition baseline', status: 'open', priority: 'medium', plannedDate: '2026-06-02', lifeAreaId: 'la-1', createdAt: now, updatedAt: now },
+  { id: 't-7', title: 'Send portfolio feedback request', status: 'open', priority: 'medium', dueDate: '2026-05-28', projectId: 'p-2', lifeAreaId: 'la-2', createdAt: now, updatedAt: now },
 ];
 
 export const mockMilestones: Milestone[] = [
