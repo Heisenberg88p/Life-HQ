@@ -1,7 +1,9 @@
 import { Link, useParams } from 'react-router-dom';
-import type { Priority, ProjectStatus, TrafficLightStatus } from '../../models/common';
+import type { MilestoneStatus, Priority, ProjectStatus, TrafficLightStatus } from '../../models/common';
+import type { Milestone } from '../../models/milestone';
 import {
   selectLifeAreaById,
+  selectMilestonesByProjectId,
   selectProjectById,
   useLifeHQStore,
 } from '../../store';
@@ -32,6 +34,12 @@ const trafficLightStyles: Record<TrafficLightStatus, string> = {
   red: 'bg-rose-300/80',
 };
 
+const milestoneStatusLabels: Record<MilestoneStatus, string> = {
+  open: 'Offen',
+  in_progress: 'In Arbeit',
+  done: 'Erledigt',
+};
+
 interface DetailFieldProps {
   label: string;
   value: string;
@@ -56,11 +64,23 @@ function getLifeAreaDisplayValue(lifeAreaId?: string, lifeAreaName?: string): st
   return lifeAreaName ?? 'Lebensbereich nicht gefunden';
 }
 
+function getNextRelevantMilestoneLabel(milestones: Milestone[]): string {
+  const openMilestones = milestones
+    .filter((milestone) => milestone.status !== 'done')
+    .sort((a, b) => (a.targetDate ?? '9999-12-31').localeCompare(b.targetDate ?? '9999-12-31'));
+
+  const nextMilestone = openMilestones[0];
+
+  return nextMilestone ? nextMilestone.title : 'Kein offener Meilenstein';
+}
+
 export function ProjectDetailPage() {
   const { projectId } = useParams();
   const project = useLifeHQStore(selectProjectById(projectId ?? ''));
   const lifeArea = useLifeHQStore(selectLifeAreaById(project?.lifeAreaId ?? ''));
+  const milestones = useLifeHQStore(selectMilestonesByProjectId(project?.id ?? ''));
   const lifeAreaDisplayValue = getLifeAreaDisplayValue(project?.lifeAreaId, lifeArea?.name);
+  const nextRelevantMilestoneLabel = getNextRelevantMilestoneLabel(milestones);
 
   if (!project) {
     return (
@@ -118,8 +138,44 @@ export function ProjectDetailPage() {
             </div>
           </div>
           <DetailField label="Zieltermin" value={project.targetDate ?? 'Kein Zieltermin'} />
+          <DetailField label="Nächster Meilenstein" value={nextRelevantMilestoneLabel} />
           {project.status === 'paused' && <DetailField label="Pausierungsgrund" value={project.pauseReason ?? 'Kein Grund hinterlegt'} />}
         </div>
+      </section>
+
+      <section className="rounded-3xl border border-slate-700/60 bg-slate-900/25 p-5 sm:p-6">
+        <div className="max-w-2xl">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted">Project Markers</p>
+          <h3 className="mt-2 text-lg font-semibold text-slate-100">Meilensteine</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Größere Fortschrittspunkte dieses Projekts. Sie geben Orientierung, ohne daraus eine Aufgabenliste zu machen.
+          </p>
+        </div>
+
+        {milestones.length === 0 ? (
+          <p className="mt-5 rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500">
+            Für dieses Projekt sind noch keine Meilensteine hinterlegt.
+          </p>
+        ) : (
+          <div className="mt-5 grid gap-3">
+            {milestones.map((milestone) => (
+              <article key={milestone.id} className="rounded-2xl border border-slate-700/50 bg-slate-950/25 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-slate-100">{milestone.title}</h4>
+                    {milestone.description && <p className="text-sm leading-6 text-slate-400">{milestone.description}</p>}
+                  </div>
+                  <span className="w-fit rounded-full border border-slate-700/60 bg-slate-950/40 px-2.5 py-1 text-xs text-slate-300">
+                    {milestoneStatusLabels[milestone.status]}
+                  </span>
+                </div>
+                <p className="mt-3 text-xs uppercase tracking-[0.16em] text-muted">
+                  Zieltermin: {milestone.targetDate ?? 'Kein Zieltermin'}
+                </p>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
