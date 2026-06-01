@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { getWeekDays, isSameDay } from '../../logic/dateLogic';
 import type { FormEvent } from 'react';
 import type { Priority, TaskStatus } from '../../models/common';
 import type { LifeArea } from '../../models/lifeArea';
@@ -34,7 +35,7 @@ const taskViews: Array<{ id: TaskView; label: string; description: string }> = [
   { id: 'today', label: 'Heute', description: 'Geplante Schritte für den aktuellen Tag.' },
   { id: 'week', label: 'Diese Woche', description: 'Geplante Aufgaben innerhalb der aktuellen Woche.' },
   { id: 'overdue', label: 'Überfällig', description: 'Fällige Aufgaben, die noch nicht erledigt sind.' },
-  { id: 'open', label: 'Alle offenen Aufgaben', description: 'Alles, was offen oder in Arbeit ist.' },
+  { id: 'open', label: 'Offen', description: 'Alles, was offen oder in Arbeit ist.' },
   { id: 'done', label: 'Erledigte Aufgaben', description: 'Abgeschlossene operative Schritte.' },
 ];
 
@@ -138,9 +139,25 @@ interface TaskCardProps {
   task: Task;
   context: TaskContextInfo;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
+  onPlanToday: (taskId: string) => void;
+  onPlanTomorrow: (taskId: string) => void;
+  onClearPlannedDate: (taskId: string) => void;
+  onSetPlannedDate: (taskId: string, plannedDate: string) => void;
+  onSetDueDate: (taskId: string, dueDate: string) => void;
+  onClearDueDate: (taskId: string) => void;
 }
 
-function TaskCard({ task, context, onStatusChange }: TaskCardProps) {
+function TaskCard({
+  task,
+  context,
+  onStatusChange,
+  onPlanToday,
+  onPlanTomorrow,
+  onClearPlannedDate,
+  onSetPlannedDate,
+  onSetDueDate,
+  onClearDueDate,
+}: TaskCardProps) {
   const overdue = isTaskOverdue(task);
   const isDone = task.status === 'done';
 
@@ -179,7 +196,10 @@ function TaskCard({ task, context, onStatusChange }: TaskCardProps) {
         <p className={overdue ? 'font-medium text-amber-100' : undefined}>
           Fälligkeit: {task.dueDate ?? 'Keine Fälligkeit'}{overdue ? ' · überfällig' : ''}
         </p>
-        <p>Geplant: {task.plannedDate ?? 'Nicht geplant'}</p>
+        <div className="space-y-1">
+          <p>Geplant: {task.plannedDate ?? 'Nicht geplant'}</p>
+          {isDone && <p>Erledigt: {task.completedAt ? task.completedAt.slice(0, 10) : 'Datum nicht gesetzt'}</p>}
+        </div>
         <div className="flex flex-wrap gap-2 lg:justify-end" aria-label={`Status für ${task.title} ändern`}>
           {task.status !== 'open' && (
             <button
@@ -210,7 +230,156 @@ function TaskCard({ task, context, onStatusChange }: TaskCardProps) {
           )}
         </div>
       </div>
+
+      <div className="mt-4 rounded-2xl border border-slate-800/80 bg-slate-950/20 p-3">
+        <p className="text-xs uppercase tracking-[0.16em] text-muted">Planung</p>
+        <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
+          <label className="space-y-2 text-xs text-slate-400">
+            <span>Geplantes Datum</span>
+            <input
+              type="date"
+              value={task.plannedDate ?? ''}
+              onChange={(event) => {
+                if (event.target.value) {
+                  onSetPlannedDate(task.id, event.target.value);
+                } else {
+                  onClearPlannedDate(task.id);
+                }
+              }}
+              className="w-full rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs text-slate-100 outline-none transition-colors focus:border-slate-400"
+            />
+          </label>
+          <label className="space-y-2 text-xs text-slate-400">
+            <span>Fälligkeit</span>
+            <input
+              type="date"
+              value={task.dueDate ?? ''}
+              onChange={(event) => {
+                if (event.target.value) {
+                  onSetDueDate(task.id, event.target.value);
+                } else {
+                  onClearDueDate(task.id);
+                }
+              }}
+              className="w-full rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs text-slate-100 outline-none transition-colors focus:border-slate-400"
+            />
+          </label>
+          <div className="flex flex-wrap gap-2 lg:justify-end">
+            <button
+              type="button"
+              onClick={() => onPlanToday(task.id)}
+              className="rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+            >
+              Heute planen
+            </button>
+            <button
+              type="button"
+              onClick={() => onPlanTomorrow(task.id)}
+              className="rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+            >
+              Morgen planen
+            </button>
+            {task.plannedDate && (
+              <button
+                type="button"
+                onClick={() => onClearPlannedDate(task.id)}
+                className="rounded-xl border border-slate-700/70 bg-slate-950/20 px-3 py-2 text-xs font-medium text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
+              >
+                Planung entfernen
+              </button>
+            )}
+            {task.dueDate && (
+              <button
+                type="button"
+                onClick={() => onClearDueDate(task.id)}
+                className="rounded-xl border border-slate-700/70 bg-slate-950/20 px-3 py-2 text-xs font-medium text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
+              >
+                Fälligkeit entfernen
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </article>
+  );
+}
+
+const weekdayLabels = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+
+interface TaskListProps {
+  tasks: Task[];
+  projects: Project[];
+  lifeAreas: LifeArea[];
+  actions: TaskPlanningActions;
+}
+
+interface TaskPlanningActions {
+  onStatusChange: (taskId: string, status: TaskStatus) => void;
+  onPlanToday: (taskId: string) => void;
+  onPlanTomorrow: (taskId: string) => void;
+  onClearPlannedDate: (taskId: string) => void;
+  onSetPlannedDate: (taskId: string, plannedDate: string) => void;
+  onSetDueDate: (taskId: string, dueDate: string) => void;
+  onClearDueDate: (taskId: string) => void;
+}
+
+function TaskList({ tasks, projects, lifeAreas, actions }: TaskListProps) {
+  return (
+    <div className="mt-5 grid gap-3">
+      {tasks.map((task) => (
+        <TaskCard
+          key={task.id}
+          task={task}
+          context={getTaskContext(task, projects, lifeAreas)}
+          {...actions}
+        />
+      ))}
+    </div>
+  );
+}
+
+function WeekTaskSection({ tasks, projects, lifeAreas, actions }: TaskListProps) {
+  const weekDays = getWeekDays();
+  const unplannedTasks = tasks.filter((task) => !task.plannedDate && task.status !== 'done');
+  const overdueTasks = getOverdueTasks(tasks);
+
+  return (
+    <div className="mt-5 space-y-5">
+      {overdueTasks.length > 0 && (
+        <div className="rounded-2xl border border-amber-300/20 bg-amber-950/10 p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-amber-100">Ruhiger Hinweis</p>
+          <p className="mt-2 text-sm text-slate-300">Es gibt überfällige Aufgaben. Sie bleiben sichtbar, ohne die Wochenplanung zu dominieren.</p>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {weekDays.map((day, index) => {
+          const dayTasks = tasks.filter((task) => isSameDay(task.plannedDate, day));
+
+          return (
+            <section key={day} className="rounded-2xl border border-slate-800/80 bg-slate-950/20 p-4">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+                <p className="text-sm font-semibold text-slate-100">{weekdayLabels[index]}</p>
+                <p className="text-xs text-slate-500">{day}</p>
+              </div>
+              {dayTasks.length === 0 ? (
+                <p className="mt-4 text-xs leading-5 text-slate-600">Keine Aufgaben geplant.</p>
+              ) : (
+                <TaskList tasks={dayTasks} projects={projects} lifeAreas={lifeAreas} actions={actions} />
+              )}
+            </section>
+          );
+        })}
+      </div>
+
+      {unplannedTasks.length > 0 && (
+        <section className="rounded-2xl border border-slate-800/80 bg-slate-950/20 p-4">
+          <p className="text-xs uppercase tracking-[0.16em] text-muted">Ohne geplantes Datum</p>
+          <p className="mt-2 text-sm text-slate-400">Diese offenen Aufgaben sind noch keinem Tag zugeordnet.</p>
+          <TaskList tasks={unplannedTasks} projects={projects} lifeAreas={lifeAreas} actions={actions} />
+        </section>
+      )}
+    </div>
   );
 }
 
@@ -224,9 +393,24 @@ export function TasksPage() {
   const lifeAreas = useLifeHQStore(selectLifeAreas);
   const addTask = useLifeHQStore((state) => state.addTask);
   const updateTaskStatus = useLifeHQStore((state) => state.updateTaskStatus);
+  const scheduleTaskForToday = useLifeHQStore((state) => state.scheduleTaskForToday);
+  const scheduleTaskForTomorrow = useLifeHQStore((state) => state.scheduleTaskForTomorrow);
+  const clearTaskPlannedDate = useLifeHQStore((state) => state.clearTaskPlannedDate);
+  const setTaskPlannedDate = useLifeHQStore((state) => state.setTaskPlannedDate);
+  const setTaskDueDate = useLifeHQStore((state) => state.setTaskDueDate);
+  const clearTaskDueDate = useLifeHQStore((state) => state.clearTaskDueDate);
 
   const visibleTasks = useMemo(() => getVisibleTasks(tasks, activeView), [activeView, tasks]);
   const activeViewMeta = taskViews.find((view) => view.id === activeView) ?? taskViews[0];
+  const taskPlanningActions: TaskPlanningActions = {
+    onStatusChange: updateTaskStatus,
+    onPlanToday: scheduleTaskForToday,
+    onPlanTomorrow: scheduleTaskForTomorrow,
+    onClearPlannedDate: clearTaskPlannedDate,
+    onSetPlannedDate: setTaskPlannedDate,
+    onSetDueDate: setTaskDueDate,
+    onClearDueDate: clearTaskDueDate,
+  };
 
   function updateTaskDraft(patch: Partial<TaskDraft>) {
     setTaskDraft((current) => ({ ...current, ...patch }));
@@ -429,21 +613,14 @@ export function TasksPage() {
           <p className="text-sm text-slate-500">{visibleTasks.length} sichtbar</p>
         </div>
 
-        {visibleTasks.length === 0 ? (
+        {activeView === 'week' ? (
+          <WeekTaskSection tasks={tasks} projects={projects} lifeAreas={lifeAreas} actions={taskPlanningActions} />
+        ) : visibleTasks.length === 0 ? (
           <p className="mt-5 rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500">
             {emptyStateMessages[activeView]}
           </p>
         ) : (
-          <div className="mt-5 grid gap-3">
-            {visibleTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                context={getTaskContext(task, projects, lifeAreas)}
-                onStatusChange={updateTaskStatus}
-              />
-            ))}
-          </div>
+          <TaskList tasks={visibleTasks} projects={projects} lifeAreas={lifeAreas} actions={taskPlanningActions} />
         )}
       </div>
     </section>
