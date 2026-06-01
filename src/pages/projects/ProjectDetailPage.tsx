@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import type { Priority, ProjectStatus, TrafficLightStatus } from '../../models/common';
 import {
-  selectLifeAreas,
+  selectLifeAreaById,
   selectProjectById,
   useLifeHQStore,
 } from '../../store';
@@ -35,22 +35,32 @@ const trafficLightStyles: Record<TrafficLightStatus, string> = {
 interface DetailFieldProps {
   label: string;
   value: string;
+  description?: string;
 }
 
-function DetailField({ label, value }: DetailFieldProps) {
+function DetailField({ label, value, description }: DetailFieldProps) {
   return (
     <div className="rounded-2xl border border-slate-700/50 bg-slate-950/25 p-4">
       <p className="text-xs uppercase tracking-[0.16em] text-muted">{label}</p>
       <p className="mt-2 text-sm font-medium text-slate-100">{value}</p>
+      {description && <p className="mt-2 text-xs leading-5 text-slate-500">{description}</p>}
     </div>
   );
+}
+
+function getLifeAreaDisplayValue(lifeAreaId?: string, lifeAreaName?: string): string {
+  if (!lifeAreaId) {
+    return 'Nicht zugeordnet';
+  }
+
+  return lifeAreaName ?? 'Lebensbereich nicht gefunden';
 }
 
 export function ProjectDetailPage() {
   const { projectId } = useParams();
   const project = useLifeHQStore(selectProjectById(projectId ?? ''));
-  const lifeAreas = useLifeHQStore(selectLifeAreas);
-  const lifeArea = project?.lifeAreaId ? lifeAreas.find((area) => area.id === project.lifeAreaId) : undefined;
+  const lifeArea = useLifeHQStore(selectLifeAreaById(project?.lifeAreaId ?? ''));
+  const lifeAreaDisplayValue = getLifeAreaDisplayValue(project?.lifeAreaId, lifeArea?.name);
 
   if (!project) {
     return (
@@ -93,7 +103,11 @@ export function ProjectDetailPage() {
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <DetailField label="Lebensbereich" value={lifeArea?.name ?? project.lifeAreaId ?? 'Kein Lebensbereich'} />
+          <DetailField
+            label="Lebensbereich"
+            value={lifeAreaDisplayValue}
+            description="Strategischer Kontext dieses Projekts, ohne die Projektansicht zu verlassen."
+          />
           <DetailField label="Status" value={projectStatusLabels[project.status]} />
           <DetailField label="Priorität" value={priorityLabels[project.priority]} />
           <div className="rounded-2xl border border-slate-700/50 bg-slate-950/25 p-4">
