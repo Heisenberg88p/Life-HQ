@@ -121,6 +121,7 @@ export function ProjectDetailPage() {
   const nextRelevantMilestoneLabel = getNextRelevantMilestoneLabel(milestones);
   const openTaskLabel = getOpenTaskLabel(tasks);
   const sortedHistoryEntries = getSortedHistoryEntries(historyEntries);
+  const isPausedProject = project?.status === 'paused';
 
   if (!project) {
     return (
@@ -153,9 +154,14 @@ export function ProjectDetailPage() {
             <p className="text-sm leading-6 text-slate-300">
               {project.description ?? 'Für dieses Projekt ist noch keine Beschreibung oder Vision hinterlegt.'}
             </p>
+            {isPausedProject && (
+              <p className="rounded-2xl border border-slate-700/50 bg-slate-950/25 px-4 py-3 text-sm leading-6 text-slate-400">
+                Dieses Projekt ist bewusst aus dem aktiven Fokus genommen. Es bleibt sichtbar, eingeordnet und für eine spätere Reaktivierung vorbereitet.
+              </p>
+            )}
           </div>
 
-          {project.status === 'paused' && (
+          {isPausedProject && (
             <span className="w-fit rounded-full border border-slate-600/60 bg-slate-950/40 px-3 py-1 text-xs font-medium text-slate-300">
               Bewusst pausiert
             </span>
@@ -168,7 +174,11 @@ export function ProjectDetailPage() {
             value={lifeAreaDisplayValue}
             description="Strategischer Kontext dieses Projekts, ohne die Projektansicht zu verlassen."
           />
-          <DetailField label="Status" value={projectStatusLabels[project.status]} />
+          <DetailField
+            label="Status"
+            value={projectStatusLabels[project.status]}
+            description={isPausedProject ? 'Bewusst pausiert, nicht abgeschlossen und nicht verloren.' : undefined}
+          />
           <DetailField label="Priorität" value={priorityLabels[project.priority]} />
           <div className="rounded-2xl border border-slate-700/50 bg-slate-950/25 p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-muted">Ampelstatus</p>
@@ -180,9 +190,36 @@ export function ProjectDetailPage() {
           <DetailField label="Zieltermin" value={project.targetDate ?? 'Kein Zieltermin'} />
           <DetailField label="Nächster Meilenstein" value={nextRelevantMilestoneLabel} />
           <DetailField label="Offene Aufgaben" value={openTaskLabel} />
-          {project.status === 'paused' && <DetailField label="Pausierungsgrund" value={project.pauseReason ?? 'Kein Grund hinterlegt'} />}
         </div>
       </section>
+
+      {isPausedProject && (
+        <section className="rounded-3xl border border-slate-700/50 bg-slate-950/20 p-5 sm:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted">Paused Project</p>
+              <h3 className="mt-2 text-lg font-semibold text-slate-100">Pausierungsinformationen</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Diese Informationen halten fest, warum das Projekt aktuell ruht und wann es wieder bewusst geprüft werden kann.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled
+              className="w-fit cursor-not-allowed rounded-full border border-slate-700/60 bg-slate-950/40 px-3 py-1.5 text-xs font-medium text-slate-500"
+            >
+              Reaktivierung vorbereiten
+            </button>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <DetailField label="Pausierungsdatum" value={project.pausedAt ?? 'Kein Pausierungsdatum hinterlegt'} />
+            <DetailField label="Pausierungsgrund" value={project.pauseReason ?? 'Kein Pausierungsgrund hinterlegt'} />
+            <DetailField label="Pausierungsnotiz" value={project.pauseNote ?? 'Keine Pausierungsnotiz hinterlegt'} />
+            <DetailField label="Wiedervorlage" value={project.reviewDate ?? 'Keine Wiedervorlage hinterlegt'} />
+          </div>
+        </section>
+      )}
 
       <section className="rounded-3xl border border-slate-700/60 bg-slate-900/25 p-5 sm:p-6">
         <div className="max-w-2xl">
