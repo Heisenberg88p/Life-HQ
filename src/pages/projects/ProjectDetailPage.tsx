@@ -1,8 +1,10 @@
 import { Link, useParams } from 'react-router-dom';
 import type { MilestoneStatus, Priority, ProjectStatus, TaskStatus, TrafficLightStatus } from '../../models/common';
 import type { Milestone } from '../../models/milestone';
+import type { ProjectHistoryEntry, ProjectHistoryEntryType } from '../../models/projectHistory';
 import type { Task } from '../../models/task';
 import {
+  selectHistoryByProjectId,
   selectLifeAreaById,
   selectMilestonesByProjectId,
   selectProjectById,
@@ -46,6 +48,18 @@ const taskStatusLabels: Record<TaskStatus, string> = {
   open: 'Offen',
   in_progress: 'In Arbeit',
   done: 'Erledigt',
+};
+
+const historyTypeLabels: Record<ProjectHistoryEntryType, string> = {
+  created: 'Erstellt',
+  status_changed: 'Status geändert',
+  priority_changed: 'Priorität geändert',
+  paused: 'Pausiert',
+  reactivated: 'Reaktiviert',
+  completed: 'Abgeschlossen',
+  task_linked: 'Aufgabe verknüpft',
+  milestone_updated: 'Meilenstein aktualisiert',
+  note_added: 'Notiz ergänzt',
 };
 
 interface DetailFieldProps {
@@ -92,15 +106,21 @@ function getOpenTaskLabel(tasks: Task[]): string {
   return openTaskCount === 1 ? '1 offene Aufgabe' : `${openTaskCount} offene Aufgaben`;
 }
 
+function getSortedHistoryEntries(historyEntries: ProjectHistoryEntry[]): ProjectHistoryEntry[] {
+  return [...historyEntries].sort((entryA, entryB) => entryB.date.localeCompare(entryA.date));
+}
+
 export function ProjectDetailPage() {
   const { projectId } = useParams();
   const project = useLifeHQStore(selectProjectById(projectId ?? ''));
   const lifeArea = useLifeHQStore(selectLifeAreaById(project?.lifeAreaId ?? ''));
   const milestones = useLifeHQStore(selectMilestonesByProjectId(project?.id ?? ''));
   const tasks = useLifeHQStore(selectTasksByProjectId(project?.id ?? ''));
+  const historyEntries = useLifeHQStore(selectHistoryByProjectId(project?.id ?? ''));
   const lifeAreaDisplayValue = getLifeAreaDisplayValue(project?.lifeAreaId, lifeArea?.name);
   const nextRelevantMilestoneLabel = getNextRelevantMilestoneLabel(milestones);
   const openTaskLabel = getOpenTaskLabel(tasks);
+  const sortedHistoryEntries = getSortedHistoryEntries(historyEntries);
 
   if (!project) {
     return (
@@ -229,6 +249,45 @@ export function ProjectDetailPage() {
                     <p>Geplant: {task.plannedDate ?? 'Nicht geplant'}</p>
                   </div>
                 </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-3xl border border-slate-700/40 bg-slate-950/10 p-5 sm:p-6">
+        <div className="max-w-2xl">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted">Project Trace</p>
+          <h3 className="mt-2 text-lg font-semibold text-slate-100">Projektverlauf</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Ein kompakter Verlauf wichtiger Projektbewegungen. Dieser Bereich bleibt bewusst sekundär und ruhig.
+          </p>
+        </div>
+
+        {sortedHistoryEntries.length === 0 ? (
+          <p className="mt-5 rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500">
+            Für dieses Projekt gibt es noch keine Verlaufseinträge.
+          </p>
+        ) : (
+          <div className="mt-5 space-y-3">
+            {sortedHistoryEntries.map((entry) => (
+              <article key={entry.id} className="rounded-2xl border border-slate-700/40 bg-slate-950/15 p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-[0.16em] text-muted">{historyTypeLabels[entry.type]}</p>
+                    <p className="text-sm leading-6 text-slate-300">{entry.description}</p>
+                  </div>
+                  <p className="text-xs text-slate-500 sm:text-right">{entry.date}</p>
+                </div>
+
+                {(entry.taskId || entry.milestoneId || entry.oldValue || entry.newValue) && (
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                    {entry.taskId && <span className="rounded-full border border-slate-700/50 px-2.5 py-1">Task: {entry.taskId}</span>}
+                    {entry.milestoneId && <span className="rounded-full border border-slate-700/50 px-2.5 py-1">Meilenstein: {entry.milestoneId}</span>}
+                    {entry.oldValue && <span className="rounded-full border border-slate-700/50 px-2.5 py-1">Vorher: {entry.oldValue}</span>}
+                    {entry.newValue && <span className="rounded-full border border-slate-700/50 px-2.5 py-1">Neu: {entry.newValue}</span>}
+                  </div>
+                )}
               </article>
             ))}
           </div>
