@@ -129,11 +129,92 @@ export const useLifeHQStore = create<LifeHQState>((set) => ({
       };
     }),
   updateProjectStatus: (id: string, status: ProjectStatus) =>
-    set((state) => ({ projects: state.projects.map((item) => (item.id === id ? withUpdatedAt({ ...item, status }) : item)) })),
+    set((state) => {
+      const project = state.projects.find((item) => item.id === id);
+
+      if (!project || project.status === status) {
+        return {};
+      }
+
+      const timestamp = now();
+
+      return {
+        projects: state.projects.map((item) => (item.id === id ? {
+          ...item,
+          status,
+          updatedAt: timestamp,
+        } : item)),
+        historyEntries: [
+          ...state.historyEntries,
+          createProjectHistoryEntry({
+            projectId: id,
+            type: 'status_changed',
+            oldValue: project.status,
+            newValue: status,
+            description: 'Project status changed.',
+            date: timestamp,
+          }),
+        ],
+      };
+    }),
   updateProjectPriority: (id: string, priority: Priority) =>
-    set((state) => ({ projects: state.projects.map((item) => (item.id === id ? withUpdatedAt({ ...item, priority }) : item)) })),
+    set((state) => {
+      const project = state.projects.find((item) => item.id === id);
+
+      if (!project || project.priority === priority) {
+        return {};
+      }
+
+      const timestamp = now();
+
+      return {
+        projects: state.projects.map((item) => (item.id === id ? {
+          ...item,
+          priority,
+          updatedAt: timestamp,
+        } : item)),
+        historyEntries: [
+          ...state.historyEntries,
+          createProjectHistoryEntry({
+            projectId: id,
+            type: 'priority_changed',
+            oldValue: project.priority,
+            newValue: priority,
+            description: 'Project priority changed.',
+            date: timestamp,
+          }),
+        ],
+      };
+    }),
   updateProjectTrafficLightStatus: (id: string, trafficLightStatus: TrafficLightStatus) =>
-    set((state) => ({ projects: state.projects.map((item) => (item.id === id ? withUpdatedAt({ ...item, trafficLightStatus }) : item)) })),
+    set((state) => {
+      const project = state.projects.find((item) => item.id === id);
+
+      if (!project || project.trafficLightStatus === trafficLightStatus) {
+        return {};
+      }
+
+      const timestamp = now();
+
+      return {
+        projects: state.projects.map((item) => (item.id === id ? {
+          ...item,
+          trafficLightStatus,
+          updatedAt: timestamp,
+        } : item)),
+        historyEntries: [
+          ...state.historyEntries,
+          createProjectHistoryEntry({
+            projectId: id,
+            type: 'traffic_light_changed',
+            oldValue: project.trafficLightStatus,
+            newValue: trafficLightStatus,
+            description: 'Project traffic light changed.',
+            date: timestamp,
+          }),
+        ],
+      };
+    }),
 
   addTask: (task: Task) => set((state) => ({ tasks: [...state.tasks, task] })),
   updateTask: (id: string, patch: Partial<Task>) =>
