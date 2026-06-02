@@ -62,13 +62,13 @@ const priorityLabels: Record<Priority, string> = {
 };
 
 const emptyStateMessages: Record<TaskView, string> = {
-  today: 'Für heute sind keine Aufgaben geplant.',
-  week: 'Für diese Woche sind noch keine Aufgaben geplant.',
-  nextWeek: 'Für nächste Woche sind noch keine Aufgaben geplant.',
-  later: 'Keine später geplanten Aufgaben.',
-  overdue: 'Keine überfälligen Aufgaben.',
-  open: 'Keine offenen Aufgaben.',
-  done: 'Noch keine erledigten Aufgaben.',
+  today: 'Keine Aufgaben für heute geplant. Dieser Tag ist frei für bewusste Planung.',
+  week: 'Für diese Woche sind noch keine Aufgaben geplant. Verteile konkrete nächste Schritte auf die passenden Tage.',
+  nextWeek: 'Für nächste Woche sind noch keine Aufgaben geplant. Die kommende Woche ist bereit für ruhige Vorplanung.',
+  later: 'Keine später geplanten Aufgaben. Aufgaben ohne aktuellen Fokus können bewusst offen bleiben.',
+  overdue: 'Keine überfälligen Aufgaben — dein System ist aktuell ruhig.',
+  open: 'Keine offenen Aufgaben. Der operative Bereich ist im Moment frei.',
+  done: 'Noch keine erledigten Aufgaben. Abgeschlossene Schritte erscheinen hier zurückgenommen.',
 };
 
 const prioritySortOrder: Record<Priority, number> = {
@@ -114,7 +114,7 @@ function sortOverdueTasks(tasks: Task[]): Task[] {
 
 const statusStyles: Record<TaskStatus, string> = {
   open: 'border-slate-700/60 bg-slate-950/40 text-slate-300',
-  in_progress: 'border-sky-300/30 bg-sky-950/20 text-sky-100',
+  in_progress: 'border-sky-300/25 bg-sky-950/15 text-sky-100',
   done: 'border-emerald-300/20 bg-emerald-950/15 text-emerald-100',
 };
 
@@ -260,49 +260,53 @@ function TaskCard({
 
   return (
     <article
-      className={`rounded-2xl border p-4 transition-colors ${
+      className={`lifehq-card-soft p-4 transition-colors focus-within:border-slate-500/70 hover:border-slate-600/70 ${
         isDone
-          ? 'border-slate-700/30 bg-slate-950/10 opacity-75'
+          ? 'border-slate-700/30 bg-slate-950/10 opacity-70'
           : overdue
-            ? 'border-amber-300/30 border-l-4 border-l-amber-300/50 bg-amber-950/10'
-            : 'border-slate-700/50 bg-slate-950/20'
+            ? 'border-amber-300/25 border-l-4 border-l-amber-300/45 bg-amber-950/10'
+            : ''
       }`}
     >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className={isDone ? 'text-sm font-semibold text-slate-400 line-through decoration-slate-600' : 'text-sm font-semibold text-slate-100'}>{task.title}</h3>
-            {overdue && <span className="rounded-full border border-amber-300/30 bg-amber-950/20 px-2.5 py-1 text-xs text-amber-100">Überfällig</span>}
+            {overdue && <span className="lifehq-badge border-amber-300/25 bg-amber-950/20 text-amber-100">Überfällig</span>}
           </div>
           {task.description && <p className="text-sm leading-6 text-slate-400">{task.description}</p>}
-          <div className={`w-fit rounded-xl border px-3 py-2 text-xs ${contextStyles[context.tone]}`}>
+          <div className={`w-fit rounded-2xl border px-3 py-2 text-xs ${contextStyles[context.tone]}`}>
             <p className="font-medium">{context.label}</p>
-            {context.detail && <p className="mt-1 text-[0.7rem] text-slate-400">{context.detail}</p>}
+            {context.detail && <p className="mt-1 text-[0.7rem] leading-4 text-slate-400">{context.detail}</p>}
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2 text-xs text-slate-300 lg:justify-end">
-          <span className={`rounded-full border px-2.5 py-1 ${statusStyles[task.status]}`}>{statusLabels[task.status]}</span>
-          <span className={task.priority === 'critical' ? 'rounded-full border border-rose-300/30 bg-rose-950/25 px-2.5 py-1 text-rose-100' : 'rounded-full border border-slate-700/60 bg-slate-950/40 px-2.5 py-1'}>
+          <span className={`lifehq-badge ${statusStyles[task.status]}`}>{statusLabels[task.status]}</span>
+          <span className={task.priority === 'critical' ? 'lifehq-badge lifehq-badge-attention' : 'lifehq-badge'}>
             Priorität: {priorityLabels[task.priority]}
           </span>
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 text-xs text-slate-500 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
-        <p className={overdue ? 'font-medium text-amber-100' : undefined}>
-          Fälligkeit: {task.dueDate ?? 'Keine Fälligkeit'}{overdue ? ' · überfällig' : ''}
-        </p>
-        <div className="space-y-1">
-          <p>Geplant: {task.plannedDate ?? 'Nicht geplant'}</p>
-          {isDone && <p>Erledigt: {task.completedAt ? task.completedAt.slice(0, 10) : 'Datum nicht gesetzt'}</p>}
+      <div className="mt-4 grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
+        <div className={`lifehq-card-soft px-3 py-2 ${overdue ? 'border-amber-300/20 bg-amber-950/10' : ''}`}>
+          <p className="lifehq-label">Fälligkeit</p>
+          <p className={overdue ? 'mt-1 font-medium text-amber-100' : 'mt-1 text-slate-300'}>
+            {task.dueDate ?? 'Keine Fälligkeit'}{overdue ? ' · überfällig' : ''}
+          </p>
         </div>
-        <div className="flex flex-wrap gap-2 lg:justify-end" aria-label={`Status für ${task.title} ändern`}>
+        <div className="lifehq-card-soft px-3 py-2">
+          <p className="lifehq-label">Geplantes Datum</p>
+          <p className="mt-1 text-slate-300">{task.plannedDate ?? 'Nicht geplant'}</p>
+          {isDone && <p className="mt-1 text-slate-500">Erledigt: {task.completedAt ? task.completedAt.slice(0, 10) : 'Datum nicht gesetzt'}</p>}
+        </div>
+        <div className="flex flex-wrap gap-2 text-xs lg:justify-end" aria-label={`Status für ${task.title} ändern`}>
           {task.status !== 'open' && (
             <button
               type="button"
               onClick={() => onStatusChange(task.id, 'open')}
-              className="rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+              className="min-h-9 rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
             >
               Wieder öffnen
             </button>
@@ -311,7 +315,7 @@ function TaskCard({
             <button
               type="button"
               onClick={() => onStatusChange(task.id, 'in_progress')}
-              className="rounded-xl border border-sky-300/20 bg-sky-950/10 px-3 py-2 text-xs font-medium text-sky-100 transition-colors hover:border-sky-300/40"
+              className="min-h-9 rounded-xl border border-sky-300/20 bg-sky-950/10 px-3 py-2 text-xs font-medium text-sky-100 transition-colors hover:border-sky-300/40"
             >
               In Arbeit
             </button>
@@ -320,7 +324,7 @@ function TaskCard({
             <button
               type="button"
               onClick={() => onStatusChange(task.id, 'done')}
-              className="rounded-xl border border-emerald-300/20 bg-emerald-950/10 px-3 py-2 text-xs font-medium text-emerald-100 transition-colors hover:border-emerald-300/40"
+              className="min-h-9 rounded-xl border border-emerald-300/20 bg-emerald-950/10 px-3 py-2 text-xs font-medium text-emerald-100 transition-colors hover:border-emerald-300/40"
             >
               Erledigen
             </button>
@@ -328,25 +332,25 @@ function TaskCard({
         </div>
       </div>
 
-      <div className="mt-4 rounded-2xl border border-slate-800/80 bg-slate-950/20 p-3">
+      <div className="lifehq-card-soft mt-4 p-3">
         <p className="lifehq-label">Planung</p>
         <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
           <label className="space-y-2 text-xs text-slate-400">
-            <span>Geplantes Datum</span>
+            <span className="lifehq-label">Geplantes Datum</span>
             <input
               type="date"
               value={dateDraft.plannedDate}
               onChange={(event) => updateDateDraft({ plannedDate: event.target.value })}
-              className="w-full rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs text-slate-100 outline-none transition-colors focus:border-slate-400"
+              className="min-h-10 w-full rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs text-slate-100 outline-none transition-colors focus:border-slate-400"
             />
           </label>
           <label className="space-y-2 text-xs text-slate-400">
-            <span>Fälligkeit</span>
+            <span className="lifehq-label">Fälligkeit</span>
             <input
               type="date"
               value={dateDraft.dueDate}
               onChange={(event) => updateDateDraft({ dueDate: event.target.value })}
-              className="w-full rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs text-slate-100 outline-none transition-colors focus:border-slate-400"
+              className="min-h-10 w-full rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs text-slate-100 outline-none transition-colors focus:border-slate-400"
             />
           </label>
           <div className="flex flex-wrap gap-2 lg:justify-end">
@@ -355,14 +359,14 @@ function TaskCard({
                 <button
                   type="button"
                   onClick={saveDateDraft}
-                  className="rounded-xl border border-emerald-300/20 bg-emerald-950/15 px-3 py-2 text-xs font-medium text-emerald-100 transition-colors hover:border-emerald-300/40"
+                  className="min-h-9 rounded-xl border border-emerald-300/20 bg-emerald-950/15 px-3 py-2 text-xs font-medium text-emerald-100 transition-colors hover:border-emerald-300/40"
                 >
                   Änderungen speichern
                 </button>
                 <button
                   type="button"
                   onClick={resetDateDraft}
-                  className="rounded-xl border border-slate-700/70 bg-slate-950/20 px-3 py-2 text-xs font-medium text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
+                  className="min-h-9 rounded-xl border border-slate-700/70 bg-slate-950/20 px-3 py-2 text-xs font-medium text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
                 >
                   Änderungen abbrechen
                 </button>
@@ -371,14 +375,14 @@ function TaskCard({
             <button
               type="button"
               onClick={() => onPlanToday(task.id)}
-              className="rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+              className="min-h-9 rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
             >
               Heute planen
             </button>
             <button
               type="button"
               onClick={() => onPlanTomorrow(task.id)}
-              className="rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+              className="min-h-9 rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
             >
               Morgen planen
             </button>
@@ -386,7 +390,7 @@ function TaskCard({
               <button
                 type="button"
                 onClick={() => onClearPlannedDate(task.id)}
-                className="rounded-xl border border-slate-700/70 bg-slate-950/20 px-3 py-2 text-xs font-medium text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
+                className="min-h-9 rounded-xl border border-slate-700/70 bg-slate-950/20 px-3 py-2 text-xs font-medium text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
               >
                 Planung entfernen
               </button>
@@ -395,7 +399,7 @@ function TaskCard({
               <button
                 type="button"
                 onClick={() => onClearDueDate(task.id)}
-                className="rounded-xl border border-slate-700/70 bg-slate-950/20 px-3 py-2 text-xs font-medium text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
+                className="min-h-9 rounded-xl border border-slate-700/70 bg-slate-950/20 px-3 py-2 text-xs font-medium text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
               >
                 Fälligkeit entfernen
               </button>
@@ -452,8 +456,8 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: Week
   return (
     <div className="mt-5 space-y-5">
       {overdueTasks.length > 0 && (
-        <div className="rounded-2xl border border-amber-300/20 bg-amber-950/10 p-4">
-          <p className="text-xs uppercase tracking-[0.16em] text-amber-100">Ruhiger Hinweis</p>
+        <div className="lifehq-note border-amber-300/20 bg-amber-950/10">
+          <p className="lifehq-label text-amber-100">Ruhiger Hinweis</p>
           <p className="mt-2 text-sm text-slate-300">Es gibt überfällige Aufgaben. Sie bleiben sichtbar, ohne die Wochenplanung zu dominieren.</p>
         </div>
       )}
@@ -463,13 +467,13 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: Week
           const dayTasks = sortTasksForPlanning(tasks.filter((task) => isSameDay(task.plannedDate, day)));
 
           return (
-            <section key={day} className="rounded-2xl border border-slate-800/80 bg-slate-950/20 p-4">
+            <section key={day} className="lifehq-card-soft p-4">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
                 <p className="text-sm font-semibold text-slate-100">{weekdayLabels[index]}</p>
-                <p className="text-xs text-slate-500">{day}</p>
+                <p className="lifehq-label">{day}</p>
               </div>
               {dayTasks.length === 0 ? (
-                <p className="mt-4 text-xs leading-5 text-slate-600">Keine Aufgaben geplant.</p>
+                <p className="lifehq-empty-state mt-4">Dieser Tag ist frei für bewusste Planung.</p>
               ) : (
                 <TaskList tasks={dayTasks} projects={projects} lifeAreas={lifeAreas} actions={actions} />
               )}
@@ -479,9 +483,9 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: Week
       </div>
 
       {unplannedTasks.length > 0 && (
-        <section className="rounded-2xl border border-slate-800/80 bg-slate-950/20 p-4">
+        <section className="lifehq-card-soft p-4">
           <p className="lifehq-label">Ohne geplantes Datum</p>
-          <p className="mt-2 text-sm text-slate-400">Diese offenen Aufgaben sind noch keinem Tag zugeordnet.</p>
+          <p className="mt-2 text-sm leading-6 text-slate-400">Diese offenen Aufgaben sind noch keinem Tag zugeordnet und bleiben als ruhiger Planungsvorrat sichtbar.</p>
           <TaskList tasks={unplannedTasks} projects={projects} lifeAreas={lifeAreas} actions={actions} />
         </section>
       )}
@@ -559,13 +563,13 @@ export function TasksPage() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="lifehq-panel-strong flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-3xl space-y-3">
           <p className="lifehq-label">Operational Execution</p>
           <div className="space-y-2">
-            <h2 className="text-2xl font-semibold sm:text-3xl">Tasks</h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-50 sm:text-3xl">Tasks</h2>
             <p className="max-w-2xl text-sm leading-6 text-slate-300">
-              Plane und kläre die nächsten konkreten Schritte, ohne das HQ in eine Aufgabenliste zu verwandeln.
+              Eine ruhige operative Arbeitsfläche für die nächsten konkreten Schritte — klar getrennt vom strategischen HQ.
             </p>
           </div>
         </div>
@@ -575,14 +579,14 @@ export function TasksPage() {
           aria-controls="task-create-form"
           aria-expanded={isCreateOpen}
           onClick={() => setIsCreateOpen((current) => !current)}
-          className="w-fit rounded-full border border-slate-200/20 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-white"
+          className="lifehq-button-primary w-fit"
         >
           Neue Aufgabe
         </button>
       </div>
 
       {isCreateOpen && (
-        <form id="task-create-form" onSubmit={handleCreateTask} className="rounded-3xl border border-slate-700/50 bg-slate-900/30 p-5 sm:p-6">
+        <form id="task-create-form" onSubmit={handleCreateTask} className="lifehq-panel p-5 sm:p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="lifehq-label">Neue Aufgabe</p>
@@ -689,16 +693,16 @@ export function TasksPage() {
         </form>
       )}
 
-      <div className="rounded-3xl border border-slate-700/50 bg-slate-950/20 p-3">
+      <div className="lifehq-panel p-3">
         <div className="grid gap-2 md:grid-cols-4 xl:grid-cols-7">
           {taskViews.map((view) => (
             <button
               key={view.id}
               type="button"
               onClick={() => setActiveView(view.id)}
-              className={`rounded-2xl border px-3 py-3 text-left text-sm transition-colors ${
+              className={`min-h-16 rounded-2xl border px-3 py-3 text-left text-sm transition-colors ${
                 activeView === view.id
-                  ? 'border-slate-200/20 bg-slate-100 text-slate-950'
+                  ? 'border-slate-200/20 bg-slate-100 text-slate-950 shadow-sm shadow-black/10'
                   : 'border-transparent text-slate-300 hover:border-slate-700 hover:bg-slate-900/60 hover:text-white'
               }`}
             >
@@ -709,14 +713,14 @@ export function TasksPage() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-slate-700/50 bg-slate-900/25 p-5 sm:p-6">
+      <div className="lifehq-panel-strong p-5 sm:p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="lifehq-label">Task View</p>
             <h3 className="mt-2 text-lg font-semibold text-slate-100">{activeViewMeta.label}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-400">{activeViewMeta.description}</p>
           </div>
-          <p className="text-sm text-slate-500">{visibleTasks.length} sichtbar</p>
+          <p className="lifehq-badge w-fit">{visibleTasks.length} sichtbar</p>
         </div>
 
         {activeView === 'week' ? (
