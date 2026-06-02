@@ -26,8 +26,8 @@ interface SummaryMetricProps {
 
 function SummaryMetric({ label, value, tone = 'default', description }: SummaryMetricProps) {
   return (
-    <div className="rounded-2xl border border-slate-700/50 bg-slate-950/30 p-4">
-      <p className="text-xs uppercase tracking-[0.18em] text-muted">{label}</p>
+    <div className="lifehq-card p-4">
+      <p className="lifehq-label">{label}</p>
       <p className={tone === 'attention' ? 'mt-3 text-3xl font-semibold text-rose-200' : 'mt-3 text-3xl font-semibold text-slate-100'}>{value}</p>
       {description && <p className="mt-2 text-xs leading-5 text-slate-500">{description}</p>}
     </div>
@@ -42,7 +42,7 @@ interface HqSectionProps {
 
 function HqSection({ title, description, children }: HqSectionProps) {
   return (
-    <section className="space-y-3 rounded-3xl border border-slate-700/50 bg-slate-950/20 p-4 sm:p-5">
+    <section className="lifehq-panel space-y-3 p-4 sm:p-5">
       <div>
         <h3 className="text-base font-semibold text-slate-100">{title}</h3>
         <p className="mt-1 text-sm leading-6 text-slate-400">{description}</p>
@@ -53,11 +53,11 @@ function HqSection({ title, description, children }: HqSectionProps) {
 }
 
 function EmptyState({ children }: { children: ReactNode }) {
-  return <p className="rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500">{children}</p>;
+  return <p className="lifehq-empty-state">{children}</p>;
 }
 
 function SectionNote({ children }: { children: ReactNode }) {
-  return <p className="rounded-2xl border border-slate-700/40 bg-slate-950/20 px-4 py-3 text-sm leading-6 text-slate-400">{children}</p>;
+  return <p className="lifehq-note">{children}</p>;
 }
 
 function LifeAreaList({ lifeAreas }: { lifeAreas: LifeArea[] }) {
@@ -68,15 +68,15 @@ function LifeAreaList({ lifeAreas }: { lifeAreas: LifeArea[] }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {lifeAreas.map((lifeArea) => (
-        <div key={lifeArea.id} className="rounded-2xl border border-slate-700/50 bg-slate-900/30 p-4">
+        <div key={lifeArea.id} className="lifehq-card p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="font-medium text-slate-100">{lifeArea.name}</p>
               {lifeArea.description && <p className="mt-1 text-sm leading-6 text-slate-400">{lifeArea.description}</p>}
             </div>
-            {lifeArea.status && <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-300">{lifeArea.status}</span>}
+            {lifeArea.status && <span className="lifehq-badge">{lifeArea.status}</span>}
           </div>
-          {lifeArea.priority && <p className="mt-3 text-xs uppercase tracking-[0.16em] text-muted">Priority: {lifeArea.priority}</p>}
+          {lifeArea.priority && <p className="lifehq-label mt-3">Priority: {lifeArea.priority}</p>}
         </div>
       ))}
     </div>
@@ -123,6 +123,7 @@ export function HqPage() {
   const criticalProjects = useLifeHQStore(selectCriticalProjects);
   const redTrafficLightProjects = useLifeHQStore(selectRedTrafficLightProjects);
   const criticalPriorityProjects = criticalProjects.filter((project) => project.priority === 'critical');
+  const pausedCriticalProjects = criticalProjects.filter((project) => project.status === 'paused');
   const pausedProjectsWithReviewDate = pausedProjects.filter((project) => project.reviewDate);
   const openTasks = useLifeHQStore(selectOpenTasks);
   const tasks = useLifeHQStore(selectTasks);
@@ -185,7 +186,7 @@ export function HqPage() {
             <SectionNote>
               {criticalProjects.length === 0
                 ? 'Keine kritischen Projekte. Aktuell gibt es keine roten strategischen Signale.'
-                : `${criticalPriorityProjects.length} mit kritischer Priorität · ${redTrafficLightProjects.length} mit roter Ampel. Projekte werden hier nur einmal geführt.`}
+                : `${criticalPriorityProjects.length} mit kritischer Priorität · ${redTrafficLightProjects.length} mit roter Ampel · ${pausedCriticalProjects.length} davon bewusst pausiert. Pausierte kritische Projekte bleiben hier sichtbar markiert.`}
             </SectionNote>
             <ProjectCardList
               projects={criticalProjects}
