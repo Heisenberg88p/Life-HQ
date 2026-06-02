@@ -329,7 +329,7 @@ function TaskCard({
       </div>
 
       <div className="mt-4 rounded-2xl border border-slate-800/80 bg-slate-950/20 p-3">
-        <p className="text-xs uppercase tracking-[0.16em] text-muted">Planung</p>
+        <p className="lifehq-label">Planung</p>
         <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
           <label className="space-y-2 text-xs text-slate-400">
             <span>Geplantes Datum</span>
@@ -480,7 +480,7 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: Week
 
       {unplannedTasks.length > 0 && (
         <section className="rounded-2xl border border-slate-800/80 bg-slate-950/20 p-4">
-          <p className="text-xs uppercase tracking-[0.16em] text-muted">Ohne geplantes Datum</p>
+          <p className="lifehq-label">Ohne geplantes Datum</p>
           <p className="mt-2 text-sm text-slate-400">Diese offenen Aufgaben sind noch keinem Tag zugeordnet.</p>
           <TaskList tasks={unplannedTasks} projects={projects} lifeAreas={lifeAreas} actions={actions} />
         </section>
@@ -561,7 +561,7 @@ export function TasksPage() {
     <section className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-3xl space-y-3">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted">Operational Execution</p>
+          <p className="lifehq-label">Operational Execution</p>
           <div className="space-y-2">
             <h2 className="text-2xl font-semibold sm:text-3xl">Tasks</h2>
             <p className="max-w-2xl text-sm leading-6 text-slate-300">
@@ -585,7 +585,7 @@ export function TasksPage() {
         <form id="task-create-form" onSubmit={handleCreateTask} className="rounded-3xl border border-slate-700/50 bg-slate-900/30 p-5 sm:p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-muted">Neue Aufgabe</p>
+              <p className="lifehq-label">Neue Aufgabe</p>
               <h3 className="mt-2 text-lg font-semibold text-slate-100">Schnellen nächsten Schritt erfassen</h3>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
                 Lege nur den Titel fest oder ergänze optional Priorität, Zuordnung und einfache Datumsfelder.
@@ -597,7 +597,7 @@ export function TasksPage() {
                 resetTaskDraft();
                 setIsCreateOpen(false);
               }}
-              className="w-fit rounded-xl border border-slate-700/70 bg-slate-950/30 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
+              className="lifehq-button-secondary w-fit text-xs"
             >
               Abbrechen
             </button>
@@ -605,7 +605,7 @@ export function TasksPage() {
 
           <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,2fr)_1fr_1fr]">
             <label className="space-y-2 text-sm text-slate-300 lg:col-span-3">
-              <span className="text-xs uppercase tracking-[0.16em] text-muted">Titel</span>
+              <span className="lifehq-label">Titel</span>
               <input
                 value={taskDraft.title}
                 onChange={(event) => updateTaskDraft({ title: event.target.value })}
@@ -615,7 +615,7 @@ export function TasksPage() {
             </label>
 
             <label className="space-y-2 text-sm text-slate-300">
-              <span className="text-xs uppercase tracking-[0.16em] text-muted">Priorität</span>
+              <span className="lifehq-label">Priorität</span>
               <select
                 value={taskDraft.priority}
                 onChange={(event) => updateTaskDraft({ priority: event.target.value as Priority })}
@@ -628,7 +628,7 @@ export function TasksPage() {
             </label>
 
             <label className="space-y-2 text-sm text-slate-300">
-              <span className="text-xs uppercase tracking-[0.16em] text-muted">Projekt</span>
+              <span className="lifehq-label">Projekt</span>
               <select
                 value={taskDraft.projectId}
                 onChange={(event) => updateTaskDraft({ projectId: event.target.value, lifeAreaId: event.target.value ? '' : taskDraft.lifeAreaId })}
@@ -642,7 +642,7 @@ export function TasksPage() {
             </label>
 
             <label className="space-y-2 text-sm text-slate-300">
-              <span className="text-xs uppercase tracking-[0.16em] text-muted">Lebensbereich</span>
+              <span className="lifehq-label">Lebensbereich</span>
               <select
                 value={taskDraft.lifeAreaId}
                 onChange={(event) => updateTaskDraft({ lifeAreaId: event.target.value })}
@@ -657,7 +657,7 @@ export function TasksPage() {
             </label>
 
             <label className="space-y-2 text-sm text-slate-300">
-              <span className="text-xs uppercase tracking-[0.16em] text-muted">Fälligkeit</span>
+              <span className="lifehq-label">Fälligkeit</span>
               <input
                 type="date"
                 value={taskDraft.dueDate}
@@ -667,7 +667,7 @@ export function TasksPage() {
             </label>
 
             <label className="space-y-2 text-sm text-slate-300">
-              <span className="text-xs uppercase tracking-[0.16em] text-muted">Geplant</span>
+              <span className="lifehq-label">Geplant</span>
               <input
                 type="date"
                 value={taskDraft.plannedDate}
@@ -681,7 +681,7 @@ export function TasksPage() {
             {createError ? <p className="text-sm text-amber-100">{createError}</p> : <p className="text-sm text-slate-500">Status startet als offen, Priorität standardmäßig mittel.</p>}
             <button
               type="submit"
-              className="w-fit rounded-full border border-emerald-300/20 bg-emerald-950/20 px-4 py-2 text-sm font-medium text-emerald-100 transition-colors hover:border-emerald-300/40"
+              className="lifehq-button-primary w-fit"
             >
               Aufgabe erstellen
             </button>
@@ -712,7 +712,7 @@ export function TasksPage() {
       <div className="rounded-3xl border border-slate-700/50 bg-slate-900/25 p-5 sm:p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted">Task View</p>
+            <p className="lifehq-label">Task View</p>
             <h3 className="mt-2 text-lg font-semibold text-slate-100">{activeViewMeta.label}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-400">{activeViewMeta.description}</p>
           </div>
@@ -724,7 +724,7 @@ export function TasksPage() {
         ) : activeView === 'nextWeek' ? (
           <WeekTaskSection tasks={tasks} projects={projects} lifeAreas={lifeAreas} actions={taskPlanningActions} weekDays={getNextWeekDays()} />
         ) : visibleTasks.length === 0 ? (
-          <p className="mt-5 rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500">
+          <p className="lifehq-empty-state mt-5">
             {emptyStateMessages[activeView]}
           </p>
         ) : (
