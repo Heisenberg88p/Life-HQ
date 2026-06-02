@@ -7,10 +7,11 @@ import type { Milestone } from '../models/milestone';
 import type { Project } from '../models/project';
 import type { ProjectHistoryEntry } from '../models/projectHistory';
 import type { Task } from '../models/task';
+import { createProjectHistoryEntry } from './helpers/historyHelpers';
 import type { HistorySlice } from './slices/historySlice';
 import type { LifeAreaSlice } from './slices/lifeAreaSlice';
 import type { MilestoneSlice } from './slices/milestoneSlice';
-import type { ProjectSlice } from './slices/projectSlice';
+import type { PauseProjectInput, ProjectSlice } from './slices/projectSlice';
 import type { TaskSlice } from './slices/taskSlice';
 import type { UISlice } from './slices/uiSlice';
 
@@ -18,6 +19,14 @@ type LifeHQState = LifeAreaSlice & ProjectSlice & TaskSlice & MilestoneSlice & H
 
 const now = () => new Date().toISOString();
 const withUpdatedAt = <T extends { updatedAt: string }>(item: T) => ({ ...item, updatedAt: now() });
+
+function getPauseProjectInput(input?: PauseProjectInput | string, note?: string): PauseProjectInput {
+  if (typeof input === 'string') {
+    return { reason: input, note };
+  }
+
+  return input ?? {};
+}
 
 export const useLifeHQStore = create<LifeHQState>((set) => ({
   lifeAreas: mockLifeAreas,
@@ -36,15 +45,49 @@ export const useLifeHQStore = create<LifeHQState>((set) => ({
   updateProject: (id: string, patch: Partial<Project>) =>
     set((state) => ({ projects: state.projects.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
   deleteProject: (id: string) => set((state) => ({ projects: state.projects.filter((item) => item.id !== id) })),
-  pauseProject: (id: string, reason?: string, note?: string) =>
-    set((state) => ({
-      projects: state.projects.map((item) => (item.id === id ? withUpdatedAt({ ...item, status: 'paused', pausedAt: now(), pauseReason: reason, pauseNote: note }) : item)),
-      historyEntries: [...state.historyEntries, { id: `h-${Date.now()}`, projectId: id, type: 'paused', date: now(), description: 'Project paused.', note, createdAt: now(), updatedAt: now() }],
-    })),
+  pauseProject: (id: string, input?: PauseProjectInput | string, note?: string) =>
+    set((state) => {
+      const project = state.projects.find((item) => item.id === id);
+
+      if (!project || project.status === 'paused' || project.status === 'completed') {
+        return {};
+      }
+
+      const pauseInput = getPauseProjectInput(input, note);
+      const timestamp = now();
+      const description = pauseInput.reason ? `Project paused: ${pauseInput.reason}` : 'Project paused.';
+
+      return {
+        projects: state.projects.map((item) => (item.id === id ? {
+          ...item,
+          status: 'paused',
+          pausedAt: timestamp,
+          pauseReason: pauseInput.reason,
+          pauseNote: pauseInput.note,
+          reviewDate: pauseInput.reviewDate,
+          updatedAt: timestamp,
+        } : item)),
+        historyEntries: [
+          ...state.historyEntries,
+          createProjectHistoryEntry({
+            projectId: id,
+            type: 'paused',
+            description,
+            oldValue: project.status,
+            newValue: 'paused',
+            note: pauseInput.note ?? pauseInput.reason,
+            date: timestamp,
+          }),
+        ],
+      };
+    }),
   reactivateProject: (id: string, note?: string) =>
     set((state) => ({
       projects: state.projects.map((item) => (item.id === id ? withUpdatedAt({ ...item, status: 'active', reactivatedAt: now(), reactivationNote: note }) : item)),
-      historyEntries: [...state.historyEntries, { id: `h-${Date.now()}`, projectId: id, type: 'reactivated', date: now(), description: 'Project reactivated.', note, createdAt: now(), updatedAt: now() }],
+      historyEntries: [
+        ...state.historyEntries,
+        createProjectHistoryEntry({ projectId: id, type: 'reactivated', description: 'Project reactivated.', note }),
+      ],
     })),
   updateProjectStatus: (id: string, status: ProjectStatus) =>
     set((state) => ({ projects: state.projects.map((item) => (item.id === id ? withUpdatedAt({ ...item, status }) : item)) })),

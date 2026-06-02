@@ -52,12 +52,19 @@ const taskStatusLabels: Record<TaskStatus, string> = {
 
 const historyTypeLabels: Record<ProjectHistoryEntryType, string> = {
   created: 'Erstellt',
+  updated: 'Bearbeitet',
   status_changed: 'Status geändert',
   priority_changed: 'Priorität geändert',
+  traffic_light_changed: 'Ampel geändert',
+  target_date_changed: 'Zieltermin geändert',
   paused: 'Pausiert',
   reactivated: 'Reaktiviert',
   completed: 'Abgeschlossen',
+  task_created: 'Aufgabe erstellt',
+  task_completed: 'Aufgabe erledigt',
   task_linked: 'Aufgabe verknüpft',
+  milestone_created: 'Meilenstein erstellt',
+  milestone_completed: 'Meilenstein erledigt',
   milestone_updated: 'Meilenstein aktualisiert',
   note_added: 'Notiz ergänzt',
 };
