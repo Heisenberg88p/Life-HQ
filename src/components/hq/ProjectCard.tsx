@@ -25,9 +25,9 @@ const trafficLightLabels: Record<TrafficLightStatus, string> = {
 };
 
 const trafficLightStyles: Record<TrafficLightStatus, string> = {
-  green: 'bg-emerald-300/80',
-  yellow: 'bg-amber-300/80',
-  red: 'bg-rose-300/80',
+  green: 'bg-emerald-300/80 ring-emerald-300/20',
+  yellow: 'bg-amber-300/80 ring-amber-300/20',
+  red: 'bg-rose-300/80 ring-rose-300/25',
 };
 
 interface ProjectCardProps {
@@ -73,31 +73,27 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
     <button
       type="button"
       onClick={() => onClick?.(project.id)}
-      className={`group w-full rounded-3xl border p-5 text-left shadow-lg shadow-black/5 transition-colors focus-visible:outline-offset-4 ${
+      className={`group w-full rounded-3xl border p-5 text-left shadow-lg shadow-black/5 transition-colors focus-visible:outline-offset-4 sm:p-6 ${
         isPaused
           ? 'border-slate-700/50 bg-slate-950/25 opacity-90 hover:border-slate-600/80 hover:bg-slate-950/35'
-          : 'border-slate-700/60 bg-slate-900/40 hover:border-slate-500/80 hover:bg-slate-900/60'
-      } ${isCritical ? 'border-l-4 border-l-rose-300/70' : 'border-l-4 border-l-slate-700/60'}`}
+          : 'border-slate-700/60 bg-slate-900/45 hover:border-slate-500/80 hover:bg-slate-900/65'
+      } ${isCritical ? 'border-l-4 border-l-rose-300/65' : 'border-l-4 border-l-slate-700/60'}`}
       aria-label={`Projekt ${project.name}`}
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-2">
             <p className="lifehq-label">{lifeArea?.name ?? 'Kein Lebensbereich'}</p>
             <div className="flex flex-wrap items-center gap-2">
-              <h4 className="text-lg font-semibold text-slate-100 group-hover:text-white">{project.name}</h4>
-              {isPaused && (
-                <span className="lifehq-badge">
-                  Bewusst pausiert
-                </span>
-              )}
+              <h4 className="text-xl font-semibold tracking-tight text-slate-100 group-hover:text-white">{project.name}</h4>
+              {isPaused && <span className="lifehq-badge">Bewusst pausiert</span>}
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2 text-xs text-slate-300 sm:justify-end">
-            <span className="lifehq-badge">{projectStatusLabels[project.status]}</span>
+            <span className="lifehq-badge">Status: {projectStatusLabels[project.status]}</span>
             <span className={project.priority === 'critical' ? 'lifehq-badge lifehq-badge-attention' : 'lifehq-badge'}>
-              {priorityLabels[project.priority]}
+              Priorität: {priorityLabels[project.priority]}
             </span>
           </div>
         </div>
@@ -113,31 +109,36 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
         )}
 
         <div className="grid gap-3 text-sm text-slate-300 sm:grid-cols-2">
-          <div className="lifehq-card-soft px-3 py-2">
+          <div className="lifehq-card-soft px-3 py-3">
             <p className="lifehq-label">Ampel</p>
             <div className="mt-2 flex items-center gap-2">
-              <span className={`h-2.5 w-2.5 rounded-full ${trafficLightStyles[project.trafficLightStatus]}`} />
+              <span className={`h-2.5 w-2.5 rounded-full ring-4 ${trafficLightStyles[project.trafficLightStatus]}`} />
               <span>{trafficLightLabels[project.trafficLightStatus]}</span>
             </div>
           </div>
 
-          <div className="lifehq-card-soft px-3 py-2">
+          <div className="lifehq-card-soft px-3 py-3">
             <p className="lifehq-label">Zieltermin</p>
-            <p className="mt-2">{project.targetDate ?? 'Kein Zieltermin'}</p>
+            <p className="mt-2 font-medium text-slate-200">{project.targetDate ?? 'Kein Zieltermin'}</p>
           </div>
         </div>
 
-        <div className="space-y-2 text-sm leading-6 text-slate-300">
-          <p>{getOpenTaskLabel(projectTasks)}</p>
-          <p>{getNextMilestoneLabel(projectMilestones)}</p>
-          {isPaused && (
-            <div className="lifehq-card-soft px-3 py-2 text-slate-400">
-              <p className="font-medium text-slate-300">Bewusst pausiert, nicht abgeschlossen.</p>
-              {project.pauseReason && <p className="mt-1 line-clamp-2">Grund: {project.pauseReason}</p>}
-              {project.reviewDate && <p className="mt-1">Wiedervorlage: {project.reviewDate}</p>}
-            </div>
-          )}
+        <div className="grid gap-2 text-sm leading-6 text-slate-300 sm:grid-cols-2">
+          <div className="lifehq-card-soft px-3 py-2">
+            <p>{getOpenTaskLabel(projectTasks)}</p>
+          </div>
+          <div className="lifehq-card-soft px-3 py-2">
+            <p>{getNextMilestoneLabel(projectMilestones)}</p>
+          </div>
         </div>
+
+        {isPaused && (
+          <div className="lifehq-card-soft px-3 py-3 text-sm leading-6 text-slate-400">
+            <p className="font-medium text-slate-300">Bewusst pausiert, nicht abgeschlossen.</p>
+            {project.pauseReason && <p className="mt-1 line-clamp-2">Grund: {project.pauseReason}</p>}
+            {project.reviewDate && <p className="mt-1">Wiedervorlage: {project.reviewDate}</p>}
+          </div>
+        )}
       </div>
     </button>
   );
