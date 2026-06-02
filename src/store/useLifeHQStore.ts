@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import type { StateCreator } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { mockHistoryEntries, mockLifeAreas, mockMilestones, mockProjects, mockTasks } from '../data/mockData';
 import { getTodayDateString, getTomorrowDateString, normalizeDate } from '../logic/dateLogic';
 import type { Priority, ProjectStatus, TrafficLightStatus, TaskStatus, MilestoneStatus } from '../models/common';
@@ -8,6 +10,14 @@ import type { Project } from '../models/project';
 import type { ProjectHistoryEntry } from '../models/projectHistory';
 import type { Task } from '../models/task';
 import { createProjectHistoryEntry } from './helpers/historyHelpers';
+import {
+  createLifeHQStorage,
+  getPersistedLifeHQState,
+  LIFEHQ_STORAGE_KEY,
+  LIFEHQ_STORAGE_VERSION,
+  mergePersistedLifeHQState,
+  sanitizePersistedLifeHQState,
+} from './persistence';
 import type { HistorySlice } from './slices/historySlice';
 import type { LifeAreaSlice } from './slices/lifeAreaSlice';
 import type { MilestoneSlice } from './slices/milestoneSlice';
@@ -15,9 +25,21 @@ import type { PauseProjectInput, ProjectSlice, ReactivateProjectInput } from './
 import type { TaskSlice } from './slices/taskSlice';
 import type { UISlice } from './slices/uiSlice';
 
-type LifeHQState = LifeAreaSlice & ProjectSlice & TaskSlice & MilestoneSlice & HistorySlice & UISlice;
+interface AppDataSlice {
+  resetAppData: () => void;
+}
+
+type LifeHQState = LifeAreaSlice & ProjectSlice & TaskSlice & MilestoneSlice & HistorySlice & UISlice & AppDataSlice;
 
 const now = () => new Date().toISOString();
+const getInitialLifeHQData = () => ({
+  lifeAreas: mockLifeAreas,
+  projects: mockProjects,
+  tasks: mockTasks,
+  milestones: mockMilestones,
+  historyEntries: mockHistoryEntries,
+  uiState: { activeMainView: 'hq' as const, selectedProjectId: undefined },
+});
 const withUpdatedAt = <T extends { updatedAt: string }>(item: T) => ({ ...item, updatedAt: now() });
 
 function getPauseProjectInput(input?: PauseProjectInput | string, note?: string): PauseProjectInput {
@@ -36,13 +58,8 @@ function getReactivateProjectInput(input?: ReactivateProjectInput | string): Rea
   return input ?? {};
 }
 
-export const useLifeHQStore = create<LifeHQState>((set) => ({
-  lifeAreas: mockLifeAreas,
-  projects: mockProjects,
-  tasks: mockTasks,
-  milestones: mockMilestones,
-  historyEntries: mockHistoryEntries,
-  uiState: { activeMainView: 'hq', selectedProjectId: undefined },
+const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
+  ...getInitialLifeHQData(),
 
   addLifeArea: (lifeArea: LifeArea) => set((state) => ({ lifeAreas: [...state.lifeAreas, lifeArea] })),
   updateLifeArea: (id: string, patch: Partial<LifeArea>) =>
@@ -392,6 +409,24 @@ export const useLifeHQStore = create<LifeHQState>((set) => ({
   setActiveMainView: (view) => set((state) => ({ uiState: { ...state.uiState, activeMainView: view } })),
   setSelectedProject: (projectId: string) => set((state) => ({ uiState: { ...state.uiState, selectedProjectId: projectId } })),
   clearSelectedProject: () => set((state) => ({ uiState: { ...state.uiState, selectedProjectId: undefined } })),
-}));
+
+  resetAppData: () => set(getInitialLifeHQData()),
+});
+
+export const useLifeHQStore = create<LifeHQState>()(
+  persist<LifeHQState, [], [], ReturnType<typeof getPersistedLifeHQState>>(createLifeHQStoreState, {
+    name: LIFEHQ_STORAGE_KEY,
+    version: LIFEHQ_STORAGE_VERSION,
+    storage: createLifeHQStorage(),
+    partialize: getPersistedLifeHQState,
+    migrate: (persistedState) => sanitizePersistedLifeHQState(persistedState, getInitialLifeHQData()),
+    merge: mergePersistedLifeHQState,
+    onRehydrateStorage: () => (_state, error) => {
+      if (error) {
+        console.warn('LifeHQ storage could not be restored. Falling back to initial app data.', error);
+      }
+    },
+  }),
+);
 
 export type { LifeHQState };
