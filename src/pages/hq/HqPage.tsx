@@ -26,10 +26,12 @@ interface SummaryMetricProps {
 
 function SummaryMetric({ label, value, tone = 'default', description }: SummaryMetricProps) {
   return (
-    <div className="rounded-2xl border border-slate-700/50 bg-slate-950/30 p-4">
-      <p className="text-xs uppercase tracking-[0.18em] text-muted">{label}</p>
-      <p className={tone === 'attention' ? 'mt-3 text-3xl font-semibold text-rose-200' : 'mt-3 text-3xl font-semibold text-slate-100'}>{value}</p>
-      {description && <p className="mt-2 text-xs leading-5 text-slate-500">{description}</p>}
+    <div className="lifehq-card flex min-h-32 flex-col justify-between p-4 sm:p-5">
+      <div className="space-y-2">
+        <p className="lifehq-label">{label}</p>
+        {description && <p className="text-xs leading-5 text-slate-500">{description}</p>}
+      </div>
+      <p className={tone === 'attention' ? 'mt-4 text-3xl font-semibold text-rose-100' : 'mt-4 text-3xl font-semibold text-slate-100'}>{value}</p>
     </div>
   );
 }
@@ -37,15 +39,17 @@ function SummaryMetric({ label, value, tone = 'default', description }: SummaryM
 interface HqSectionProps {
   title: string;
   description: string;
+  eyebrow?: string;
   children: ReactNode;
 }
 
-function HqSection({ title, description, children }: HqSectionProps) {
+function HqSection({ title, description, eyebrow, children }: HqSectionProps) {
   return (
-    <section className="space-y-3 rounded-3xl border border-slate-700/50 bg-slate-950/20 p-4 sm:p-5">
-      <div>
-        <h3 className="text-base font-semibold text-slate-100">{title}</h3>
-        <p className="mt-1 text-sm leading-6 text-slate-400">{description}</p>
+    <section className="lifehq-panel space-y-4 p-4 sm:p-5">
+      <div className="space-y-2">
+        {eyebrow && <p className="lifehq-label">{eyebrow}</p>}
+        <h3 className="text-lg font-semibold text-slate-100">{title}</h3>
+        <p className="text-sm leading-6 text-slate-400">{description}</p>
       </div>
       {children}
     </section>
@@ -53,30 +57,36 @@ function HqSection({ title, description, children }: HqSectionProps) {
 }
 
 function EmptyState({ children }: { children: ReactNode }) {
-  return <p className="rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500">{children}</p>;
+  return (
+    <div className="lifehq-empty-state">
+      <p className="font-medium text-slate-400">Bereit für Einordnung</p>
+      <p className="mt-1">{children}</p>
+    </div>
+  );
 }
 
 function SectionNote({ children }: { children: ReactNode }) {
-  return <p className="rounded-2xl border border-slate-700/40 bg-slate-950/20 px-4 py-3 text-sm leading-6 text-slate-400">{children}</p>;
+  return <p className="lifehq-note">{children}</p>;
 }
 
 function LifeAreaList({ lifeAreas }: { lifeAreas: LifeArea[] }) {
   if (lifeAreas.length === 0) {
-    return <EmptyState>No life areas available yet.</EmptyState>;
+    return <EmptyState>Baue Schritt für Schritt dein persönliches HQ auf.</EmptyState>;
   }
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {lifeAreas.map((lifeArea) => (
-        <div key={lifeArea.id} className="rounded-2xl border border-slate-700/50 bg-slate-900/30 p-4">
+        <div key={lifeArea.id} className="lifehq-card p-4">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="font-medium text-slate-100">{lifeArea.name}</p>
-              {lifeArea.description && <p className="mt-1 text-sm leading-6 text-slate-400">{lifeArea.description}</p>}
+            <div className="min-w-0 space-y-2">
+              <p className="lifehq-label">Life Area</p>
+              <h4 className="text-base font-semibold text-slate-100">{lifeArea.name}</h4>
+              {lifeArea.description && <p className="text-sm leading-6 text-slate-400">{lifeArea.description}</p>}
             </div>
-            {lifeArea.status && <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-300">{lifeArea.status}</span>}
+            {lifeArea.status && <span className="lifehq-badge shrink-0">Status: {lifeArea.status}</span>}
           </div>
-          {lifeArea.priority && <p className="mt-3 text-xs uppercase tracking-[0.16em] text-muted">Priority: {lifeArea.priority}</p>}
+          {lifeArea.priority && <p className="lifehq-label mt-4">Priority: {lifeArea.priority}</p>}
         </div>
       ))}
     </div>
@@ -98,7 +108,7 @@ function ProjectCardList({ projects, lifeAreas, tasks, milestones, emptyText, on
   }
 
   return (
-    <div className="space-y-3">
+    <div className="grid gap-3">
       {projects.map((project) => (
         <ProjectCard
           key={project.id}
@@ -123,6 +133,7 @@ export function HqPage() {
   const criticalProjects = useLifeHQStore(selectCriticalProjects);
   const redTrafficLightProjects = useLifeHQStore(selectRedTrafficLightProjects);
   const criticalPriorityProjects = criticalProjects.filter((project) => project.priority === 'critical');
+  const pausedCriticalProjects = criticalProjects.filter((project) => project.status === 'paused');
   const pausedProjectsWithReviewDate = pausedProjects.filter((project) => project.reviewDate);
   const openTasks = useLifeHQStore(selectOpenTasks);
   const tasks = useLifeHQStore(selectTasks);
@@ -134,41 +145,49 @@ export function HqPage() {
 
   return (
     <div className="space-y-6">
-      <section className="max-w-3xl space-y-3">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted">Strategic Overview</p>
-        <div className="space-y-2">
-          <h2 className="text-2xl font-semibold sm:text-3xl">HQ</h2>
-          <p className="max-w-2xl text-sm leading-6 text-slate-300">
-            Your LifeHQ command surface for reading the current strategic landscape before moving into operational execution.
-          </p>
+      <section className="lifehq-panel-strong overflow-hidden p-5 sm:p-6">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
+          <div className="max-w-3xl space-y-3">
+            <p className="lifehq-label">Strategic Overview</p>
+            <div className="space-y-2">
+              <h2 className="text-3xl font-semibold tracking-tight text-slate-100 sm:text-4xl">HQ</h2>
+              <p className="max-w-2xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
+                Your LifeHQ command surface for reading life areas, strategic projects, focus decisions and attention signals before moving into execution.
+              </p>
+            </div>
+          </div>
+          <div className="lifehq-card-soft p-4 text-sm leading-6 text-slate-400">
+            <p className="font-medium text-slate-200">Strategic map, not a task list.</p>
+            <p className="mt-1">Review where focus is active, planned, paused or asking for calm attention.</p>
+          </div>
         </div>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="HQ summary">
-        <SummaryMetric label="Life Areas" value={lifeAreas.length} />
-        <SummaryMetric label="Active Projects" value={activeProjects.length} />
-        <SummaryMetric label="Open Tasks" value={openTasks.length} />
-        <SummaryMetric label="Critical Signals" value={criticalProjects.length} tone="attention" />
+        <SummaryMetric label="Life Areas" value={lifeAreas.length} description="Top-level domains" />
+        <SummaryMetric label="Active Projects" value={activeProjects.length} description="Moving forward now" />
+        <SummaryMetric label="Open Tasks" value={openTasks.length} description="Execution context" />
+        <SummaryMetric label="Critical Signals" value={criticalProjects.length} tone="attention" description="Need calm review" />
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
-        <div className="space-y-4">
-          <HqSection title="Life Areas" description="A high-level map of the life domains currently represented in the system.">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
+        <div className="space-y-5">
+          <HqSection title="Life Areas" eyebrow="Operating Domains" description="A high-level map of the life domains currently represented in the system.">
             <LifeAreaList lifeAreas={lifeAreas} />
           </HqSection>
 
-          <HqSection title="Active Projects" description="Strategic initiatives that are currently moving forward.">
+          <HqSection title="Active Projects" eyebrow="Current Focus" description="Strategic initiatives that are currently moving forward.">
             <ProjectCardList
               projects={activeProjects}
               lifeAreas={lifeAreas}
               tasks={tasks}
               milestones={milestones}
-              emptyText="Noch keine aktiven Projekte. Dein HQ ist bereit, sobald du ein Projekt startest."
+              emptyText="Noch keine aktiven Projekte. Dieser Bereich ist bereit für deine nächsten Vorhaben."
               onProjectSelect={openProjectDetail}
             />
           </HqSection>
 
-          <HqSection title="Planned Projects" description="Potential initiatives prepared for a later execution window.">
+          <HqSection title="Planned Projects" eyebrow="Prepared Direction" description="Potential initiatives prepared for a later execution window.">
             <ProjectCardList
               projects={plannedProjects}
               lifeAreas={lifeAreas}
@@ -180,12 +199,12 @@ export function HqPage() {
           </HqSection>
         </div>
 
-        <div className="space-y-4">
-          <HqSection title="Critical Projects" description="Projects that deserve calm attention because priority is critical or the traffic light is red.">
+        <div className="space-y-5">
+          <HqSection title="Critical Projects" eyebrow="Attention Signals" description="Projects that deserve calm attention because priority is critical or the traffic light is red.">
             <SectionNote>
               {criticalProjects.length === 0
                 ? 'Keine kritischen Projekte. Aktuell gibt es keine roten strategischen Signale.'
-                : `${criticalPriorityProjects.length} mit kritischer Priorität · ${redTrafficLightProjects.length} mit roter Ampel. Projekte werden hier nur einmal geführt.`}
+                : `${criticalPriorityProjects.length} mit kritischer Priorität · ${redTrafficLightProjects.length} mit roter Ampel · ${pausedCriticalProjects.length} davon bewusst pausiert. Pausierte kritische Projekte bleiben hier sichtbar markiert.`}
             </SectionNote>
             <ProjectCardList
               projects={criticalProjects}
@@ -197,7 +216,7 @@ export function HqPage() {
             />
           </HqSection>
 
-          <HqSection title="Paused Projects" description="Projects intentionally held outside active focus without being lost or completed.">
+          <HqSection title="Paused Projects" eyebrow="Focus Decisions" description="Projects intentionally held outside active focus without being lost or completed.">
             <SectionNote>
               {pausedProjects.length === 0
                 ? 'Keine pausierten Projekte. Alle sichtbaren Projekte sind aktuell eingeordnet.'
@@ -213,7 +232,7 @@ export function HqPage() {
             />
           </HqSection>
 
-          <HqSection title="Strategic Signals" description="Quiet context signals for orientation, not a performance dashboard.">
+          <HqSection title="Strategic Signals" eyebrow="Quiet Metrics" description="Quiet context signals for orientation, not a performance dashboard.">
             <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
               <SummaryMetric label="Completed" value={completedProjects.length} description="Closed strategic loops" />
               <SummaryMetric label="Red Ampel" value={redTrafficLightProjects.length} tone="attention" description="Projects needing review" />
