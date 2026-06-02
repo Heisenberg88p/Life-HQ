@@ -11,7 +11,7 @@ import { createProjectHistoryEntry } from './helpers/historyHelpers';
 import type { HistorySlice } from './slices/historySlice';
 import type { LifeAreaSlice } from './slices/lifeAreaSlice';
 import type { MilestoneSlice } from './slices/milestoneSlice';
-import type { PauseProjectInput, ProjectSlice } from './slices/projectSlice';
+import type { PauseProjectInput, ProjectSlice, ReactivateProjectInput } from './slices/projectSlice';
 import type { TaskSlice } from './slices/taskSlice';
 import type { UISlice } from './slices/uiSlice';
 
@@ -23,6 +23,14 @@ const withUpdatedAt = <T extends { updatedAt: string }>(item: T) => ({ ...item, 
 function getPauseProjectInput(input?: PauseProjectInput | string, note?: string): PauseProjectInput {
   if (typeof input === 'string') {
     return { reason: input, note };
+  }
+
+  return input ?? {};
+}
+
+function getReactivateProjectInput(input?: ReactivateProjectInput | string): ReactivateProjectInput {
+  if (typeof input === 'string') {
+    return { note: input };
   }
 
   return input ?? {};
@@ -81,14 +89,45 @@ export const useLifeHQStore = create<LifeHQState>((set) => ({
         ],
       };
     }),
-  reactivateProject: (id: string, note?: string) =>
-    set((state) => ({
-      projects: state.projects.map((item) => (item.id === id ? withUpdatedAt({ ...item, status: 'active', reactivatedAt: now(), reactivationNote: note }) : item)),
-      historyEntries: [
-        ...state.historyEntries,
-        createProjectHistoryEntry({ projectId: id, type: 'reactivated', description: 'Project reactivated.', note }),
-      ],
-    })),
+  reactivateProject: (id: string, input?: ReactivateProjectInput | string) =>
+    set((state) => {
+      const project = state.projects.find((item) => item.id === id);
+
+      if (!project || project.status !== 'paused') {
+        return {};
+      }
+
+      const reactivationInput = getReactivateProjectInput(input);
+      const nextStatus = reactivationInput.status === 'planned' ? 'planned' : 'active';
+      const timestamp = now();
+      const description = reactivationInput.note ? `Project reactivated: ${reactivationInput.note}` : 'Project reactivated.';
+
+      return {
+        projects: state.projects.map((item) => (item.id === id ? {
+          ...item,
+          status: nextStatus,
+          ...(reactivationInput.priority !== undefined ? { priority: reactivationInput.priority } : {}),
+          ...(reactivationInput.trafficLightStatus !== undefined ? { trafficLightStatus: reactivationInput.trafficLightStatus } : {}),
+          ...(reactivationInput.targetDate !== undefined ? { targetDate: reactivationInput.targetDate } : {}),
+          ...(reactivationInput.description !== undefined ? { description: reactivationInput.description } : {}),
+          reactivatedAt: timestamp,
+          reactivationNote: reactivationInput.note,
+          updatedAt: timestamp,
+        } : item)),
+        historyEntries: [
+          ...state.historyEntries,
+          createProjectHistoryEntry({
+            projectId: id,
+            type: 'reactivated',
+            description,
+            oldValue: 'paused',
+            newValue: nextStatus,
+            note: reactivationInput.note,
+            date: timestamp,
+          }),
+        ],
+      };
+    }),
   updateProjectStatus: (id: string, status: ProjectStatus) =>
     set((state) => ({ projects: state.projects.map((item) => (item.id === id ? withUpdatedAt({ ...item, status }) : item)) })),
   updateProjectPriority: (id: string, priority: Priority) =>
