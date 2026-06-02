@@ -51,9 +51,9 @@ const trafficLightLabels: Record<TrafficLightStatus, string> = {
 };
 
 const trafficLightStyles: Record<TrafficLightStatus, string> = {
-  green: 'bg-emerald-300/80',
-  yellow: 'bg-amber-300/80',
-  red: 'bg-rose-300/80',
+  green: 'bg-emerald-300/80 ring-emerald-300/20',
+  yellow: 'bg-amber-300/80 ring-amber-300/20',
+  red: 'bg-rose-300/80 ring-rose-300/25',
 };
 
 const milestoneStatusLabels: Record<MilestoneStatus, string> = {
@@ -105,7 +105,7 @@ interface DetailFieldProps {
 
 function DetailField({ label, value, description }: DetailFieldProps) {
   return (
-    <div className="lifehq-card-soft p-4">
+    <div className="lifehq-card-soft flex min-h-28 flex-col justify-between p-4">
       <p className="lifehq-label">{label}</p>
       <p className="mt-2 text-sm font-medium text-slate-100">{value}</p>
       {description && <p className="mt-2 text-xs leading-5 text-slate-500">{description}</p>}
@@ -231,11 +231,11 @@ export function ProjectDetailPage() {
 
   if (!project) {
     return (
-      <div className="space-y-6">
-        <Link to="/hq" className="text-sm font-medium text-slate-300 transition-colors hover:text-white">
+      <div className="space-y-7">
+        <Link to="/hq" className="lifehq-button-secondary w-fit">
           ← Zurück zum HQ
         </Link>
-        <section className="rounded-3xl border border-slate-700/60 bg-slate-900/30 p-6">
+        <section className="lifehq-panel p-6">
           <p className="lifehq-label">Project Detail</p>
           <h2 className="mt-3 text-2xl font-semibold text-slate-100">Projekt nicht gefunden</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
@@ -248,27 +248,27 @@ export function ProjectDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link to="/hq" className="text-sm font-medium text-slate-300 transition-colors hover:text-white">
+      <Link to="/hq" className="lifehq-button-secondary w-fit">
         ← Zurück zum HQ
       </Link>
 
-      <section className="rounded-3xl border border-slate-700/60 bg-slate-900/35 p-5 shadow-lg shadow-black/5 sm:p-6">
+      <section className="lifehq-panel-strong p-5 sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-3xl space-y-3">
+          <div className="max-w-3xl space-y-4">
             <p className="lifehq-label">Project Detail</p>
-            <h2 className="text-2xl font-semibold text-slate-100 sm:text-3xl">{project.name}</h2>
-            <p className="text-sm leading-6 text-slate-300">
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-100 sm:text-4xl">{project.name}</h2>
+            <p className="lifehq-card-soft p-4 text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
               {project.description ?? 'Für dieses Projekt ist noch keine Beschreibung oder Vision hinterlegt.'}
             </p>
             {isPausedProject && (
-              <p className="rounded-2xl border border-slate-700/50 bg-slate-950/25 px-4 py-3 text-sm leading-6 text-slate-400">
+              <p className="lifehq-note">
                 Dieses Projekt ist bewusst pausiert. Es bleibt gespeichert und kann später wieder aufgenommen werden.
               </p>
             )}
           </div>
 
           {isPausedProject && (
-            <span className="w-fit rounded-full border border-slate-600/60 bg-slate-950/40 px-3 py-1 text-xs font-medium text-slate-300">
+            <span className="lifehq-badge w-fit">
               Bewusst pausiert
             </span>
           )}
@@ -289,7 +289,7 @@ export function ProjectDetailPage() {
           <div className="lifehq-card-soft p-4">
             <p className="lifehq-label">Ampelstatus</p>
             <div className="mt-2 flex items-center gap-2 text-sm font-medium text-slate-100">
-              <span className={`h-2.5 w-2.5 rounded-full ${trafficLightStyles[project.trafficLightStatus]}`} />
+              <span className={`h-2.5 w-2.5 rounded-full ring-4 ${trafficLightStyles[project.trafficLightStatus]}`} />
               <span>{trafficLightLabels[project.trafficLightStatus]}</span>
             </div>
           </div>
@@ -300,7 +300,7 @@ export function ProjectDetailPage() {
       </section>
 
       {canPauseProject && (
-        <section className="rounded-3xl border border-slate-700/50 bg-slate-950/20 p-5 sm:p-6">
+        <section className="lifehq-panel p-5 sm:p-6">
           <div className="max-w-2xl">
             <p className="lifehq-label">Focus Decision</p>
             <h3 className="mt-2 text-lg font-semibold text-slate-100">Projekt pausieren</h3>
@@ -331,7 +331,7 @@ export function ProjectDetailPage() {
             <button
               type="button"
               onClick={handlePauseProject}
-              className="w-fit rounded-full border border-slate-600/70 bg-slate-950/40 px-4 py-2 text-sm font-medium text-slate-200 transition-colors hover:border-slate-400 hover:text-white lg:mb-1"
+              className="lifehq-button-secondary w-fit lg:mb-1"
             >
               Projekt pausieren
             </button>
@@ -351,7 +351,7 @@ export function ProjectDetailPage() {
       )}
 
       {hasPauseInformation && (
-        <section className="rounded-3xl border border-slate-700/50 bg-slate-950/20 p-5 sm:p-6">
+        <section className="lifehq-panel p-5 sm:p-6">
           <div className="max-w-2xl">
             <p className="lifehq-label">Paused Project</p>
             <h3 className="mt-2 text-lg font-semibold text-slate-100">Pausierungsinformationen</h3>
@@ -448,7 +448,7 @@ export function ProjectDetailPage() {
                 <button
                   type="button"
                   onClick={handleReactivateProject}
-                  className="rounded-full border border-emerald-300/20 bg-emerald-950/20 px-4 py-2 text-sm font-medium text-emerald-100 transition-colors hover:border-emerald-300/40"
+                  className="lifehq-button-primary"
                 >
                   Projekt reaktivieren
                 </button>
@@ -459,7 +459,7 @@ export function ProjectDetailPage() {
       )}
 
       {hasReactivationInformation && (
-        <section className="rounded-3xl border border-slate-700/40 bg-slate-950/10 p-5 sm:p-6">
+        <section className="lifehq-panel p-5 sm:p-6">
           <div className="max-w-2xl">
             <p className="lifehq-label">Project Return</p>
             <h3 className="mt-2 text-lg font-semibold text-slate-100">Reaktivierungsinformationen</h3>
@@ -474,7 +474,7 @@ export function ProjectDetailPage() {
         </section>
       )}
 
-      <section className="rounded-3xl border border-slate-700/60 bg-slate-900/25 p-5 sm:p-6">
+      <section className="lifehq-panel-strong p-5 sm:p-6">
         <div className="max-w-2xl">
           <p className="lifehq-label">Project Markers</p>
           <h3 className="mt-2 text-lg font-semibold text-slate-100">Meilensteine</h3>
@@ -490,17 +490,17 @@ export function ProjectDetailPage() {
         ) : (
           <div className="mt-5 grid gap-3">
             {milestones.map((milestone) => (
-              <article key={milestone.id} className="lifehq-card-soft p-4">
+              <article key={milestone.id} className={`lifehq-card-soft p-4 transition-colors ${milestone.status === 'done' ? 'opacity-70' : 'hover:border-slate-600/60'}`}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-2">
                     <h4 className="font-semibold text-slate-100">{milestone.title}</h4>
                     {milestone.description && <p className="text-sm leading-6 text-slate-400">{milestone.description}</p>}
                   </div>
-                  <span className="w-fit rounded-full border border-slate-700/60 bg-slate-950/40 px-2.5 py-1 text-xs text-slate-300">
+                  <span className="lifehq-badge w-fit">
                     {milestoneStatusLabels[milestone.status]}
                   </span>
                 </div>
-                <p className="mt-3 text-xs uppercase tracking-[0.16em] text-muted">
+                <p className="lifehq-label mt-3">
                   Zieltermin: {milestone.targetDate ?? 'Kein Zieltermin'}
                 </p>
               </article>
@@ -509,7 +509,7 @@ export function ProjectDetailPage() {
         )}
       </section>
 
-      <section className="rounded-3xl border border-slate-700/50 bg-slate-950/15 p-5 sm:p-6">
+      <section className="lifehq-panel p-5 sm:p-6">
         <div className="max-w-2xl">
           <p className="lifehq-label">Project Execution Context</p>
           <h3 className="mt-2 text-lg font-semibold text-slate-100">Projektaufgaben</h3>
@@ -525,7 +525,7 @@ export function ProjectDetailPage() {
         ) : (
           <div className="mt-5 grid gap-2">
             {tasks.map((task) => (
-              <article key={task.id} className="rounded-2xl border border-slate-700/40 bg-slate-950/20 p-4">
+              <article key={task.id} className={`lifehq-card-soft p-4 transition-colors ${task.status === 'done' ? 'opacity-70' : 'hover:border-slate-600/60'}`}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-2">
                     <h4 className="text-sm font-semibold text-slate-100">{task.title}</h4>
@@ -545,7 +545,7 @@ export function ProjectDetailPage() {
         )}
       </section>
 
-      <section className="rounded-3xl border border-slate-700/40 bg-slate-950/10 p-5 sm:p-6">
+      <section className="lifehq-panel p-5 sm:p-6">
         <div className="max-w-2xl">
           <p className="lifehq-label">Project Trace</p>
           <h3 className="mt-2 text-lg font-semibold text-slate-100">Projektverlauf</h3>
@@ -561,7 +561,7 @@ export function ProjectDetailPage() {
         ) : (
           <div className="mt-5 space-y-3">
             {sortedHistoryEntries.map((entry) => (
-              <article key={entry.id} className="rounded-2xl border border-slate-700/40 bg-slate-950/15 p-4">
+              <article key={entry.id} className="lifehq-card-soft p-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-2">
                     <p className="lifehq-label">{historyTypeLabels[entry.type]}</p>
@@ -572,11 +572,11 @@ export function ProjectDetailPage() {
 
                 {(entry.taskId || entry.milestoneId || entry.oldValue || entry.newValue || entry.note) && (
                   <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
-                    {entry.taskId && <span className="rounded-full border border-slate-700/50 px-2.5 py-1">Task: {entry.taskId}</span>}
-                    {entry.milestoneId && <span className="rounded-full border border-slate-700/50 px-2.5 py-1">Meilenstein: {entry.milestoneId}</span>}
-                    {entry.oldValue && <span className="rounded-full border border-slate-700/50 px-2.5 py-1">Vorher: {entry.oldValue}</span>}
-                    {entry.newValue && <span className="rounded-full border border-slate-700/50 px-2.5 py-1">Neu: {entry.newValue}</span>}
-                    {entry.note && <span className="rounded-full border border-slate-700/50 px-2.5 py-1">Notiz: {entry.note}</span>}
+                    {entry.taskId && <span className="lifehq-badge">Task: {entry.taskId}</span>}
+                    {entry.milestoneId && <span className="lifehq-badge">Meilenstein: {entry.milestoneId}</span>}
+                    {entry.oldValue && <span className="lifehq-badge">Vorher: {entry.oldValue}</span>}
+                    {entry.newValue && <span className="lifehq-badge">Neu: {entry.newValue}</span>}
+                    {entry.note && <span className="lifehq-badge">Notiz: {entry.note}</span>}
                   </div>
                 )}
               </article>
