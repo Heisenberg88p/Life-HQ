@@ -7,6 +7,7 @@ import type { Milestone } from '../models/milestone';
 import type { Project } from '../models/project';
 import type { ProjectHistoryEntry } from '../models/projectHistory';
 import type { Task } from '../models/task';
+import { createProjectHistoryEntry } from './helpers/historyHelpers';
 import type { HistorySlice } from './slices/historySlice';
 import type { LifeAreaSlice } from './slices/lifeAreaSlice';
 import type { MilestoneSlice } from './slices/milestoneSlice';
@@ -39,12 +40,18 @@ export const useLifeHQStore = create<LifeHQState>((set) => ({
   pauseProject: (id: string, reason?: string, note?: string) =>
     set((state) => ({
       projects: state.projects.map((item) => (item.id === id ? withUpdatedAt({ ...item, status: 'paused', pausedAt: now(), pauseReason: reason, pauseNote: note }) : item)),
-      historyEntries: [...state.historyEntries, { id: `h-${Date.now()}`, projectId: id, type: 'paused', date: now(), description: 'Project paused.', note, createdAt: now(), updatedAt: now() }],
+      historyEntries: [
+        ...state.historyEntries,
+        createProjectHistoryEntry({ projectId: id, type: 'paused', description: 'Project paused.', note }),
+      ],
     })),
   reactivateProject: (id: string, note?: string) =>
     set((state) => ({
       projects: state.projects.map((item) => (item.id === id ? withUpdatedAt({ ...item, status: 'active', reactivatedAt: now(), reactivationNote: note }) : item)),
-      historyEntries: [...state.historyEntries, { id: `h-${Date.now()}`, projectId: id, type: 'reactivated', date: now(), description: 'Project reactivated.', note, createdAt: now(), updatedAt: now() }],
+      historyEntries: [
+        ...state.historyEntries,
+        createProjectHistoryEntry({ projectId: id, type: 'reactivated', description: 'Project reactivated.', note }),
+      ],
     })),
   updateProjectStatus: (id: string, status: ProjectStatus) =>
     set((state) => ({ projects: state.projects.map((item) => (item.id === id ? withUpdatedAt({ ...item, status }) : item)) })),
