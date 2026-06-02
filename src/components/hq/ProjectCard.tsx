@@ -58,6 +58,7 @@ function getStrategicSignalLabels(project: Project): string[] {
   return [
     project.priority === 'critical' ? 'Kritische Priorität' : undefined,
     project.trafficLightStatus === 'red' ? 'Rote Ampel' : undefined,
+    project.status === 'paused' && (project.priority === 'critical' || project.trafficLightStatus === 'red') ? 'Pausiert, Signal bleibt sichtbar' : undefined,
   ].filter((label): label is string => Boolean(label));
 }
 
@@ -73,7 +74,9 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
       type="button"
       onClick={() => onClick?.(project.id)}
       className={`group w-full rounded-3xl border p-5 text-left shadow-lg shadow-black/5 transition-colors ${
-        isPaused ? 'border-slate-700/40 bg-slate-950/20 opacity-75' : 'border-slate-700/60 bg-slate-900/40 hover:border-slate-500/80 hover:bg-slate-900/60'
+        isPaused
+          ? 'border-slate-700/50 bg-slate-950/25 opacity-90 hover:border-slate-600/80 hover:bg-slate-950/35'
+          : 'border-slate-700/60 bg-slate-900/40 hover:border-slate-500/80 hover:bg-slate-900/60'
       } ${isCritical ? 'border-l-4 border-l-rose-300/70' : 'border-l-4 border-l-slate-700/60'}`}
       aria-label={`Projekt ${project.name}`}
     >
@@ -81,7 +84,14 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-2">
             <p className="text-xs uppercase tracking-[0.18em] text-muted">{lifeArea?.name ?? 'Kein Lebensbereich'}</p>
-            <h4 className="text-lg font-semibold text-slate-100 group-hover:text-white">{project.name}</h4>
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="text-lg font-semibold text-slate-100 group-hover:text-white">{project.name}</h4>
+              {isPaused && (
+                <span className="rounded-full border border-slate-600/70 bg-slate-950/50 px-2.5 py-1 text-xs font-medium text-slate-300">
+                  Bewusst pausiert
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2 text-xs text-slate-300 sm:justify-end">
@@ -120,8 +130,13 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
         <div className="space-y-2 text-sm leading-6 text-slate-300">
           <p>{getOpenTaskLabel(projectTasks)}</p>
           <p>{getNextMilestoneLabel(projectMilestones)}</p>
-          {isPaused && <p className="text-slate-400">Pausiert{project.pauseReason ? `: ${project.pauseReason}` : ''}</p>}
-          {isPaused && project.reviewDate && <p className="text-slate-400">Wiedervorlage: {project.reviewDate}</p>}
+          {isPaused && (
+            <div className="rounded-2xl border border-slate-700/50 bg-slate-950/25 px-3 py-2 text-slate-400">
+              <p className="font-medium text-slate-300">Bewusst pausiert, nicht abgeschlossen.</p>
+              {project.pauseReason && <p className="mt-1 line-clamp-2">Grund: {project.pauseReason}</p>}
+              {project.reviewDate && <p className="mt-1">Wiedervorlage: {project.reviewDate}</p>}
+            </div>
+          )}
         </div>
       </div>
     </button>
