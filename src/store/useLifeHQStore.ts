@@ -140,19 +140,81 @@ export const useLifeHQStore = create<LifeHQState>((set) => ({
     set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
   deleteTask: (id: string) => set((state) => ({ tasks: state.tasks.filter((item) => item.id !== id) })),
   updateTaskStatus: (id: string, status: TaskStatus) =>
-    set((state) => ({
-      tasks: state.tasks.map((item) => {
-        if (item.id !== id) {
-          return item;
-        }
+    set((state) => {
+      const task = state.tasks.find((item) => item.id === id);
 
-        return withUpdatedAt({ ...item, status, completedAt: status === 'done' ? now() : undefined });
-      }),
-    })),
+      if (!task || (task.status === 'done' && status === 'done')) {
+        return {};
+      }
+
+      const timestamp = now();
+      const taskProjectId = task.projectId;
+      const shouldCreateHistoryEntry = Boolean(taskProjectId && task.status !== 'done' && status === 'done');
+
+      return {
+        tasks: state.tasks.map((item) => {
+          if (item.id !== id) {
+            return item;
+          }
+
+          return {
+            ...item,
+            status,
+            completedAt: status === 'done' ? timestamp : undefined,
+            updatedAt: timestamp,
+          };
+        }),
+        ...(shouldCreateHistoryEntry ? {
+          historyEntries: [
+            ...state.historyEntries,
+            createProjectHistoryEntry({
+              projectId: taskProjectId as string,
+              type: 'task_completed',
+              taskId: task.id,
+              oldValue: task.status,
+              newValue: 'done',
+              description: `Task completed: ${task.title}.`,
+              date: timestamp,
+            }),
+          ],
+        } : {}),
+      };
+    }),
   updateTaskPriority: (id: string, priority: Priority) =>
     set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, priority }) : item)) })),
   completeTask: (id: string) =>
-    set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, status: 'done', completedAt: now() }) : item)) })),
+    set((state) => {
+      const task = state.tasks.find((item) => item.id === id);
+
+      if (!task || task.status === 'done') {
+        return {};
+      }
+
+      const timestamp = now();
+
+      return {
+        tasks: state.tasks.map((item) => (item.id === id ? {
+          ...item,
+          status: 'done',
+          completedAt: timestamp,
+          updatedAt: timestamp,
+        } : item)),
+        ...(task.projectId ? {
+          historyEntries: [
+            ...state.historyEntries,
+            createProjectHistoryEntry({
+              projectId: task.projectId,
+              type: 'task_completed',
+              taskId: task.id,
+              oldValue: task.status,
+              newValue: 'done',
+              description: `Task completed: ${task.title}.`,
+              date: timestamp,
+            }),
+          ],
+        } : {}),
+      };
+    }),
   setTaskPlannedDate: (id: string, plannedDate: string | Date) =>
     set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, plannedDate: normalizeDate(plannedDate) }) : item)) })),
   scheduleTaskForToday: (id: string) =>
@@ -179,9 +241,70 @@ export const useLifeHQStore = create<LifeHQState>((set) => ({
     set((state) => ({ milestones: state.milestones.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
   deleteMilestone: (id: string) => set((state) => ({ milestones: state.milestones.filter((item) => item.id !== id) })),
   updateMilestoneStatus: (id: string, status: MilestoneStatus) =>
-    set((state) => ({ milestones: state.milestones.map((item) => (item.id === id ? withUpdatedAt({ ...item, status }) : item)) })),
+    set((state) => {
+      const milestone = state.milestones.find((item) => item.id === id);
+
+      if (!milestone || (milestone.status === 'done' && status === 'done')) {
+        return {};
+      }
+
+      const timestamp = now();
+      const shouldCreateHistoryEntry = milestone.status !== 'done' && status === 'done';
+
+      return {
+        milestones: state.milestones.map((item) => (item.id === id ? {
+          ...item,
+          status,
+          ...(status === 'done' ? { completedAt: timestamp } : {}),
+          updatedAt: timestamp,
+        } : item)),
+        ...(shouldCreateHistoryEntry ? {
+          historyEntries: [
+            ...state.historyEntries,
+            createProjectHistoryEntry({
+              projectId: milestone.projectId,
+              type: 'milestone_completed',
+              milestoneId: milestone.id,
+              oldValue: milestone.status,
+              newValue: 'done',
+              description: `Milestone completed: ${milestone.title}.`,
+              date: timestamp,
+            }),
+          ],
+        } : {}),
+      };
+    }),
   completeMilestone: (id: string) =>
-    set((state) => ({ milestones: state.milestones.map((item) => (item.id === id ? withUpdatedAt({ ...item, status: 'done', completedAt: now() }) : item)) })),
+    set((state) => {
+      const milestone = state.milestones.find((item) => item.id === id);
+
+      if (!milestone || milestone.status === 'done') {
+        return {};
+      }
+
+      const timestamp = now();
+
+      return {
+        milestones: state.milestones.map((item) => (item.id === id ? {
+          ...item,
+          status: 'done',
+          completedAt: timestamp,
+          updatedAt: timestamp,
+        } : item)),
+        historyEntries: [
+          ...state.historyEntries,
+          createProjectHistoryEntry({
+            projectId: milestone.projectId,
+            type: 'milestone_completed',
+            milestoneId: milestone.id,
+            oldValue: milestone.status,
+            newValue: 'done',
+            description: `Milestone completed: ${milestone.title}.`,
+            date: timestamp,
+          }),
+        ],
+      };
+    }),
 
   addHistoryEntry: (entry: ProjectHistoryEntry) => set((state) => ({ historyEntries: [...state.historyEntries, entry] })),
 
