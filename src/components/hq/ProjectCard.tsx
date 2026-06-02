@@ -73,7 +73,7 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
     <button
       type="button"
       onClick={() => onClick?.(project.id)}
-      className={`group w-full rounded-3xl border p-5 text-left shadow-lg shadow-black/5 transition-colors ${
+      className={`group w-full rounded-3xl border p-5 text-left shadow-lg shadow-black/5 transition-colors focus-visible:outline-offset-4 ${
         isPaused
           ? 'border-slate-700/50 bg-slate-950/25 opacity-90 hover:border-slate-600/80 hover:bg-slate-950/35'
           : 'border-slate-700/60 bg-slate-900/40 hover:border-slate-500/80 hover:bg-slate-900/60'
@@ -83,11 +83,11 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-2">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted">{lifeArea?.name ?? 'Kein Lebensbereich'}</p>
+            <p className="lifehq-label">{lifeArea?.name ?? 'Kein Lebensbereich'}</p>
             <div className="flex flex-wrap items-center gap-2">
               <h4 className="text-lg font-semibold text-slate-100 group-hover:text-white">{project.name}</h4>
               {isPaused && (
-                <span className="rounded-full border border-slate-600/70 bg-slate-950/50 px-2.5 py-1 text-xs font-medium text-slate-300">
+                <span className="lifehq-badge">
                   Bewusst pausiert
                 </span>
               )}
@@ -95,8 +95,8 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
           </div>
 
           <div className="flex flex-wrap gap-2 text-xs text-slate-300 sm:justify-end">
-            <span className="rounded-full border border-slate-700/60 bg-slate-950/40 px-2.5 py-1">{projectStatusLabels[project.status]}</span>
-            <span className={project.priority === 'critical' ? 'rounded-full border border-rose-300/30 bg-rose-950/30 px-2.5 py-1 text-rose-100' : 'rounded-full border border-slate-700/60 bg-slate-950/40 px-2.5 py-1'}>
+            <span className="lifehq-badge">{projectStatusLabels[project.status]}</span>
+            <span className={project.priority === 'critical' ? 'lifehq-badge lifehq-badge-attention' : 'lifehq-badge'}>
               {priorityLabels[project.priority]}
             </span>
           </div>
@@ -105,7 +105,7 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
         {strategicSignalLabels.length > 0 && (
           <div className="flex flex-wrap gap-2 text-xs text-rose-100">
             {strategicSignalLabels.map((label) => (
-              <span key={label} className="rounded-full border border-rose-300/20 bg-rose-950/20 px-2.5 py-1">
+              <span key={label} className="lifehq-badge lifehq-badge-attention">
                 {label}
               </span>
             ))}
@@ -113,16 +113,16 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
         )}
 
         <div className="grid gap-3 text-sm text-slate-300 sm:grid-cols-2">
-          <div className="rounded-2xl border border-slate-700/40 bg-slate-950/25 px-3 py-2">
-            <p className="text-xs uppercase tracking-[0.16em] text-muted">Ampel</p>
+          <div className="lifehq-card-soft px-3 py-2">
+            <p className="lifehq-label">Ampel</p>
             <div className="mt-2 flex items-center gap-2">
               <span className={`h-2.5 w-2.5 rounded-full ${trafficLightStyles[project.trafficLightStatus]}`} />
               <span>{trafficLightLabels[project.trafficLightStatus]}</span>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-700/40 bg-slate-950/25 px-3 py-2">
-            <p className="text-xs uppercase tracking-[0.16em] text-muted">Zieltermin</p>
+          <div className="lifehq-card-soft px-3 py-2">
+            <p className="lifehq-label">Zieltermin</p>
             <p className="mt-2">{project.targetDate ?? 'Kein Zieltermin'}</p>
           </div>
         </div>
@@ -131,7 +131,7 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
           <p>{getOpenTaskLabel(projectTasks)}</p>
           <p>{getNextMilestoneLabel(projectMilestones)}</p>
           {isPaused && (
-            <div className="rounded-2xl border border-slate-700/50 bg-slate-950/25 px-3 py-2 text-slate-400">
+            <div className="lifehq-card-soft px-3 py-2 text-slate-400">
               <p className="font-medium text-slate-300">Bewusst pausiert, nicht abgeschlossen.</p>
               {project.pauseReason && <p className="mt-1 line-clamp-2">Grund: {project.pauseReason}</p>}
               {project.reviewDate && <p className="mt-1">Wiedervorlage: {project.reviewDate}</p>}

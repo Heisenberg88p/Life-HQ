@@ -105,8 +105,8 @@ interface DetailFieldProps {
 
 function DetailField({ label, value, description }: DetailFieldProps) {
   return (
-    <div className="rounded-2xl border border-slate-700/50 bg-slate-950/25 p-4">
-      <p className="text-xs uppercase tracking-[0.16em] text-muted">{label}</p>
+    <div className="lifehq-card-soft p-4">
+      <p className="lifehq-label">{label}</p>
       <p className="mt-2 text-sm font-medium text-slate-100">{value}</p>
       {description && <p className="mt-2 text-xs leading-5 text-slate-500">{description}</p>}
     </div>
@@ -236,7 +236,7 @@ export function ProjectDetailPage() {
           ← Zurück zum HQ
         </Link>
         <section className="rounded-3xl border border-slate-700/60 bg-slate-900/30 p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted">Project Detail</p>
+          <p className="lifehq-label">Project Detail</p>
           <h2 className="mt-3 text-2xl font-semibold text-slate-100">Projekt nicht gefunden</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
             Dieses Projekt ist im aktuellen HQ-State nicht vorhanden. Kehre zurück ins HQ und wähle ein vorhandenes Projekt aus.
@@ -255,7 +255,7 @@ export function ProjectDetailPage() {
       <section className="rounded-3xl border border-slate-700/60 bg-slate-900/35 p-5 shadow-lg shadow-black/5 sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl space-y-3">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted">Project Detail</p>
+            <p className="lifehq-label">Project Detail</p>
             <h2 className="text-2xl font-semibold text-slate-100 sm:text-3xl">{project.name}</h2>
             <p className="text-sm leading-6 text-slate-300">
               {project.description ?? 'Für dieses Projekt ist noch keine Beschreibung oder Vision hinterlegt.'}
@@ -286,8 +286,8 @@ export function ProjectDetailPage() {
             description={isPausedProject ? 'Bewusst pausiert, nicht abgeschlossen und nicht verloren.' : undefined}
           />
           <DetailField label="Priorität" value={priorityLabels[project.priority]} />
-          <div className="rounded-2xl border border-slate-700/50 bg-slate-950/25 p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-muted">Ampelstatus</p>
+          <div className="lifehq-card-soft p-4">
+            <p className="lifehq-label">Ampelstatus</p>
             <div className="mt-2 flex items-center gap-2 text-sm font-medium text-slate-100">
               <span className={`h-2.5 w-2.5 rounded-full ${trafficLightStyles[project.trafficLightStatus]}`} />
               <span>{trafficLightLabels[project.trafficLightStatus]}</span>
@@ -302,7 +302,7 @@ export function ProjectDetailPage() {
       {canPauseProject && (
         <section className="rounded-3xl border border-slate-700/50 bg-slate-950/20 p-5 sm:p-6">
           <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted">Focus Decision</p>
+            <p className="lifehq-label">Focus Decision</p>
             <h3 className="mt-2 text-lg font-semibold text-slate-100">Projekt pausieren</h3>
             <p className="mt-2 text-sm leading-6 text-slate-400">
               Pausieren nimmt dieses Projekt bewusst aus dem aktiven Fokus. Es bleibt gespeichert und kann später wieder aufgenommen werden.
@@ -311,7 +311,7 @@ export function ProjectDetailPage() {
 
           <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
             <label className="space-y-2 text-sm text-slate-300">
-              <span className="text-xs uppercase tracking-[0.16em] text-muted">Pausierungsgrund</span>
+              <span className="lifehq-label">Pausierungsgrund</span>
               <input
                 value={pauseDraft.reason}
                 onChange={(event) => updatePauseDraft({ reason: event.target.value })}
@@ -320,7 +320,7 @@ export function ProjectDetailPage() {
               />
             </label>
             <label className="space-y-2 text-sm text-slate-300">
-              <span className="text-xs uppercase tracking-[0.16em] text-muted">Wiedervorlage</span>
+              <span className="lifehq-label">Wiedervorlage</span>
               <input
                 type="date"
                 value={pauseDraft.reviewDate}
@@ -338,7 +338,7 @@ export function ProjectDetailPage() {
           </div>
 
           <label className="mt-4 block space-y-2 text-sm text-slate-300">
-            <span className="text-xs uppercase tracking-[0.16em] text-muted">Pausierungsnotiz</span>
+            <span className="lifehq-label">Pausierungsnotiz</span>
             <textarea
               value={pauseDraft.note}
               onChange={(event) => updatePauseDraft({ note: event.target.value })}
@@ -353,7 +353,7 @@ export function ProjectDetailPage() {
       {hasPauseInformation && (
         <section className="rounded-3xl border border-slate-700/50 bg-slate-950/20 p-5 sm:p-6">
           <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted">Paused Project</p>
+            <p className="lifehq-label">Paused Project</p>
             <h3 className="mt-2 text-lg font-semibold text-slate-100">Pausierungsinformationen</h3>
             <p className="mt-2 text-sm leading-6 text-slate-400">
               Dieses Projekt ist bewusst pausiert oder wurde bewusst pausiert. Es bleibt gespeichert und kann später wieder aufgenommen werden.
@@ -370,7 +370,7 @@ export function ProjectDetailPage() {
           {isPausedProject && (
             <div className="mt-6 rounded-3xl border border-slate-700/50 bg-slate-900/25 p-4 sm:p-5">
               <div className="max-w-2xl">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted">Return to Focus</p>
+                <p className="lifehq-label">Return to Focus</p>
                 <h4 className="mt-2 text-base font-semibold text-slate-100">Projekt reaktivieren</h4>
                 <p className="mt-2 text-sm leading-6 text-slate-400">
                   Reaktivieren bringt dieses Projekt zurück in den geplanten oder aktiven Arbeitszustand.
@@ -379,7 +379,7 @@ export function ProjectDetailPage() {
 
               <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <label className="space-y-2 text-sm text-slate-300">
-                  <span className="text-xs uppercase tracking-[0.16em] text-muted">Neuer Status</span>
+                  <span className="lifehq-label">Neuer Status</span>
                   <select
                     value={reactivationDraft.status}
                     onChange={(event) => updateReactivationDraft({ status: event.target.value as ReactivationStatus })}
@@ -391,7 +391,7 @@ export function ProjectDetailPage() {
                   </select>
                 </label>
                 <label className="space-y-2 text-sm text-slate-300">
-                  <span className="text-xs uppercase tracking-[0.16em] text-muted">Priorität</span>
+                  <span className="lifehq-label">Priorität</span>
                   <select
                     value={reactivationDraft.priority}
                     onChange={(event) => updateReactivationDraft({ priority: event.target.value as Priority })}
@@ -403,7 +403,7 @@ export function ProjectDetailPage() {
                   </select>
                 </label>
                 <label className="space-y-2 text-sm text-slate-300">
-                  <span className="text-xs uppercase tracking-[0.16em] text-muted">Ampelstatus</span>
+                  <span className="lifehq-label">Ampelstatus</span>
                   <select
                     value={reactivationDraft.trafficLightStatus}
                     onChange={(event) => updateReactivationDraft({ trafficLightStatus: event.target.value as TrafficLightStatus })}
@@ -415,7 +415,7 @@ export function ProjectDetailPage() {
                   </select>
                 </label>
                 <label className="space-y-2 text-sm text-slate-300">
-                  <span className="text-xs uppercase tracking-[0.16em] text-muted">Zieltermin</span>
+                  <span className="lifehq-label">Zieltermin</span>
                   <input
                     type="date"
                     value={reactivationDraft.targetDate}
@@ -424,7 +424,7 @@ export function ProjectDetailPage() {
                   />
                 </label>
                 <label className="space-y-2 text-sm text-slate-300 md:col-span-2">
-                  <span className="text-xs uppercase tracking-[0.16em] text-muted">Beschreibung</span>
+                  <span className="lifehq-label">Beschreibung</span>
                   <textarea
                     value={reactivationDraft.description}
                     onChange={(event) => updateReactivationDraft({ description: event.target.value })}
@@ -433,7 +433,7 @@ export function ProjectDetailPage() {
                   />
                 </label>
                 <label className="space-y-2 text-sm text-slate-300 xl:col-span-3">
-                  <span className="text-xs uppercase tracking-[0.16em] text-muted">Reaktivierungsnotiz</span>
+                  <span className="lifehq-label">Reaktivierungsnotiz</span>
                   <textarea
                     value={reactivationDraft.note}
                     onChange={(event) => updateReactivationDraft({ note: event.target.value })}
@@ -461,7 +461,7 @@ export function ProjectDetailPage() {
       {hasReactivationInformation && (
         <section className="rounded-3xl border border-slate-700/40 bg-slate-950/10 p-5 sm:p-6">
           <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted">Project Return</p>
+            <p className="lifehq-label">Project Return</p>
             <h3 className="mt-2 text-lg font-semibold text-slate-100">Reaktivierungsinformationen</h3>
             <p className="mt-2 text-sm leading-6 text-slate-400">
               Diese Informationen halten fest, wann das Projekt wieder bewusst aufgenommen wurde.
@@ -476,7 +476,7 @@ export function ProjectDetailPage() {
 
       <section className="rounded-3xl border border-slate-700/60 bg-slate-900/25 p-5 sm:p-6">
         <div className="max-w-2xl">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted">Project Markers</p>
+          <p className="lifehq-label">Project Markers</p>
           <h3 className="mt-2 text-lg font-semibold text-slate-100">Meilensteine</h3>
           <p className="mt-2 text-sm leading-6 text-slate-400">
             Größere Fortschrittspunkte dieses Projekts. Sie geben Orientierung, ohne daraus eine Aufgabenliste zu machen.
@@ -484,13 +484,13 @@ export function ProjectDetailPage() {
         </div>
 
         {milestones.length === 0 ? (
-          <p className="mt-5 rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500">
+          <p className="lifehq-empty-state mt-5">
             Für dieses Projekt sind noch keine Meilensteine hinterlegt.
           </p>
         ) : (
           <div className="mt-5 grid gap-3">
             {milestones.map((milestone) => (
-              <article key={milestone.id} className="rounded-2xl border border-slate-700/50 bg-slate-950/25 p-4">
+              <article key={milestone.id} className="lifehq-card-soft p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-2">
                     <h4 className="font-semibold text-slate-100">{milestone.title}</h4>
@@ -511,7 +511,7 @@ export function ProjectDetailPage() {
 
       <section className="rounded-3xl border border-slate-700/50 bg-slate-950/15 p-5 sm:p-6">
         <div className="max-w-2xl">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted">Project Execution Context</p>
+          <p className="lifehq-label">Project Execution Context</p>
           <h3 className="mt-2 text-lg font-semibold text-slate-100">Projektaufgaben</h3>
           <p className="mt-2 text-sm leading-6 text-slate-400">
             Operative Bezugspunkte dieses Projekts. Sie bleiben kompakt und dienen hier nur der strategischen Einordnung.
@@ -519,7 +519,7 @@ export function ProjectDetailPage() {
         </div>
 
         {tasks.length === 0 ? (
-          <p className="mt-5 rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500">
+          <p className="lifehq-empty-state mt-5">
             Für dieses Projekt sind noch keine Aufgaben hinterlegt.
           </p>
         ) : (
@@ -530,8 +530,8 @@ export function ProjectDetailPage() {
                   <div className="space-y-2">
                     <h4 className="text-sm font-semibold text-slate-100">{task.title}</h4>
                     <div className="flex flex-wrap gap-2 text-xs text-slate-300">
-                      <span className="rounded-full border border-slate-700/60 bg-slate-950/40 px-2.5 py-1">{taskStatusLabels[task.status]}</span>
-                      <span className="rounded-full border border-slate-700/60 bg-slate-950/40 px-2.5 py-1">Priorität: {priorityLabels[task.priority]}</span>
+                      <span className="lifehq-badge">{taskStatusLabels[task.status]}</span>
+                      <span className="lifehq-badge">Priorität: {priorityLabels[task.priority]}</span>
                     </div>
                   </div>
                   <div className="text-xs leading-5 text-slate-500 sm:text-right">
@@ -547,7 +547,7 @@ export function ProjectDetailPage() {
 
       <section className="rounded-3xl border border-slate-700/40 bg-slate-950/10 p-5 sm:p-6">
         <div className="max-w-2xl">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted">Project Trace</p>
+          <p className="lifehq-label">Project Trace</p>
           <h3 className="mt-2 text-lg font-semibold text-slate-100">Projektverlauf</h3>
           <p className="mt-2 text-sm leading-6 text-slate-400">
             Ein kompakter Verlauf wichtiger Projektbewegungen. Dieser Bereich bleibt bewusst sekundär und ruhig.
@@ -555,7 +555,7 @@ export function ProjectDetailPage() {
         </div>
 
         {sortedHistoryEntries.length === 0 ? (
-          <p className="mt-5 rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500">
+          <p className="lifehq-empty-state mt-5">
             Für dieses Projekt gibt es noch keine Verlaufseinträge.
           </p>
         ) : (
@@ -564,7 +564,7 @@ export function ProjectDetailPage() {
               <article key={entry.id} className="rounded-2xl border border-slate-700/40 bg-slate-950/15 p-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-2">
-                    <p className="text-xs uppercase tracking-[0.16em] text-muted">{historyTypeLabels[entry.type]}</p>
+                    <p className="lifehq-label">{historyTypeLabels[entry.type]}</p>
                     <p className="text-sm leading-6 text-slate-300">{entry.description}</p>
                   </div>
                   <p className="text-xs text-slate-500 sm:text-right">{entry.date}</p>
