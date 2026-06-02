@@ -123,6 +123,7 @@ export function HqPage() {
   const criticalProjects = useLifeHQStore(selectCriticalProjects);
   const redTrafficLightProjects = useLifeHQStore(selectRedTrafficLightProjects);
   const criticalPriorityProjects = criticalProjects.filter((project) => project.priority === 'critical');
+  const pausedCriticalProjects = criticalProjects.filter((project) => project.status === 'paused');
   const pausedProjectsWithReviewDate = pausedProjects.filter((project) => project.reviewDate);
   const openTasks = useLifeHQStore(selectOpenTasks);
   const tasks = useLifeHQStore(selectTasks);
@@ -185,7 +186,7 @@ export function HqPage() {
             <SectionNote>
               {criticalProjects.length === 0
                 ? 'Keine kritischen Projekte. Aktuell gibt es keine roten strategischen Signale.'
-                : `${criticalPriorityProjects.length} mit kritischer Priorität · ${redTrafficLightProjects.length} mit roter Ampel. Projekte werden hier nur einmal geführt.`}
+                : `${criticalPriorityProjects.length} mit kritischer Priorität · ${redTrafficLightProjects.length} mit roter Ampel · ${pausedCriticalProjects.length} davon bewusst pausiert. Pausierte kritische Projekte bleiben hier sichtbar markiert.`}
             </SectionNote>
             <ProjectCardList
               projects={criticalProjects}
