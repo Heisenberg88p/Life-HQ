@@ -11,7 +11,7 @@ export function AppShell() {
       <div className="flex min-h-dvh w-full bg-[#030303]">
         <DesktopNavigation />
 
-        <div className="flex min-w-0 flex-1 flex-col bg-[#060606]">
+        <div className="flex min-w-0 flex-1 flex-col bg-[#060606] lg:pl-64 xl:pl-[17.5rem]">
           <AppHeader />
           <PageContainer>
             <ContentPanel>
