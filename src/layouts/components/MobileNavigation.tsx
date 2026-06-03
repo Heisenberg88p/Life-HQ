@@ -2,8 +2,10 @@ import { MainNavigation } from '../../components/navigation/MainNavigation';
 
 export function MobileNavigation() {
   return (
-    <div className="sticky bottom-0 z-10 shrink-0 border-t border-slate-800/80 bg-surface/95 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden">
-      <MainNavigation variant="mobile" />
+    <div className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-30 lg:hidden">
+      <div className="rounded-3xl border border-slate-700/70 bg-surface/95 p-2 shadow-2xl shadow-black/35 backdrop-blur-md">
+        <MainNavigation variant="mobile" />
+      </div>
     </div>
   );
 }
