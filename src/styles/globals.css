@@ -146,3 +146,301 @@ textarea {
     @apply min-w-0 rounded-[1.25rem] border border-white/10 bg-[#090909] transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D];
   }
 }
+
+@layer components {
+  .lifehq-back-link {
+    @apply inline-flex w-fit items-center text-sm font-medium text-[#D6AD64]/80 transition-colors hover:text-[#F5F1EA];
+  }
+
+  .lifehq-life-area-header {
+    @apply min-w-0 rounded-[1.5rem] border border-white/10 bg-[linear-gradient(135deg,_#070707,_#0D0C0A)];
+  }
+
+  .lifehq-life-area-stat-panel {
+    @apply grid gap-3 rounded-[1.25rem] border border-white/10 bg-black/25 p-3 sm:grid-cols-3 lg:grid-cols-1;
+  }
+
+  .lifehq-life-area-stat {
+    @apply min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.025] px-4 py-3;
+  }
+
+  .lifehq-life-area-project-card {
+    @apply flex w-full min-w-0 flex-col gap-4 rounded-[1.35rem] border border-white/10 bg-[#090909] p-5 transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D] sm:flex-row sm:items-start sm:p-6;
+  }
+
+  .lifehq-life-area-project-meta {
+    @apply min-w-0 rounded-2xl border border-white/[0.08] bg-black/20 px-3 py-3 leading-5;
+  }
+}
+
+@layer components {
+  .lifehq-project-backlink {
+    @apply inline-flex w-fit items-center text-sm font-medium text-[#D6AD64]/80 transition-colors hover:text-[#F5F1EA];
+  }
+
+  .lifehq-project-breadcrumb {
+    @apply flex flex-wrap items-center gap-2 text-xs leading-5 text-[#7E776E];
+  }
+
+  .lifehq-project-hero {
+    @apply grid min-w-0 gap-6 lg:items-start;
+  }
+
+  .lifehq-project-pause-card {
+    @apply min-w-0 rounded-[1.35rem] border border-[#D6AD64]/25 bg-[linear-gradient(135deg,_#080808,_#11100D)] p-5;
+  }
+
+  .lifehq-project-status-grid {
+    @apply grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7;
+  }
+
+  .lifehq-project-status-card {
+    @apply min-w-0 rounded-[1.1rem] border border-white/10 bg-[#090909] px-4 py-4;
+  }
+
+  .lifehq-project-status-icon {
+    @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#D6AD64]/25 bg-[#D6AD64]/10 text-sm text-[#D6AD64];
+  }
+
+  .lifehq-project-section {
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-5 sm:p-6;
+  }
+
+  .lifehq-project-section-secondary {
+    @apply bg-white/[0.012];
+  }
+
+  .lifehq-project-milestone-card {
+    @apply min-w-0 rounded-[1.25rem] border border-white/10 bg-[#090909] p-5 transition-colors hover:border-[#D6AD64]/25;
+  }
+
+  .lifehq-project-task-row {
+    @apply flex min-w-0 flex-col gap-4 rounded-[1.1rem] border border-white/[0.08] bg-[#090909] px-4 py-4 transition-colors hover:border-[#D6AD64]/20 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .lifehq-project-history-entry {
+    @apply min-w-0 rounded-[1rem] border border-white/[0.07] bg-black/20 p-4;
+  }
+
+  .lifehq-project-action-panel {
+    @apply min-w-0 rounded-[1.25rem] border border-white/[0.08] bg-[#080808] p-4 sm:p-5;
+  }
+
+  .lifehq-project-form-control {
+    @apply w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
+  }
+}
+
+@layer components {
+  .lifehq-tasks-hero {
+    @apply flex min-w-0 flex-col gap-5 lg:flex-row lg:items-end lg:justify-between;
+  }
+
+  .lifehq-task-view-switcher {
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-2;
+  }
+
+  .lifehq-task-view-item {
+    @apply min-h-16 min-w-[9.5rem] rounded-2xl border border-transparent px-3 py-3 text-left text-sm text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/25 hover:bg-white/[0.025] hover:text-[#F5F1EA];
+  }
+
+  .lifehq-task-view-item-active {
+    @apply border-[#D6AD64]/35 bg-[#0A0A0A] text-[#F5F1EA] shadow-[0_0_24px_rgba(214,173,100,0.06)];
+  }
+
+  .lifehq-task-section {
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-5 sm:p-6;
+  }
+
+  .lifehq-task-row {
+    @apply min-w-0 rounded-[1.25rem] border border-white/10 bg-[#090909] p-5 transition-colors hover:border-[#D6AD64]/25 hover:bg-[#0D0D0D];
+  }
+
+  .lifehq-task-status-dot {
+    @apply mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/30;
+  }
+
+  .lifehq-task-context {
+    @apply w-fit rounded-2xl border px-3 py-2 text-xs;
+  }
+
+  .lifehq-task-chip {
+    @apply inline-flex max-w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.025] px-2.5 py-1 text-xs font-medium leading-5 text-[#B8B1A7];
+  }
+
+  .lifehq-task-action-button {
+    @apply inline-flex min-h-9 items-center justify-center rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/30 hover:text-[#F5F1EA];
+  }
+
+  .lifehq-task-action-button-gold {
+    @apply border-[#D6AD64]/25 bg-[#D6AD64]/10 text-[#F5F1EA];
+  }
+
+  .lifehq-task-planning-panel {
+    @apply mt-4 rounded-[1rem] border border-white/[0.07] bg-black/20 p-3;
+  }
+
+  .lifehq-task-form,
+  .lifehq-week-section {
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-5 sm:p-6;
+  }
+
+  .lifehq-task-form-control {
+    @apply w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
+  }
+
+  .lifehq-empty-task-state {
+    @apply min-w-0 rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-3 text-sm leading-6 text-[#7E776E];
+  }
+}
+
+@layer components {
+  .lifehq-crud-panel {
+    @apply min-w-0 rounded-[1.25rem] border border-white/[0.08] bg-[#080808] p-4 sm:p-5;
+  }
+
+  .lifehq-crud-control {
+    @apply w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
+  }
+
+  .lifehq-danger-zone {
+    @apply min-w-0 rounded-[1.1rem] border border-[#D6AD64]/20 bg-[#D6AD64]/[0.06] p-4;
+  }
+}
+
+@layer components {
+  .lifehq-settings-section {
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-5 sm:p-6;
+  }
+}
+
+@layer components {
+  .lifehq-launch-intro {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    overflow: hidden;
+    background: #030303;
+    pointer-events: none;
+    animation: lifehq-launch-intro 850ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .lifehq-launch-brand {
+    transform-origin: center;
+    animation: lifehq-launch-brand 850ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes lifehq-launch-intro {
+  0% {
+    opacity: 1;
+  }
+
+  68% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes lifehq-launch-brand {
+  0% {
+    opacity: 0;
+    transform: scale(1.28);
+  }
+
+  32% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+
+  68% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+}
+
+@media (min-width: 640px) {
+  .lifehq-launch-brand {
+    transform: scale(1.45);
+  }
+
+  @keyframes lifehq-launch-brand {
+    0% {
+      opacity: 0;
+      transform: scale(1.42);
+    }
+
+    32% {
+      opacity: 1;
+      transform: scale(1.45);
+    }
+
+    68% {
+      opacity: 1;
+      transform: scale(1.45);
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale(1.45);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifehq-launch-intro {
+    animation-duration: 260ms;
+  }
+
+  .lifehq-launch-brand {
+    animation: lifehq-launch-brand-reduced 260ms ease-out both;
+  }
+}
+
+@keyframes lifehq-launch-brand-reduced {
+  0% {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+
+  55% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+}
+
+@media (min-width: 640px) and (prefers-reduced-motion: reduce) {
+  @keyframes lifehq-launch-brand-reduced {
+    0% {
+      opacity: 0;
+      transform: scale(1.45);
+    }
+
+    55% {
+      opacity: 1;
+      transform: scale(1.45);
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale(1.45);
+    }
+  }
+}
