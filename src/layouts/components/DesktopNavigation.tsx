@@ -1,3 +1,4 @@
+import { NavLink } from 'react-router-dom';
 import { MainNavigation } from '../../components/navigation/MainNavigation';
 
 function BrandTreeIcon() {
@@ -33,6 +34,27 @@ export function DesktopNavigation() {
             <p className="text-[#B8B1A7]">Tasks für Umsetzung.</p>
           </div>
         </div>
+      </div>
+
+      <div className="mt-auto pt-8">
+        <NavLink
+          to="/settings"
+          className={({ isActive }) =>
+            `flex min-h-11 items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-medium transition-colors ${
+              isActive
+                ? 'border-[#D6AD64]/30 bg-[#D6AD64]/10 text-[#F5F1EA]'
+                : 'border-white/10 bg-white/[0.02] text-[#B8B1A7] hover:border-[#D6AD64]/25 hover:bg-white/[0.035] hover:text-[#F5F1EA]'
+            }`
+          }
+          aria-label="Einstellungen öffnen"
+        >
+          {({ isActive }) => (
+            <>
+              <span className={isActive ? 'text-[#D6AD64]' : 'text-[#7E776E]'} aria-hidden="true">⚙</span>
+              <span>Einstellungen</span>
+            </>
+          )}
+        </NavLink>
       </div>
     </aside>
   );

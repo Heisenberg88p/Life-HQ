@@ -3,6 +3,7 @@ import { AppShell } from './layouts/AppShell';
 import { HqPage } from './pages/hq/HqPage';
 import { LifeAreaDetailPage } from './pages/life-areas/LifeAreaDetailPage';
 import { ProjectDetailPage } from './pages/projects/ProjectDetailPage';
+import { SettingsPage } from './pages/settings/SettingsPage';
 import { TasksPage } from './pages/tasks/TasksPage';
 
 export function App() {
@@ -14,6 +15,7 @@ export function App() {
         <Route path="/life-areas/:lifeAreaId" element={<LifeAreaDetailPage />} />
         <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
         <Route path="/tasks" element={<TasksPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Route>
     </Routes>
   );

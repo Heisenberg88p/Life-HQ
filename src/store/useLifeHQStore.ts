@@ -27,6 +27,7 @@ import type { UISlice } from './slices/uiSlice';
 
 interface AppDataSlice {
   resetAppData: () => void;
+  clearAllUserData: () => void;
 }
 
 type LifeHQState = LifeAreaSlice & ProjectSlice & TaskSlice & MilestoneSlice & HistorySlice & UISlice & AppDataSlice;
@@ -416,6 +417,14 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
   clearSelectedProject: () => set((state) => ({ uiState: { ...state.uiState, selectedProjectId: undefined } })),
 
   resetAppData: () => set(getInitialLifeHQData()),
+  clearAllUserData: () => set((state) => ({
+    lifeAreas: [],
+    projects: [],
+    tasks: [],
+    milestones: [],
+    historyEntries: [],
+    uiState: { ...state.uiState, selectedProjectId: undefined },
+  })),
 });
 
 export const useLifeHQStore = create<LifeHQState>()(

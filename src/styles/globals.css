@@ -307,3 +307,9 @@ textarea {
     @apply min-w-0 rounded-[1.1rem] border border-[#D6AD64]/20 bg-[#D6AD64]/[0.06] p-4;
   }
 }
+
+@layer components {
+  .lifehq-settings-section {
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-5 sm:p-6;
+  }
+}
