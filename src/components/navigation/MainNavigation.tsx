@@ -1,14 +1,32 @@
 import { NavLink } from 'react-router-dom';
 
 type NavigationVariant = 'desktop' | 'mobile';
+type NavigationIcon = 'hq' | 'tasks';
 
-const navigationItems = [
-  { to: '/hq', label: 'HQ', description: 'Strategie', icon: '▦' },
-  { to: '/tasks', label: 'Tasks', description: 'Umsetzung', icon: '☑' },
+const navigationItems: Array<{ to: string; label: string; description: string; icon: NavigationIcon }> = [
+  { to: '/hq', label: 'HQ', description: 'Strategie', icon: 'hq' },
+  { to: '/tasks', label: 'Tasks', description: 'Umsetzung', icon: 'tasks' },
 ];
 
 interface MainNavigationProps {
   variant?: NavigationVariant;
+}
+
+function NavigationIcon({ icon, isActive }: { icon: NavigationIcon; isActive: boolean }) {
+  const iconColor = isActive ? 'text-[#D6AD64]' : 'text-[#7E776E]';
+
+  if (icon === 'hq') {
+    return (
+      <span className={`lifehq-nav-grid-icon ${iconColor}`} aria-hidden="true">
+        <span />
+        <span />
+        <span />
+        <span />
+      </span>
+    );
+  }
+
+  return <span className={iconColor} aria-hidden="true">☑</span>;
 }
 
 export function MainNavigation({ variant = 'desktop' }: MainNavigationProps) {
@@ -32,7 +50,7 @@ export function MainNavigation({ variant = 'desktop' }: MainNavigationProps) {
         >
           {({ isActive }) => (
             <span className={`flex min-w-0 items-center ${isMobile ? 'justify-center gap-2' : 'gap-3'}`}>
-              <span className={isActive ? 'text-[#D6AD64]' : 'text-[#7E776E]'} aria-hidden="true">{item.icon}</span>
+              <NavigationIcon icon={item.icon} isActive={isActive} />
               <span className="min-w-0">
                 <span className="block truncate font-semibold leading-5">{item.label}</span>
                 <span className={`mt-0.5 block truncate text-xs leading-4 ${isActive ? 'text-[#D6AD64]/75' : 'text-[#7E776E]'} ${isMobile ? 'text-[0.7rem]' : ''}`}>{item.description}</span>

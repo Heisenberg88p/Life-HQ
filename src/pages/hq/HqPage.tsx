@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ProjectCard } from '../../components/hq/ProjectCard';
 import type { LifeArea } from '../../models/lifeArea';
 import type { Project } from '../../models/project';
 import type { Task } from '../../models/task';
@@ -9,11 +8,9 @@ import {
   selectCompletedProjects,
   selectCriticalProjects,
   selectLifeAreas,
-  selectMilestones,
   selectPausedProjects,
   selectTasks,
   selectPlannedProjects,
-  selectRedTrafficLightProjects,
   useLifeHQStore,
 } from '../../store';
 
@@ -48,10 +45,6 @@ function EmptyState({ children }: { children: ReactNode }) {
       <p className="mt-1 text-[#7E776E]">{children}</p>
     </div>
   );
-}
-
-function SectionNote({ children }: { children: ReactNode }) {
-  return <p className="lifehq-note border-white/10 bg-white/[0.025] text-[#B8B1A7]">{children}</p>;
 }
 
 function getLifeAreaSymbol(lifeAreaName: string): string {
@@ -253,12 +246,12 @@ function OrphanProjectList({ projects, tasks, onProjectSelect }: OrphanProjectLi
         <span aria-hidden="true" />
         <h3 className="font-serif text-xl font-semibold tracking-tight text-[#F5F1EA]">Projekte ohne Lebensbereich</h3>
       </div>
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="lifehq-unassigned-project-grid">
         {projects.map((project) => {
           const projectOpenTaskCount = tasks.filter((task) => task.projectId === project.id && task.status !== 'done').length;
 
           return (
-            <button key={project.id} type="button" onClick={() => onProjectSelect(project.id)} className="lifehq-domain-card group flex items-center gap-4 p-4 text-left sm:p-5">
+            <button key={project.id} type="button" onClick={() => onProjectSelect(project.id)} className="lifehq-unassigned-project-card group flex items-center gap-4 p-4 text-left sm:p-5">
               <div className="lifehq-gold-icon-frame shrink-0" aria-hidden="true">◎</div>
               <div className="min-w-0 flex-1">
                 <h4 className="text-base font-semibold text-[#F5F1EA]">{project.name}</h4>
@@ -277,36 +270,6 @@ function OrphanProjectList({ projects, tasks, onProjectSelect }: OrphanProjectLi
   );
 }
 
-interface ProjectCardListProps {
-  projects: Project[];
-  lifeAreas: LifeArea[];
-  tasks: ReturnType<typeof selectTasks>;
-  milestones: ReturnType<typeof selectMilestones>;
-  emptyText: string;
-  onProjectSelect: (projectId: string) => void;
-}
-
-function ProjectCardList({ projects, lifeAreas, tasks, milestones, emptyText, onProjectSelect }: ProjectCardListProps) {
-  if (projects.length === 0) {
-    return <EmptyState>{emptyText}</EmptyState>;
-  }
-
-  return (
-    <div className="grid gap-3">
-      {projects.map((project) => (
-        <ProjectCard
-          key={project.id}
-          project={project}
-          lifeArea={lifeAreas.find((lifeArea) => lifeArea.id === project.lifeAreaId)}
-          tasks={tasks}
-          milestones={milestones}
-          onClick={onProjectSelect}
-        />
-      ))}
-    </div>
-  );
-}
-
 export function HqPage() {
   const navigate = useNavigate();
   const lifeAreas = useLifeHQStore(selectLifeAreas);
@@ -315,12 +278,7 @@ export function HqPage() {
   const pausedProjects = useLifeHQStore(selectPausedProjects);
   const completedProjects = useLifeHQStore(selectCompletedProjects);
   const criticalProjects = useLifeHQStore(selectCriticalProjects);
-  const redTrafficLightProjects = useLifeHQStore(selectRedTrafficLightProjects);
-  const criticalPriorityProjects = criticalProjects.filter((project) => project.priority === 'critical');
-  const pausedCriticalProjects = criticalProjects.filter((project) => project.status === 'paused');
-  const pausedProjectsWithReviewDate = pausedProjects.filter((project) => project.reviewDate);
   const tasks = useLifeHQStore(selectTasks);
-  const milestones = useLifeHQStore(selectMilestones);
   const allStatusProjects = [...activeProjects, ...plannedProjects, ...pausedProjects, ...completedProjects];
   const orphanProjects = allStatusProjects.filter((project) => !project.lifeAreaId);
 
@@ -357,62 +315,6 @@ export function HqPage() {
       </HqSection>
 
       <OrphanProjectList projects={orphanProjects} tasks={tasks} onProjectSelect={openProjectDetail} />
-
-      <div className="space-y-5">
-        <HqSection title="Aktive Projekte" eyebrow="Aktiver Fokus" description="Strategische Vorhaben, die aktuell in Bewegung sind.">
-          <ProjectCardList
-            projects={activeProjects}
-            lifeAreas={lifeAreas}
-            tasks={tasks}
-            milestones={milestones}
-            emptyText="Noch keine aktiven Projekte. Dieser Bereich ist bereit für deine nächsten Vorhaben."
-            onProjectSelect={openProjectDetail}
-          />
-        </HqSection>
-
-        <HqSection title="Geplante Projekte" eyebrow="Geplante Richtung" description="Vorhaben, die für später vorbereitet sind.">
-          <ProjectCardList
-            projects={plannedProjects}
-            lifeAreas={lifeAreas}
-            tasks={tasks}
-            milestones={milestones}
-            emptyText="Keine geplanten Projekte. Spätere Initiativen können hier ruhig gesammelt werden."
-            onProjectSelect={openProjectDetail}
-          />
-        </HqSection>
-
-        <HqSection title="Projekte mit Aufmerksamkeit" eyebrow="Aufmerksamkeit" description="Projekte, die ruhig geprüft werden sollten.">
-          <SectionNote>
-            {criticalProjects.length === 0
-              ? 'Keine kritischen Projekte. Aktuell gibt es keine roten strategischen Signale.'
-              : `${criticalPriorityProjects.length} mit kritischer Priorität · ${redTrafficLightProjects.length} mit roter Ampel · ${pausedCriticalProjects.length} davon bewusst pausiert.`}
-          </SectionNote>
-          <ProjectCardList
-            projects={criticalProjects}
-            lifeAreas={lifeAreas}
-            tasks={tasks}
-            milestones={milestones}
-            emptyText="Keine kritischen Projekte. Aktuell gibt es keine roten strategischen Signale."
-            onProjectSelect={openProjectDetail}
-          />
-        </HqSection>
-
-        <HqSection title="Pausierte Projekte" eyebrow="Fokusentscheidungen" description="Bewusst zurückgestellte Projekte, die nicht verloren oder abgeschlossen sind.">
-          <SectionNote>
-            {pausedProjects.length === 0
-              ? 'Keine pausierten Projekte. Alle sichtbaren Projekte sind aktuell eingeordnet.'
-              : `${pausedProjects.length} bewusst pausiert · ${pausedProjectsWithReviewDate.length} mit Wiedervorlage.`}
-          </SectionNote>
-          <ProjectCardList
-            projects={pausedProjects}
-            lifeAreas={lifeAreas}
-            tasks={tasks}
-            milestones={milestones}
-            emptyText="Keine pausierten Projekte. Alle sichtbaren Projekte sind aktuell eingeordnet."
-            onProjectSelect={openProjectDetail}
-          />
-        </HqSection>
-      </div>
     </div>
   );
 }

@@ -120,4 +120,25 @@ textarea {
   .lifehq-muted-meta {
     @apply text-[0.82rem] leading-5 text-[#B8B1A7];
   }
+
+
+  .lifehq-brand-tree {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D6AD64]/35 bg-[#D6AD64]/10;
+  }
+
+  .lifehq-nav-grid-icon {
+    @apply grid h-5 w-5 shrink-0 grid-cols-2 gap-1;
+  }
+
+  .lifehq-nav-grid-icon > span {
+    @apply rounded-[0.2rem] border border-current;
+  }
+
+  .lifehq-unassigned-project-grid {
+    @apply grid gap-3 lg:grid-cols-2;
+  }
+
+  .lifehq-unassigned-project-card {
+    @apply min-w-0 rounded-[1.25rem] border border-white/10 bg-[#090909] transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D];
+  }
 }
