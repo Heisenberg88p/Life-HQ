@@ -146,3 +146,29 @@ textarea {
     @apply min-w-0 rounded-[1.25rem] border border-white/10 bg-[#090909] transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D];
   }
 }
+
+@layer components {
+  .lifehq-back-link {
+    @apply inline-flex w-fit items-center text-sm font-medium text-[#D6AD64]/80 transition-colors hover:text-[#F5F1EA];
+  }
+
+  .lifehq-life-area-header {
+    @apply min-w-0 rounded-[1.5rem] border border-white/10 bg-[linear-gradient(135deg,_#070707,_#0D0C0A)];
+  }
+
+  .lifehq-life-area-stat-panel {
+    @apply grid gap-3 rounded-[1.25rem] border border-white/10 bg-black/25 p-3 sm:grid-cols-3 lg:grid-cols-1;
+  }
+
+  .lifehq-life-area-stat {
+    @apply min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.025] px-4 py-3;
+  }
+
+  .lifehq-life-area-project-card {
+    @apply flex w-full min-w-0 flex-col gap-4 rounded-[1.35rem] border border-white/10 bg-[#090909] p-5 transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D] sm:flex-row sm:items-start sm:p-6;
+  }
+
+  .lifehq-life-area-project-meta {
+    @apply min-w-0 rounded-2xl border border-white/[0.08] bg-black/20 px-3 py-3 leading-5;
+  }
+}
