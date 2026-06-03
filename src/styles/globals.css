@@ -31,68 +31,69 @@ textarea {
 
 @layer components {
   .lifehq-panel {
-    @apply min-w-0 rounded-3xl border border-slate-700/50 bg-slate-950/20 shadow-sm shadow-black/10;
+    @apply min-w-0 rounded-3xl border border-white/10 bg-white/[0.025];
   }
 
   .lifehq-panel-strong {
-    @apply min-w-0 rounded-3xl border border-slate-700/50 bg-slate-900/25 shadow-lg shadow-black/10;
+    @apply min-w-0 rounded-3xl border border-white/10 bg-white/[0.025];
   }
 
   .lifehq-card {
-    @apply min-w-0 rounded-2xl border border-slate-700/50 bg-slate-900/30 shadow-sm shadow-black/5;
+    @apply min-w-0 rounded-2xl border border-white/10 bg-[#0A0A0A];
   }
 
   .lifehq-card-soft {
-    @apply min-w-0 rounded-2xl border border-slate-700/40 bg-slate-950/25;
+    @apply min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.025];
   }
 
   .lifehq-label {
-    @apply text-xs font-medium uppercase tracking-[0.18em] text-muted;
+    @apply text-xs font-medium uppercase tracking-[0.18em] text-[#7E776E];
   }
 
   .lifehq-badge {
-    @apply inline-flex max-w-full items-center break-words rounded-full border border-slate-700/60 bg-slate-950/40 px-2.5 py-1 text-xs font-medium leading-5 text-slate-300;
+    @apply inline-flex max-w-full items-center break-words rounded-full border border-white/10 bg-white/[0.025] px-2.5 py-1 text-xs font-medium leading-5 text-[#B8B1A7];
   }
 
   .lifehq-badge-attention {
-    @apply border-rose-300/25 bg-rose-950/25 text-rose-100;
+    @apply border-[#D6AD64]/30 bg-[#D6AD64]/10 text-[#D6AD64];
   }
 
   .lifehq-empty-state {
-    @apply min-w-0 rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500;
+    @apply min-w-0 rounded-2xl border border-dashed border-white/10 bg-white/[0.025] px-4 py-3 text-sm leading-6 text-[#7E776E];
   }
 
   .lifehq-note {
-    @apply min-w-0 rounded-2xl border border-slate-700/40 bg-slate-950/20 px-4 py-3 text-sm leading-6 text-slate-400;
+    @apply min-w-0 rounded-2xl border border-white/10 bg-white/[0.025] px-4 py-3 text-sm leading-6 text-[#B8B1A7];
   }
 
   .lifehq-button-primary {
-    @apply inline-flex min-h-10 max-w-full items-center justify-center rounded-full border border-emerald-300/25 bg-emerald-950/25 px-4 py-2 text-center text-sm font-medium text-emerald-100 transition-colors hover:border-emerald-300/45 hover:bg-emerald-950/35;
+    @apply inline-flex min-h-10 max-w-full items-center justify-center rounded-full border border-[#D6AD64]/35 bg-[#D6AD64]/10 px-4 py-2 text-center text-sm font-medium text-[#F5F1EA] transition-colors hover:border-[#D6AD64]/55 hover:bg-[#D6AD64]/15;
   }
 
   .lifehq-button-secondary {
-    @apply inline-flex min-h-10 max-w-full items-center justify-center rounded-full border border-slate-700/70 bg-slate-950/30 px-4 py-2 text-center text-sm font-medium text-slate-300 transition-colors hover:border-slate-500 hover:bg-slate-900/60 hover:text-white;
+    @apply inline-flex min-h-10 max-w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.025] px-4 py-2 text-center text-sm font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/35 hover:bg-white/[0.04] hover:text-[#F5F1EA];
   }
 
 
   .lifehq-hero-panel {
-    @apply min-w-0 overflow-hidden rounded-[2rem] border border-amber-200/15 bg-[radial-gradient(circle_at_top_right,_rgba(217,119,6,0.10),_transparent_22rem),linear-gradient(135deg,_rgba(2,6,23,0.96),_rgba(15,23,42,0.82))] shadow-2xl shadow-black/25;
+    @apply min-w-0;
   }
 
   .lifehq-premium-panel {
-    @apply min-w-0 rounded-[1.75rem] border border-amber-200/10 bg-black/20 shadow-lg shadow-black/10;
+    @apply min-w-0 rounded-[1.35rem] border border-white/10 bg-white/[0.025];
   }
 
   .lifehq-premium-card {
-    @apply min-w-0 rounded-[1.75rem] border border-white/10 bg-[linear-gradient(145deg,_rgba(2,6,23,0.92),_rgba(15,23,42,0.62))] shadow-xl shadow-black/10 transition-colors hover:border-amber-200/35 hover:bg-slate-950/70;
+    @apply min-w-0 rounded-[1.35rem] border border-white/10 bg-[#090909] transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D];
   }
 
   .lifehq-attention-card {
-    @apply min-w-0 rounded-[1.5rem] border border-amber-300/35 bg-[radial-gradient(circle_at_top_left,_rgba(245,158,11,0.14),_transparent_16rem),rgba(2,6,23,0.76)] shadow-xl shadow-amber-950/10;
+    @apply min-w-0 rounded-[1.25rem] border border-[#D6AD64]/35 bg-[linear-gradient(135deg,_#0A0A0A,_#11100E)];
   }
 
-  .lifehq-gold-icon {
-    @apply flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-300/25 bg-amber-950/10 text-2xl text-amber-200 shadow-[0_0_28px_rgba(217,119,6,0.10)];
+  .lifehq-gold-icon,
+  .lifehq-gold-icon-frame {
+    @apply flex h-12 w-12 items-center justify-center rounded-xl border border-[#D6AD64]/35 bg-[#D6AD64]/10 text-2xl text-[#D6AD64];
   }
 
   .lifehq-section-title {
@@ -100,6 +101,23 @@ textarea {
   }
 
   .lifehq-section-title > span {
-    @apply h-2 w-2 shrink-0 rounded-full bg-amber-300/80 shadow-[0_0_18px_rgba(251,191,36,0.35)];
+    @apply h-2 w-2 shrink-0 rounded-full bg-[#D6AD64] shadow-[0_0_18px_rgba(214,173,100,0.35)];
+  }
+
+
+  .lifehq-sidebar {
+    @apply border-r border-white/10 bg-[#030303];
+  }
+
+  .lifehq-domain-card {
+    @apply min-w-0 rounded-[1.35rem] border border-white/10 bg-[#090909] transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D] hover:shadow-[0_0_28px_rgba(214,173,100,0.08)];
+  }
+
+  .lifehq-secondary-project-panel {
+    @apply min-w-0 rounded-[1.25rem] border border-white/[0.07] bg-white/[0.018];
+  }
+
+  .lifehq-muted-meta {
+    @apply text-[0.82rem] leading-5 text-[#B8B1A7];
   }
 }
