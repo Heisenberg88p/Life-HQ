@@ -6,7 +6,7 @@ import type { ProjectHistoryEntry, ProjectHistoryEntryType } from '../../models/
 import type { Task } from '../../models/task';
 import {
   selectHistoryByProjectId,
-  selectLifeAreaById,
+  selectLifeAreas,
   selectMilestonesByProjectId,
   selectProjectById,
   selectTasksByProjectId,
@@ -113,12 +113,31 @@ function DetailField({ label, value, description }: DetailFieldProps) {
   );
 }
 
+
+function getLifeAreaDisplayName(lifeAreaName: string): string {
+  const normalizedName = lifeAreaName.toLowerCase();
+
+  if (normalizedName.includes('health') || normalizedName.includes('gesund')) return 'Gesundheit';
+  if (normalizedName.includes('career') || normalizedName.includes('karriere')) return 'Karriere';
+  if (normalizedName.includes('finance') || normalizedName.includes('finanz')) return 'Finanzen';
+  if (normalizedName.includes('relationship') || normalizedName.includes('beziehung')) return 'Beziehungen';
+  if (normalizedName.includes('personal development') || normalizedName.includes('entwicklung')) return 'Persönliche Entwicklung';
+  if (normalizedName.includes('home') || normalizedName.includes('zuhause')) return 'Zuhause';
+  if (normalizedName.includes('family') || normalizedName.includes('familie')) return 'Familie';
+  if (normalizedName.includes('business')) return 'Business';
+  if (normalizedName.includes('work') || normalizedName.includes('arbeit')) return 'Arbeit';
+  if (normalizedName.includes('sport')) return 'Sport';
+  if (normalizedName.includes('nutrition') || normalizedName.includes('ernährung')) return 'Ernährung';
+
+  return lifeAreaName;
+}
+
 function getLifeAreaDisplayValue(lifeAreaId?: string, lifeAreaName?: string): string {
   if (!lifeAreaId) {
     return 'Nicht zugeordnet';
   }
 
-  return lifeAreaName ?? 'Lebensbereich nicht gefunden';
+  return lifeAreaName ? getLifeAreaDisplayName(lifeAreaName) : 'Lebensbereich nicht gefunden';
 }
 
 function getNextRelevantMilestoneLabel(milestones: Milestone[]): string {
@@ -171,7 +190,7 @@ function getOptionalValue(value: string): string | undefined {
 export function ProjectDetailPage() {
   const { projectId } = useParams();
   const project = useLifeHQStore(selectProjectById(projectId ?? ''));
-  const lifeArea = useLifeHQStore(selectLifeAreaById(project?.lifeAreaId ?? ''));
+  const lifeAreas = useLifeHQStore(selectLifeAreas);
   const milestones = useLifeHQStore(selectMilestonesByProjectId(project?.id ?? ''));
   const tasks = useLifeHQStore(selectTasksByProjectId(project?.id ?? ''));
   const historyEntries = useLifeHQStore(selectHistoryByProjectId(project?.id ?? ''));
@@ -179,7 +198,10 @@ export function ProjectDetailPage() {
   const reactivateProject = useLifeHQStore((state) => state.reactivateProject);
   const [pauseDraft, setPauseDraft] = useState<PauseDraft>(defaultPauseDraft);
   const [reactivationDraft, setReactivationDraft] = useState<ReactivationDraft>(() => getInitialReactivationDraft());
-  const lifeAreaDisplayValue = getLifeAreaDisplayValue(project?.lifeAreaId, lifeArea?.name);
+  const projectLifeAreaId = project?.lifeAreaId?.trim();
+  const lifeArea = projectLifeAreaId ? lifeAreas.find((area) => area.id === projectLifeAreaId) : undefined;
+  const lifeAreaDisplayName = lifeArea ? getLifeAreaDisplayName(lifeArea.name) : undefined;
+  const lifeAreaDisplayValue = getLifeAreaDisplayValue(projectLifeAreaId, lifeArea?.name);
   const nextRelevantMilestoneLabel = getNextRelevantMilestoneLabel(milestones);
   const openTaskLabel = getOpenTaskLabel(tasks);
   const sortedHistoryEntries = getSortedHistoryEntries(historyEntries);
@@ -187,6 +209,9 @@ export function ProjectDetailPage() {
   const canPauseProject = Boolean(project && project.status !== 'paused' && project.status !== 'completed');
   const hasPauseInformation = Boolean(isPausedProject || project?.pausedAt || project?.pauseReason || project?.pauseNote || project?.reviewDate);
   const hasReactivationInformation = Boolean(project?.reactivatedAt || project?.reactivationNote);
+  const projectBackLinkTarget = lifeArea ? `/life-areas/${lifeArea.id}` : '/hq';
+  const projectBackLinkLabel = lifeAreaDisplayName ? `← Zurück zu ${lifeAreaDisplayName}` : '← Zurück zum HQ';
+  const breadcrumbContextLabel = lifeAreaDisplayName ?? 'Projekte ohne Lebensbereich';
 
   useEffect(() => {
     setPauseDraft(defaultPauseDraft);
@@ -248,9 +273,18 @@ export function ProjectDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link to="/hq" className="lifehq-button-secondary w-fit">
-        ← Zurück zum HQ
-      </Link>
+      <div className="space-y-2">
+        <Link to={projectBackLinkTarget} className="lifehq-button-secondary w-fit">
+          {projectBackLinkLabel}
+        </Link>
+        <nav aria-label="Projektkontext" className="flex flex-wrap items-center gap-2 text-xs text-[#7E776E]">
+          <span>HQ</span>
+          <span className="text-[#D6AD64]/55" aria-hidden="true">›</span>
+          <span>{breadcrumbContextLabel}</span>
+          <span className="text-[#D6AD64]/55" aria-hidden="true">›</span>
+          <span className="text-[#B8B1A7]">{project.name}</span>
+        </nav>
+      </div>
 
       <section className="lifehq-panel-strong p-5 sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

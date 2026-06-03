@@ -178,9 +178,10 @@ interface LifeAreaListProps {
   projects: Project[];
   tasks: Task[];
   criticalProjects: Project[];
+  onLifeAreaSelect: (lifeAreaId: string) => void;
 }
 
-function LifeAreaList({ lifeAreas, projects, tasks, criticalProjects }: LifeAreaListProps) {
+function LifeAreaList({ lifeAreas, projects, tasks, criticalProjects, onLifeAreaSelect }: LifeAreaListProps) {
   if (lifeAreas.length === 0) {
     return <EmptyState>Baue Schritt für Schritt dein persönliches HQ auf.</EmptyState>;
   }
@@ -195,7 +196,13 @@ function LifeAreaList({ lifeAreas, projects, tasks, criticalProjects }: LifeArea
         const needsAttention = areaAttentionProjects.length > 0;
 
         return (
-          <article key={lifeArea.id} className="lifehq-domain-card group flex min-h-[13rem] flex-col justify-between p-6 sm:p-7">
+          <button
+            key={lifeArea.id}
+            type="button"
+            onClick={() => onLifeAreaSelect(lifeArea.id)}
+            className="lifehq-domain-card group flex min-h-[13rem] flex-col justify-between p-6 text-left sm:p-7"
+            aria-label={`Lebensbereich ${getLifeAreaDisplayName(lifeArea.name)} öffnen`}
+          >
             <div className="flex items-start justify-between gap-4">
               <div className="lifehq-gold-icon-frame" aria-hidden="true">
                 {getLifeAreaSymbol(lifeArea.name)}
@@ -222,7 +229,7 @@ function LifeAreaList({ lifeAreas, projects, tasks, criticalProjects }: LifeArea
                 </p>
               )}
             </div>
-          </article>
+          </button>
         );
       })}
     </div>
@@ -291,6 +298,10 @@ export function HqPage() {
     navigate(`/projects/${projectId}`);
   };
 
+  const openLifeAreaDetail = (lifeAreaId: string) => {
+    navigate(`/life-areas/${lifeAreaId}`);
+  };
+
   return (
     <div className="space-y-12">
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-center">
@@ -316,7 +327,13 @@ export function HqPage() {
       </section>
 
       <HqSection title="Lebensbereiche" prominence="primary">
-        <LifeAreaList lifeAreas={lifeAreas} projects={allStatusProjects} tasks={tasks} criticalProjects={criticalProjects} />
+        <LifeAreaList
+          lifeAreas={lifeAreas}
+          projects={allStatusProjects}
+          tasks={tasks}
+          criticalProjects={criticalProjects}
+          onLifeAreaSelect={openLifeAreaDetail}
+        />
       </HqSection>
 
       <OrphanProjectList projects={orphanProjects} tasks={tasks} onProjectSelect={openProjectDetail} />
