@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { MilestoneStatus, Priority, ProjectStatus, TaskStatus, TrafficLightStatus } from '../../models/common';
 import type { Milestone } from '../../models/milestone';
 import type { ProjectHistoryEntry, ProjectHistoryEntryType } from '../../models/projectHistory';
@@ -230,6 +230,7 @@ function getOptionalValue(value: string): string | undefined {
 }
 
 export function ProjectDetailPage() {
+  const navigate = useNavigate();
   const { projectId } = useParams();
   const project = useLifeHQStore(selectProjectById(projectId ?? ''));
   const lifeAreas = useLifeHQStore(selectLifeAreas);
@@ -238,6 +239,8 @@ export function ProjectDetailPage() {
   const historyEntries = useLifeHQStore(selectHistoryByProjectId(project?.id ?? ''));
   const pauseProject = useLifeHQStore((state) => state.pauseProject);
   const reactivateProject = useLifeHQStore((state) => state.reactivateProject);
+  const deleteProject = useLifeHQStore((state) => state.deleteProject);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [pauseDraft, setPauseDraft] = useState<PauseDraft>(defaultPauseDraft);
   const [reactivationDraft, setReactivationDraft] = useState<ReactivationDraft>(() => getInitialReactivationDraft());
   const projectLifeAreaId = project?.lifeAreaId?.trim();
@@ -294,6 +297,18 @@ export function ProjectDetailPage() {
       description: getOptionalValue(reactivationDraft.description),
       note: getOptionalValue(reactivationDraft.note),
     });
+  }
+
+
+  function handleDeleteProject() {
+    if (!project) {
+      return;
+    }
+
+    const redirectTarget = projectBackLinkTarget;
+
+    deleteProject(project.id);
+    navigate(redirectTarget);
   }
 
   if (!project) {
@@ -459,6 +474,26 @@ export function ProjectDetailPage() {
           </div>
         )}
       </ProjectSection>
+
+      <ProjectSection title="Projekt löschen" description="Diesen V1-Verwaltungsschritt nur ausführen, wenn das Projekt wirklich entfernt werden soll." secondary>
+        <div className="lifehq-danger-zone">
+          <p className="text-sm leading-6 text-[#B8B1A7]">
+            Projekt löschen entfernt dieses Projekt inklusive zugehöriger Meilensteine, Projektaufgaben und Verlaufseinträge.
+          </p>
+          {isDeleteConfirmOpen ? (
+            <div className="mt-4 space-y-3">
+              <p className="text-sm font-medium text-[#F5F1EA]">Dieses Projekt wirklich löschen? Zugehörige Meilensteine, Projektaufgaben und Verlaufseinträge werden ebenfalls entfernt.</p>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => setIsDeleteConfirmOpen(false)} className="lifehq-button-secondary">Abbrechen</button>
+                <button type="button" onClick={handleDeleteProject} className="lifehq-button-primary">Endgültig löschen</button>
+              </div>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setIsDeleteConfirmOpen(true)} className="lifehq-button-secondary mt-4">Projekt löschen</button>
+          )}
+        </div>
+      </ProjectSection>
+
 
       {(canPauseProject || hasPauseInformation || hasReactivationInformation) && (
         <ProjectSection title="Fokussteuerung" description="Bestehende Pause- und Reaktivierungsinformationen bleiben funktional erhalten." secondary>

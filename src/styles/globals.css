@@ -293,3 +293,17 @@ textarea {
     @apply min-w-0 rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-3 text-sm leading-6 text-[#7E776E];
   }
 }
+
+@layer components {
+  .lifehq-crud-panel {
+    @apply min-w-0 rounded-[1.25rem] border border-white/[0.08] bg-[#080808] p-4 sm:p-5;
+  }
+
+  .lifehq-crud-control {
+    @apply w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
+  }
+
+  .lifehq-danger-zone {
+    @apply min-w-0 rounded-[1.1rem] border border-[#D6AD64]/20 bg-[#D6AD64]/[0.06] p-4;
+  }
+}

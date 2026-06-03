@@ -1,3 +1,4 @@
+import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { Milestone } from '../../models/milestone';
 import type { Priority, ProjectStatus, TrafficLightStatus } from '../../models/common';
@@ -11,6 +12,40 @@ import {
   selectTasks,
   useLifeHQStore,
 } from '../../store';
+
+
+type LifeAreaEditDraft = {
+  name: string;
+  description: string;
+};
+
+type ProjectDraft = {
+  name: string;
+  description: string;
+  status: ProjectStatus;
+  priority: Priority;
+  trafficLightStatus: TrafficLightStatus;
+  targetDate: string;
+};
+
+const defaultProjectDraft: ProjectDraft = {
+  name: '',
+  description: '',
+  status: 'planned',
+  priority: 'medium',
+  trafficLightStatus: 'green',
+  targetDate: '',
+};
+
+function createEntityId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getOptionalFormValue(value: string): string | undefined {
+  const trimmedValue = value.trim();
+
+  return trimmedValue ? trimmedValue : undefined;
+}
 
 const projectStatusLabels: Record<ProjectStatus, string> = {
   planned: 'Geplant',
@@ -77,6 +112,8 @@ function getLifeAreaDisplayName(lifeAreaName: string): string {
 }
 
 function getLifeAreaDisplayDescription(lifeArea: LifeArea): string {
+  if (lifeArea.description) return lifeArea.description;
+
   const normalizedName = lifeArea.name.toLowerCase();
 
   if (normalizedName.includes('health') || normalizedName.includes('gesund')) return 'Stärke deinen Körper und Geist.';
@@ -213,6 +250,16 @@ export function LifeAreaDetailPage() {
   const projects = useLifeHQStore(selectProjects);
   const tasks = useLifeHQStore(selectTasks);
   const milestones = useLifeHQStore(selectMilestones);
+  const updateLifeArea = useLifeHQStore((state) => state.updateLifeArea);
+  const deleteLifeArea = useLifeHQStore((state) => state.deleteLifeArea);
+  const addProject = useLifeHQStore((state) => state.addProject);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editDraft, setEditDraft] = useState<LifeAreaEditDraft>(() => ({ name: lifeArea?.name ?? '', description: lifeArea?.description ?? '' }));
+  const [editError, setEditError] = useState<string | undefined>();
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
+  const [projectDraft, setProjectDraft] = useState<ProjectDraft>(defaultProjectDraft);
+  const [projectError, setProjectError] = useState<string | undefined>();
 
   if (!lifeArea) {
     return (
@@ -229,19 +276,95 @@ export function LifeAreaDetailPage() {
     );
   }
 
+  const currentLifeArea = lifeArea;
   const lifeAreaProjects = projects
-    .filter((project) => project.lifeAreaId === lifeArea.id)
+    .filter((project) => project.lifeAreaId === currentLifeArea.id)
     .sort((firstProject, secondProject) => prioritySortOrder[firstProject.priority] - prioritySortOrder[secondProject.priority]);
   const lifeAreaProjectIds = new Set(lifeAreaProjects.map((project) => project.id));
   const openLifeAreaTasks = tasks.filter(
-    (task) => task.status !== 'done' && (task.lifeAreaId === lifeArea.id || (task.projectId ? lifeAreaProjectIds.has(task.projectId) : false)),
+    (task) => task.status !== 'done' && (task.lifeAreaId === currentLifeArea.id || (task.projectId ? lifeAreaProjectIds.has(task.projectId) : false)),
   );
   const attentionProjects = lifeAreaProjects.filter(isAttentionProject);
-  const displayName = getLifeAreaDisplayName(lifeArea.name);
+  const directLifeAreaTasks = tasks.filter((task) => task.lifeAreaId === currentLifeArea.id);
+  const canDeleteLifeArea = lifeAreaProjects.length === 0 && directLifeAreaTasks.length === 0;
+  const displayName = getLifeAreaDisplayName(currentLifeArea.name);
 
   const openProjectDetail = (projectId: string) => {
     navigate(`/projects/${projectId}`);
   };
+
+
+  function openEditPanel() {
+    setEditDraft({ name: currentLifeArea.name, description: currentLifeArea.description ?? '' });
+    setEditError(undefined);
+    setIsDeleteConfirmOpen(false);
+    setIsEditOpen((current) => !current);
+  }
+
+  function updateEditDraft(patch: Partial<LifeAreaEditDraft>) {
+    setEditDraft((current) => ({ ...current, ...patch }));
+    setEditError(undefined);
+  }
+
+  function handleUpdateLifeArea(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const name = editDraft.name.trim();
+
+    if (!name) {
+      setEditError('Bitte gib einen Namen ein.');
+      return;
+    }
+
+    updateLifeArea(currentLifeArea.id, {
+      name,
+      description: getOptionalFormValue(editDraft.description),
+    });
+    setIsEditOpen(false);
+  }
+
+  function updateProjectDraft(patch: Partial<ProjectDraft>) {
+    setProjectDraft((current) => ({ ...current, ...patch }));
+    setProjectError(undefined);
+  }
+
+  function resetProjectDraft() {
+    setProjectDraft(defaultProjectDraft);
+    setProjectError(undefined);
+  }
+
+  function handleCreateProject(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const name = projectDraft.name.trim();
+
+    if (!name) {
+      setProjectError('Bitte gib einen Projektnamen ein.');
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+
+    addProject({
+      id: createEntityId('p'),
+      name,
+      description: getOptionalFormValue(projectDraft.description),
+      lifeAreaId: currentLifeArea.id,
+      status: projectDraft.status,
+      priority: projectDraft.priority,
+      trafficLightStatus: projectDraft.trafficLightStatus,
+      targetDate: projectDraft.targetDate || undefined,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+    resetProjectDraft();
+    setIsProjectFormOpen(false);
+  }
+
+  function handleDeleteLifeArea() {
+    deleteLifeArea(currentLifeArea.id);
+    navigate('/hq');
+  }
 
   return (
     <div className="mx-auto max-w-[82rem] space-y-8">
@@ -251,33 +374,95 @@ export function LifeAreaDetailPage() {
         <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
           <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-start">
             <div className="lifehq-gold-icon-frame shrink-0 text-3xl" aria-hidden="true">
-              {getLifeAreaSymbol(lifeArea.name)}
+              {getLifeAreaSymbol(currentLifeArea.name)}
             </div>
             <div className="min-w-0 space-y-4">
               <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/70">Lebensbereich</p>
               <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-5xl lg:text-6xl">{displayName}</h1>
               <p className="max-w-3xl text-base leading-7 text-[#B8B1A7]">
-                {getLifeAreaDisplayDescription(lifeArea)}
+                {getLifeAreaDisplayDescription(currentLifeArea)}
               </p>
             </div>
           </div>
 
-          <aside className="lifehq-life-area-stat-panel">
-            <LifeAreaStat label="Projekte" value={getProjectCountLabel(lifeAreaProjects.length)} />
-            <LifeAreaStat label="Offene Aufgaben" value={getOpenTaskLabel(openLifeAreaTasks.length)} />
-            <LifeAreaStat label="Bitte prüfen" value={getAttentionProjectLabel(attentionProjects.length)} />
+          <aside className="space-y-3">
+            <div className="lifehq-life-area-stat-panel">
+              <LifeAreaStat label="Projekte" value={getProjectCountLabel(lifeAreaProjects.length)} />
+              <LifeAreaStat label="Offene Aufgaben" value={getOpenTaskLabel(openLifeAreaTasks.length)} />
+              <LifeAreaStat label="Bitte prüfen" value={getAttentionProjectLabel(attentionProjects.length)} />
+            </div>
+            <button type="button" onClick={openEditPanel} className="lifehq-button-secondary w-full">Lebensbereich bearbeiten</button>
           </aside>
         </div>
       </section>
 
+      {isEditOpen && (
+        <form onSubmit={handleUpdateLifeArea} className="lifehq-crud-panel">
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2 text-sm text-[#B8B1A7]">
+              <span className="lifehq-label">Name</span>
+              <input value={editDraft.name} onChange={(event) => updateEditDraft({ name: event.target.value })} className="lifehq-crud-control" />
+            </label>
+            <label className="space-y-2 text-sm text-[#B8B1A7]">
+              <span className="lifehq-label">Beschreibung</span>
+              <input value={editDraft.description} onChange={(event) => updateEditDraft({ description: event.target.value })} className="lifehq-crud-control" />
+            </label>
+          </div>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {editError ? <p className="text-sm text-[#D6AD64]">{editError}</p> : <p className="text-sm text-[#7E776E]">Name und Beschreibung dieses Lebensbereichs bearbeiten.</p>}
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => setIsEditOpen(false)} className="lifehq-button-secondary">Abbrechen</button>
+              <button type="submit" className="lifehq-button-primary">Speichern</button>
+            </div>
+          </div>
+
+          <div className="lifehq-danger-zone mt-6">
+            <p className="font-semibold text-[#F5F1EA]">Lebensbereich löschen</p>
+            {!canDeleteLifeArea ? (
+              <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">Dieser Lebensbereich enthält noch Projekte oder Aufgaben. Entferne oder verschiebe diese zuerst, bevor du ihn löschst.</p>
+            ) : isDeleteConfirmOpen ? (
+              <div className="mt-3 space-y-3">
+                <p className="text-sm text-[#B8B1A7]">Diesen Lebensbereich wirklich löschen?</p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setIsDeleteConfirmOpen(false)} className="lifehq-button-secondary">Abbrechen</button>
+                  <button type="button" onClick={handleDeleteLifeArea} className="lifehq-button-primary">Endgültig löschen</button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={() => setIsDeleteConfirmOpen(true)} className="lifehq-button-secondary mt-3">Lebensbereich löschen</button>
+            )}
+          </div>
+        </form>
+      )}
+
       <section className="space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div className="lifehq-section-title">
-            <span aria-hidden="true" />
-            <h2 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">Projekte in {displayName}</h2>
+          <div className="space-y-2">
+            <div className="lifehq-section-title">
+              <span aria-hidden="true" />
+              <h2 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">Projekte in {displayName}</h2>
+            </div>
+            <p className="text-xs text-[#7E776E]">Sortiert nach: Priorität</p>
           </div>
-          <p className="text-xs text-[#7E776E]">Sortiert nach: Priorität</p>
+          <button type="button" onClick={() => setIsProjectFormOpen((current) => !current)} className="lifehq-button-secondary w-fit">Projekt hinzufügen</button>
         </div>
+
+        {isProjectFormOpen && (
+          <form onSubmit={handleCreateProject} className="lifehq-crud-panel">
+            <div className="grid gap-4 lg:grid-cols-3">
+              <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-2"><span className="lifehq-label">Projektname</span><input value={projectDraft.name} onChange={(event) => updateProjectDraft({ name: event.target.value })} className="lifehq-crud-control" /></label>
+              <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-3"><span className="lifehq-label">Beschreibung</span><textarea value={projectDraft.description} onChange={(event) => updateProjectDraft({ description: event.target.value })} className="lifehq-crud-control" rows={3} /></label>
+              <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Status</span><select value={projectDraft.status} onChange={(event) => updateProjectDraft({ status: event.target.value as ProjectStatus })} className="lifehq-crud-control">{Object.entries(projectStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+              <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Priorität</span><select value={projectDraft.priority} onChange={(event) => updateProjectDraft({ priority: event.target.value as Priority })} className="lifehq-crud-control">{Object.entries(priorityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+              <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Ampelstatus</span><select value={projectDraft.trafficLightStatus} onChange={(event) => updateProjectDraft({ trafficLightStatus: event.target.value as TrafficLightStatus })} className="lifehq-crud-control">{Object.entries(trafficLightLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+              <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Zieltermin</span><input type="date" value={projectDraft.targetDate} onChange={(event) => updateProjectDraft({ targetDate: event.target.value })} className="lifehq-crud-control" /></label>
+            </div>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              {projectError ? <p className="text-sm text-[#D6AD64]">{projectError}</p> : <p className="text-sm text-[#7E776E]">Das Projekt wird automatisch diesem Lebensbereich zugeordnet.</p>}
+              <div className="flex flex-wrap gap-2"><button type="button" onClick={() => { resetProjectDraft(); setIsProjectFormOpen(false); }} className="lifehq-button-secondary">Abbrechen</button><button type="submit" className="lifehq-button-primary">Speichern</button></div>
+            </div>
+          </form>
+        )}
 
         {lifeAreaProjects.length === 0 ? (
           <div className="lifehq-empty-state">
