@@ -13,7 +13,7 @@ function BrandTreeIcon() {
 
 export function DesktopNavigation() {
   return (
-    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-white/10 bg-[#030303] px-6 py-9 lg:flex xl:w-[17.5rem]">
+    <aside className="fixed left-0 top-0 z-30 hidden h-dvh w-64 shrink-0 flex-col border-r border-white/10 bg-[#030303] px-6 py-9 lg:flex xl:w-[17.5rem]">
       <div className="mb-10 flex items-center gap-3">
         <div className="lifehq-brand-tree" aria-hidden="true"><BrandTreeIcon /></div>
         <div className="flex items-baseline gap-2">
@@ -24,7 +24,7 @@ export function DesktopNavigation() {
 
       <MainNavigation />
 
-      <div className="mt-auto border-t border-white/10 pt-7 text-sm leading-6 text-[#B8B1A7]">
+      <div className="mt-8 border-t border-white/10 pt-7 text-sm leading-6 text-[#B8B1A7]">
         <div className="flex gap-3">
           <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#D6AD64]/35 text-xs text-[#D6AD64]" aria-hidden="true">✧</div>
           <div>
