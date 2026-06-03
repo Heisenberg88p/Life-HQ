@@ -251,7 +251,7 @@ function OrphanProjectList({ projects, tasks, onProjectSelect }: OrphanProjectLi
           const projectOpenTaskCount = tasks.filter((task) => task.projectId === project.id && task.status !== 'done').length;
 
           return (
-            <button key={project.id} type="button" onClick={() => onProjectSelect(project.id)} className="lifehq-unassigned-project-card group flex items-center gap-4 p-4 text-left sm:p-5">
+            <button key={project.id} type="button" onClick={() => onProjectSelect(project.id)} className="lifehq-unassigned-project-card group flex items-center gap-4 p-6 text-left">
               <div className="lifehq-gold-icon-frame shrink-0" aria-hidden="true">◎</div>
               <div className="min-w-0 flex-1">
                 <h4 className="text-base font-semibold text-[#F5F1EA]">{project.name}</h4>
@@ -280,7 +280,12 @@ export function HqPage() {
   const criticalProjects = useLifeHQStore(selectCriticalProjects);
   const tasks = useLifeHQStore(selectTasks);
   const allStatusProjects = [...activeProjects, ...plannedProjects, ...pausedProjects, ...completedProjects];
-  const orphanProjects = allStatusProjects.filter((project) => !project.lifeAreaId);
+  const existingLifeAreaIds = new Set(lifeAreas.map((lifeArea) => lifeArea.id));
+  const orphanProjects = allStatusProjects.filter((project) => {
+    const lifeAreaId = project.lifeAreaId?.trim();
+
+    return !lifeAreaId || !existingLifeAreaIds.has(lifeAreaId);
+  });
 
   const openProjectDetail = (projectId: string) => {
     navigate(`/projects/${projectId}`);
