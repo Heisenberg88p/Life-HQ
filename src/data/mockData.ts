@@ -77,6 +77,26 @@ export const mockProjects: Project[] = [
     createdAt: now,
     updatedAt: now,
   },
+  {
+    id: 'p-6',
+    name: 'Lebensplan 2026',
+    description: 'Übergeordnete Planung und Ausrichtung.',
+    status: 'planned',
+    priority: 'medium',
+    trafficLightStatus: 'yellow',
+    createdAt: now,
+    updatedAt: now,
+  },
+  {
+    id: 'p-7',
+    name: 'Ideen sammeln',
+    description: 'Neue Ideen und Möglichkeiten.',
+    status: 'planned',
+    priority: 'low',
+    trafficLightStatus: 'green',
+    createdAt: now,
+    updatedAt: now,
+  },
 ];
 
 export const mockTasks: Task[] = [
@@ -87,6 +107,9 @@ export const mockTasks: Task[] = [
   { id: 't-5', title: 'Archive health check notes', status: 'done', priority: 'low', projectId: 'p-4', lifeAreaId: 'la-1', completedAt: now, createdAt: now, updatedAt: now },
   { id: 't-6', title: 'Review weekly nutrition baseline', status: 'open', priority: 'medium', plannedDate: '2026-06-02', lifeAreaId: 'la-1', createdAt: now, updatedAt: now },
   { id: 't-7', title: 'Send portfolio feedback request', status: 'open', priority: 'medium', dueDate: '2026-05-28', projectId: 'p-2', lifeAreaId: 'la-2', createdAt: now, updatedAt: now },
+  { id: 't-8', title: 'Jahresziele strukturieren', status: 'open', priority: 'medium', projectId: 'p-6', createdAt: now, updatedAt: now },
+  { id: 't-9', title: 'Prioritäten für Q3 festlegen', status: 'open', priority: 'medium', projectId: 'p-6', createdAt: now, updatedAt: now },
+  { id: 't-10', title: 'Neue Projektideen notieren', status: 'open', priority: 'low', projectId: 'p-7', createdAt: now, updatedAt: now },
 ];
 
 export const mockMilestones: Milestone[] = [
