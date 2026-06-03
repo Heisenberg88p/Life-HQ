@@ -25,9 +25,9 @@ const trafficLightLabels: Record<TrafficLightStatus, string> = {
 };
 
 const trafficLightStyles: Record<TrafficLightStatus, string> = {
-  green: 'bg-emerald-300/80',
-  yellow: 'bg-amber-300/80',
-  red: 'bg-rose-300/80',
+  green: 'bg-[#8E9B72] ring-[#8E9B72]/20',
+  yellow: 'bg-[#D6AD64] ring-[#D6AD64]/20',
+  red: 'bg-[#B36A4C] ring-[#B36A4C]/25',
 };
 
 interface ProjectCardProps {
@@ -36,6 +36,25 @@ interface ProjectCardProps {
   tasks: Task[];
   milestones: Milestone[];
   onClick?: (projectId: string) => void;
+}
+
+
+function getLifeAreaDisplayName(lifeAreaName: string): string {
+  const normalizedName = lifeAreaName.toLowerCase();
+
+  if (normalizedName.includes('health') || normalizedName.includes('gesund')) return 'Gesundheit';
+  if (normalizedName.includes('career') || normalizedName.includes('karriere')) return 'Karriere';
+  if (normalizedName.includes('finance') || normalizedName.includes('finanz')) return 'Finanzen';
+  if (normalizedName.includes('relationship') || normalizedName.includes('beziehung')) return 'Beziehungen';
+  if (normalizedName.includes('personal development') || normalizedName.includes('entwicklung')) return 'Persönliche Entwicklung';
+  if (normalizedName.includes('home') || normalizedName.includes('zuhause')) return 'Zuhause';
+  if (normalizedName.includes('family') || normalizedName.includes('familie')) return 'Familie';
+  if (normalizedName.includes('business')) return 'Business';
+  if (normalizedName.includes('work') || normalizedName.includes('arbeit')) return 'Arbeit';
+  if (normalizedName.includes('sport')) return 'Sport';
+  if (normalizedName.includes('nutrition') || normalizedName.includes('ernährung')) return 'Ernährung';
+
+  return lifeAreaName;
 }
 
 function getOpenTaskLabel(tasks: Task[]): string {
@@ -58,6 +77,7 @@ function getStrategicSignalLabels(project: Project): string[] {
   return [
     project.priority === 'critical' ? 'Kritische Priorität' : undefined,
     project.trafficLightStatus === 'red' ? 'Rote Ampel' : undefined,
+    project.status === 'paused' && (project.priority === 'critical' || project.trafficLightStatus === 'red') ? 'Pausiert, Signal bleibt sichtbar' : undefined,
   ].filter((label): label is string => Boolean(label));
 }
 
@@ -67,62 +87,76 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
   const projectTasks = tasks.filter((task) => task.projectId === project.id);
   const projectMilestones = milestones.filter((milestone) => milestone.projectId === project.id);
   const strategicSignalLabels = getStrategicSignalLabels(project);
+  const lifeAreaLabel = lifeArea ? getLifeAreaDisplayName(lifeArea.name) : 'Kein Lebensbereich';
 
   return (
     <button
       type="button"
       onClick={() => onClick?.(project.id)}
-      className={`group w-full rounded-3xl border p-5 text-left shadow-lg shadow-black/5 transition-colors ${
-        isPaused ? 'border-slate-700/40 bg-slate-950/20 opacity-75' : 'border-slate-700/60 bg-slate-900/40 hover:border-slate-500/80 hover:bg-slate-900/60'
-      } ${isCritical ? 'border-l-4 border-l-rose-300/70' : 'border-l-4 border-l-slate-700/60'}`}
+      className={`lifehq-premium-card group w-full p-4 text-left focus-visible:outline-offset-4 sm:p-5 ${
+        isPaused ? 'opacity-85' : ''
+      } ${isCritical ? 'border-amber-300/35 shadow-amber-950/10' : ''}`}
       aria-label={`Projekt ${project.name}`}
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-2">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted">{lifeArea?.name ?? 'Kein Lebensbereich'}</p>
-            <h4 className="text-lg font-semibold text-slate-100 group-hover:text-white">{project.name}</h4>
+            <p className="text-xs text-[#D6AD64]/65">{lifeAreaLabel}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="text-lg font-semibold tracking-tight text-[#F5F1EA] group-hover:text-white sm:text-xl">{project.name}</h4>
+              {isPaused && <span className="lifehq-badge border-amber-200/15 bg-black/20 text-amber-100/85">Bewusst pausiert</span>}
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 text-xs text-slate-300 sm:justify-end">
-            <span className="rounded-full border border-slate-700/60 bg-slate-950/40 px-2.5 py-1">{projectStatusLabels[project.status]}</span>
-            <span className={project.priority === 'critical' ? 'rounded-full border border-rose-300/30 bg-rose-950/30 px-2.5 py-1 text-rose-100' : 'rounded-full border border-slate-700/60 bg-slate-950/40 px-2.5 py-1'}>
-              {priorityLabels[project.priority]}
+          <div className="flex flex-wrap gap-2 text-xs text-[#B8B1A7] sm:justify-end">
+            <span className="lifehq-badge">Status: {projectStatusLabels[project.status]}</span>
+            <span className={project.priority === 'critical' ? 'lifehq-badge border-amber-300/25 bg-amber-950/15 text-amber-100' : 'lifehq-badge'}>
+              Priorität: {priorityLabels[project.priority]}
             </span>
           </div>
         </div>
 
         {strategicSignalLabels.length > 0 && (
-          <div className="flex flex-wrap gap-2 text-xs text-rose-100">
+          <div className="flex flex-wrap gap-2 text-xs text-amber-100">
             {strategicSignalLabels.map((label) => (
-              <span key={label} className="rounded-full border border-rose-300/20 bg-rose-950/20 px-2.5 py-1">
+              <span key={label} className="lifehq-badge border-amber-300/25 bg-amber-950/15 text-amber-100">
                 {label}
               </span>
             ))}
           </div>
         )}
 
-        <div className="grid gap-3 text-sm text-slate-300 sm:grid-cols-2">
-          <div className="rounded-2xl border border-slate-700/40 bg-slate-950/25 px-3 py-2">
-            <p className="text-xs uppercase tracking-[0.16em] text-muted">Ampel</p>
+        <div className="grid gap-3 text-sm text-[#B8B1A7] sm:grid-cols-2">
+          <div className="lifehq-card-soft border-white/10 bg-black/20 px-3 py-3">
+            <p className="lifehq-label">Ampel</p>
             <div className="mt-2 flex items-center gap-2">
-              <span className={`h-2.5 w-2.5 rounded-full ${trafficLightStyles[project.trafficLightStatus]}`} />
+              <span className={`h-2.5 w-2.5 rounded-full ring-4 ${trafficLightStyles[project.trafficLightStatus]}`} />
               <span>{trafficLightLabels[project.trafficLightStatus]}</span>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-700/40 bg-slate-950/25 px-3 py-2">
-            <p className="text-xs uppercase tracking-[0.16em] text-muted">Zieltermin</p>
-            <p className="mt-2">{project.targetDate ?? 'Kein Zieltermin'}</p>
+          <div className="lifehq-card-soft border-white/10 bg-black/20 px-3 py-3">
+            <p className="lifehq-label">Zieltermin</p>
+            <p className="mt-2 font-medium text-[#F5F1EA]">{project.targetDate ?? 'Kein Zieltermin'}</p>
           </div>
         </div>
 
-        <div className="space-y-2 text-sm leading-6 text-slate-300">
-          <p>{getOpenTaskLabel(projectTasks)}</p>
-          <p>{getNextMilestoneLabel(projectMilestones)}</p>
-          {isPaused && <p className="text-slate-400">Pausiert{project.pauseReason ? `: ${project.pauseReason}` : ''}</p>}
-          {isPaused && project.reviewDate && <p className="text-slate-400">Wiedervorlage: {project.reviewDate}</p>}
+        <div className="grid gap-2 text-sm leading-6 text-[#B8B1A7] sm:grid-cols-2">
+          <div className="lifehq-card-soft border-white/10 bg-black/20 px-3 py-2">
+            <p>{getOpenTaskLabel(projectTasks)}</p>
+          </div>
+          <div className="lifehq-card-soft border-white/10 bg-black/20 px-3 py-2">
+            <p>{getNextMilestoneLabel(projectMilestones)}</p>
+          </div>
         </div>
+
+        {isPaused && (
+          <div className="lifehq-card-soft border-amber-200/10 bg-black/20 px-3 py-3 text-sm leading-6 text-[#B8B1A7]">
+            <p className="font-medium text-[#F5F1EA]">Bewusst pausiert, nicht abgeschlossen.</p>
+            {project.pauseReason && <p className="mt-1 line-clamp-2">Grund: {project.pauseReason}</p>}
+            {project.reviewDate && <p className="mt-1">Wiedervorlage: {project.reviewDate}</p>}
+          </div>
+        )}
       </div>
     </button>
   );

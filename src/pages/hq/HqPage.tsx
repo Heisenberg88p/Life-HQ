@@ -1,51 +1,37 @@
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ProjectCard } from '../../components/hq/ProjectCard';
 import type { LifeArea } from '../../models/lifeArea';
 import type { Project } from '../../models/project';
+import type { Task } from '../../models/task';
 import {
   selectActiveProjects,
   selectCompletedProjects,
   selectCriticalProjects,
   selectLifeAreas,
-  selectMilestones,
-  selectOpenTasks,
   selectPausedProjects,
   selectTasks,
   selectPlannedProjects,
-  selectRedTrafficLightProjects,
   useLifeHQStore,
 } from '../../store';
 
-interface SummaryMetricProps {
-  label: string;
-  value: number;
-  tone?: 'default' | 'attention';
-  description?: string;
-}
-
-function SummaryMetric({ label, value, tone = 'default', description }: SummaryMetricProps) {
-  return (
-    <div className="rounded-2xl border border-slate-700/50 bg-slate-950/30 p-4">
-      <p className="text-xs uppercase tracking-[0.18em] text-muted">{label}</p>
-      <p className={tone === 'attention' ? 'mt-3 text-3xl font-semibold text-rose-200' : 'mt-3 text-3xl font-semibold text-slate-100'}>{value}</p>
-      {description && <p className="mt-2 text-xs leading-5 text-slate-500">{description}</p>}
-    </div>
-  );
-}
-
 interface HqSectionProps {
   title: string;
-  description: string;
+  description?: string;
+  eyebrow?: string;
   children: ReactNode;
+  prominence?: 'primary' | 'secondary';
 }
 
-function HqSection({ title, description, children }: HqSectionProps) {
+function HqSection({ title, description, eyebrow, children, prominence = 'secondary' }: HqSectionProps) {
   return (
-    <section className="space-y-3 rounded-3xl border border-slate-700/50 bg-slate-950/20 p-4 sm:p-5">
-      <div>
-        <h3 className="text-base font-semibold text-slate-100">{title}</h3>
-        <p className="mt-1 text-sm leading-6 text-slate-400">{description}</p>
+    <section className={prominence === 'primary' ? 'space-y-6' : 'lifehq-secondary-project-panel space-y-4 p-4 sm:p-5'}>
+      <div className="space-y-2">
+        {eyebrow && <p className="text-xs text-[#D6AD64]/70">{eyebrow}</p>}
+        <div className="lifehq-section-title">
+          <span aria-hidden="true" />
+          <h3 className={prominence === 'primary' ? 'font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]' : 'text-lg font-semibold tracking-tight text-[#F5F1EA]'}>{title}</h3>
+        </div>
+        {description && <p className="max-w-2xl text-sm leading-6 text-[#7E776E]">{description}</p>}
       </div>
       {children}
     </section>
@@ -53,63 +39,234 @@ function HqSection({ title, description, children }: HqSectionProps) {
 }
 
 function EmptyState({ children }: { children: ReactNode }) {
-  return <p className="rounded-2xl border border-dashed border-slate-700/70 bg-slate-950/10 px-4 py-3 text-sm leading-6 text-slate-500">{children}</p>;
-}
-
-function SectionNote({ children }: { children: ReactNode }) {
-  return <p className="rounded-2xl border border-slate-700/40 bg-slate-950/20 px-4 py-3 text-sm leading-6 text-slate-400">{children}</p>;
-}
-
-function LifeAreaList({ lifeAreas }: { lifeAreas: LifeArea[] }) {
-  if (lifeAreas.length === 0) {
-    return <EmptyState>No life areas available yet.</EmptyState>;
-  }
-
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {lifeAreas.map((lifeArea) => (
-        <div key={lifeArea.id} className="rounded-2xl border border-slate-700/50 bg-slate-900/30 p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="font-medium text-slate-100">{lifeArea.name}</p>
-              {lifeArea.description && <p className="mt-1 text-sm leading-6 text-slate-400">{lifeArea.description}</p>}
-            </div>
-            {lifeArea.status && <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-300">{lifeArea.status}</span>}
-          </div>
-          {lifeArea.priority && <p className="mt-3 text-xs uppercase tracking-[0.16em] text-muted">Priority: {lifeArea.priority}</p>}
-        </div>
-      ))}
+    <div className="lifehq-empty-state border-white/10 bg-white/[0.025]">
+      <p className="font-medium text-[#B8B1A7]">Bereit für Einordnung</p>
+      <p className="mt-1 text-[#7E776E]">{children}</p>
     </div>
   );
 }
 
-interface ProjectCardListProps {
-  projects: Project[];
-  lifeAreas: LifeArea[];
-  tasks: ReturnType<typeof selectTasks>;
-  milestones: ReturnType<typeof selectMilestones>;
-  emptyText: string;
-  onProjectSelect: (projectId: string) => void;
+function getLifeAreaSymbol(lifeAreaName: string): string {
+  const normalizedName = lifeAreaName.toLowerCase();
+
+  if (normalizedName.includes('health') || normalizedName.includes('gesund')) {
+    return '♡';
+  }
+
+  if (normalizedName.includes('career') || normalizedName.includes('karriere') || normalizedName.includes('work')) {
+    return '▣';
+  }
+
+  if (normalizedName.includes('finance') || normalizedName.includes('finanz')) {
+    return '▥';
+  }
+
+  if (normalizedName.includes('relationship') || normalizedName.includes('beziehung')) {
+    return '♁';
+  }
+
+  if (normalizedName.includes('home') || normalizedName.includes('zuhause')) {
+    return '⌂';
+  }
+
+  if (normalizedName.includes('personal') || normalizedName.includes('entwicklung')) {
+    return '◇';
+  }
+
+  return '✦';
 }
 
-function ProjectCardList({ projects, lifeAreas, tasks, milestones, emptyText, onProjectSelect }: ProjectCardListProps) {
-  if (projects.length === 0) {
-    return <EmptyState>{emptyText}</EmptyState>;
+function getLifeAreaDisplayName(lifeAreaName: string): string {
+  const normalizedName = lifeAreaName.toLowerCase();
+
+  if (normalizedName.includes('health') || normalizedName.includes('gesund')) {
+    return 'Gesundheit';
+  }
+
+  if (normalizedName.includes('career') || normalizedName.includes('karriere')) {
+    return 'Karriere';
+  }
+
+  if (normalizedName.includes('finance') || normalizedName.includes('finanz')) {
+    return 'Finanzen';
+  }
+
+  if (normalizedName.includes('relationship') || normalizedName.includes('beziehung')) {
+    return 'Beziehungen';
+  }
+
+  if (normalizedName.includes('personal development') || normalizedName.includes('entwicklung')) {
+    return 'Persönliche Entwicklung';
+  }
+
+  if (normalizedName.includes('home') || normalizedName.includes('zuhause')) {
+    return 'Zuhause';
+  }
+
+  if (normalizedName.includes('family') || normalizedName.includes('familie')) {
+    return 'Familie';
+  }
+
+  if (normalizedName.includes('business')) {
+    return 'Business';
+  }
+
+  if (normalizedName.includes('work') || normalizedName.includes('arbeit')) {
+    return 'Arbeit';
+  }
+
+  if (normalizedName.includes('sport')) {
+    return 'Sport';
+  }
+
+  if (normalizedName.includes('nutrition') || normalizedName.includes('ernährung')) {
+    return 'Ernährung';
+  }
+
+  return lifeAreaName;
+}
+
+function getLifeAreaDisplayDescription(lifeArea: LifeArea): string {
+  const normalizedName = lifeArea.name.toLowerCase();
+
+  if (normalizedName.includes('health') || normalizedName.includes('gesund')) {
+    return 'Stärke deinen Körper und Geist.';
+  }
+
+  if (normalizedName.includes('career') || normalizedName.includes('karriere')) {
+    return 'Wachse professionell und gestalte Wirkung.';
+  }
+
+  if (normalizedName.includes('finance') || normalizedName.includes('finanz')) {
+    return 'Schaffe Klarheit und finanzielle Freiheit.';
+  }
+
+  if (normalizedName.includes('relationship') || normalizedName.includes('beziehung')) {
+    return 'Pflege echte Verbindungen.';
+  }
+
+  if (normalizedName.includes('personal development') || normalizedName.includes('entwicklung')) {
+    return 'Lerne, reflektiere und wachse.';
+  }
+
+  if (normalizedName.includes('home') || normalizedName.includes('zuhause')) {
+    return 'Gestalte dein Umfeld bewusst und harmonisch.';
+  }
+
+  return lifeArea.description ?? 'Dieser Lebensbereich ist bereit für deine nächsten strategischen Vorhaben.';
+}
+
+function getProjectLabel(projectCount: number): string {
+  if (projectCount === 0) {
+    return 'Keine Projekte';
+  }
+
+  return projectCount === 1 ? '1 Projekt' : `${projectCount} Projekte`;
+}
+
+function getOpenTaskLabel(openTaskCount: number): string {
+  if (openTaskCount === 0) {
+    return 'Keine offenen Aufgaben';
+  }
+
+  return openTaskCount === 1 ? '1 offene Aufgabe' : `${openTaskCount} offene Aufgaben`;
+}
+
+interface LifeAreaListProps {
+  lifeAreas: LifeArea[];
+  projects: Project[];
+  tasks: Task[];
+  criticalProjects: Project[];
+}
+
+function LifeAreaList({ lifeAreas, projects, tasks, criticalProjects }: LifeAreaListProps) {
+  if (lifeAreas.length === 0) {
+    return <EmptyState>Baue Schritt für Schritt dein persönliches HQ auf.</EmptyState>;
   }
 
   return (
-    <div className="space-y-3">
-      {projects.map((project) => (
-        <ProjectCard
-          key={project.id}
-          project={project}
-          lifeArea={lifeAreas.find((lifeArea) => lifeArea.id === project.lifeAreaId)}
-          tasks={tasks}
-          milestones={milestones}
-          onClick={onProjectSelect}
-        />
-      ))}
+    <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      {lifeAreas.map((lifeArea) => {
+        const areaProjects = projects.filter((project) => project.lifeAreaId === lifeArea.id);
+        const areaProjectIds = new Set(areaProjects.map((project) => project.id));
+        const areaOpenTasks = tasks.filter((task) => task.status !== 'done' && (task.lifeAreaId === lifeArea.id || (task.projectId ? areaProjectIds.has(task.projectId) : false)));
+        const areaAttentionProjects = criticalProjects.filter((project) => project.lifeAreaId === lifeArea.id);
+        const needsAttention = areaAttentionProjects.length > 0;
+
+        return (
+          <article key={lifeArea.id} className="lifehq-domain-card group flex min-h-[13rem] flex-col justify-between p-6 sm:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div className="lifehq-gold-icon-frame" aria-hidden="true">
+                {getLifeAreaSymbol(lifeArea.name)}
+              </div>
+              <span className="text-xl leading-none text-[#D6AD64]/65 transition-transform group-hover:translate-x-1" aria-hidden="true">›</span>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              <h4 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">{getLifeAreaDisplayName(lifeArea.name)}</h4>
+              <p className="line-clamp-2 min-h-12 text-sm leading-6 text-[#B8B1A7]">
+                {getLifeAreaDisplayDescription(lifeArea)}
+              </p>
+            </div>
+
+            <div className="mt-6 border-t border-white/[0.08] pt-4">
+              <div className="flex flex-wrap gap-x-5 gap-y-2 text-[0.82rem] leading-5 text-[#B8B1A7]">
+                <span>{getProjectLabel(areaProjects.length)}</span>
+                <span>{getOpenTaskLabel(areaOpenTasks.length)}</span>
+              </div>
+              {needsAttention && (
+                <p className="mt-3 flex items-center gap-2 text-xs text-[#D6AD64]/85">
+                  <span className="h-2 w-2 rounded-full bg-[#D6AD64] shadow-[0_0_18px_rgba(214,173,100,0.35)]" aria-hidden="true" />
+                  Bitte prüfen
+                </p>
+              )}
+            </div>
+          </article>
+        );
+      })}
     </div>
+  );
+}
+
+interface OrphanProjectListProps {
+  projects: Project[];
+  tasks: ReturnType<typeof selectTasks>;
+  onProjectSelect: (projectId: string) => void;
+}
+
+function OrphanProjectList({ projects, tasks, onProjectSelect }: OrphanProjectListProps) {
+  if (projects.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="space-y-4">
+      <div className="lifehq-section-title">
+        <span aria-hidden="true" />
+        <h3 className="font-serif text-xl font-semibold tracking-tight text-[#F5F1EA]">Projekte ohne Lebensbereich</h3>
+      </div>
+      <div className="lifehq-unassigned-project-grid">
+        {projects.map((project) => {
+          const projectOpenTaskCount = tasks.filter((task) => task.projectId === project.id && task.status !== 'done').length;
+
+          return (
+            <button key={project.id} type="button" onClick={() => onProjectSelect(project.id)} className="lifehq-unassigned-project-card group flex items-center gap-4 p-6 text-left">
+              <div className="lifehq-gold-icon-frame shrink-0" aria-hidden="true">◎</div>
+              <div className="min-w-0 flex-1">
+                <h4 className="text-base font-semibold text-[#F5F1EA]">{project.name}</h4>
+                <p className="mt-1 line-clamp-2 text-sm leading-6 text-[#B8B1A7]">{project.description ?? 'Übergeordnete Planung und Ausrichtung.'}</p>
+              </div>
+              <div className="hidden text-right text-xs leading-5 text-[#7E776E] sm:block">
+                <p>{getOpenTaskLabel(projectOpenTaskCount)}</p>
+                {(project.priority === 'critical' || project.trafficLightStatus === 'red') && <p className="text-[#D6AD64]/80">Bitte prüfen</p>}
+              </div>
+              <span className="text-2xl text-[#D6AD64]/65 transition-transform group-hover:translate-x-1" aria-hidden="true">›</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -121,107 +278,48 @@ export function HqPage() {
   const pausedProjects = useLifeHQStore(selectPausedProjects);
   const completedProjects = useLifeHQStore(selectCompletedProjects);
   const criticalProjects = useLifeHQStore(selectCriticalProjects);
-  const redTrafficLightProjects = useLifeHQStore(selectRedTrafficLightProjects);
-  const criticalPriorityProjects = criticalProjects.filter((project) => project.priority === 'critical');
-  const pausedProjectsWithReviewDate = pausedProjects.filter((project) => project.reviewDate);
-  const openTasks = useLifeHQStore(selectOpenTasks);
   const tasks = useLifeHQStore(selectTasks);
-  const milestones = useLifeHQStore(selectMilestones);
+  const allStatusProjects = [...activeProjects, ...plannedProjects, ...pausedProjects, ...completedProjects];
+  const existingLifeAreaIds = new Set(lifeAreas.map((lifeArea) => lifeArea.id));
+  const orphanProjects = allStatusProjects.filter((project) => {
+    const lifeAreaId = project.lifeAreaId?.trim();
+
+    return !lifeAreaId || !existingLifeAreaIds.has(lifeAreaId);
+  });
 
   const openProjectDetail = (projectId: string) => {
     navigate(`/projects/${projectId}`);
   };
 
   return (
-    <div className="space-y-6">
-      <section className="max-w-3xl space-y-3">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted">Strategic Overview</p>
-        <div className="space-y-2">
-          <h2 className="text-2xl font-semibold sm:text-3xl">HQ</h2>
-          <p className="max-w-2xl text-sm leading-6 text-slate-300">
-            Your LifeHQ command surface for reading the current strategic landscape before moving into operational execution.
+    <div className="space-y-12">
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-center">
+        <div className="max-w-3xl space-y-4">
+          <h1 className="font-serif text-5xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4rem]">HQ</h1>
+          <p className="max-w-2xl text-base leading-7 text-[#B8B1A7]">
+            Deine strategische Übersicht über Lebensbereiche und Projekte.
           </p>
         </div>
-      </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="HQ summary">
-        <SummaryMetric label="Life Areas" value={lifeAreas.length} />
-        <SummaryMetric label="Active Projects" value={activeProjects.length} />
-        <SummaryMetric label="Open Tasks" value={openTasks.length} />
-        <SummaryMetric label="Critical Signals" value={criticalProjects.length} tone="attention" />
-      </section>
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
-        <div className="space-y-4">
-          <HqSection title="Life Areas" description="A high-level map of the life domains currently represented in the system.">
-            <LifeAreaList lifeAreas={lifeAreas} />
-          </HqSection>
-
-          <HqSection title="Active Projects" description="Strategic initiatives that are currently moving forward.">
-            <ProjectCardList
-              projects={activeProjects}
-              lifeAreas={lifeAreas}
-              tasks={tasks}
-              milestones={milestones}
-              emptyText="Noch keine aktiven Projekte. Dein HQ ist bereit, sobald du ein Projekt startest."
-              onProjectSelect={openProjectDetail}
-            />
-          </HqSection>
-
-          <HqSection title="Planned Projects" description="Potential initiatives prepared for a later execution window.">
-            <ProjectCardList
-              projects={plannedProjects}
-              lifeAreas={lifeAreas}
-              tasks={tasks}
-              milestones={milestones}
-              emptyText="Keine geplanten Projekte. Spätere Initiativen können hier ruhig gesammelt werden."
-              onProjectSelect={openProjectDetail}
-            />
-          </HqSection>
-        </div>
-
-        <div className="space-y-4">
-          <HqSection title="Critical Projects" description="Projects that deserve calm attention because priority is critical or the traffic light is red.">
-            <SectionNote>
-              {criticalProjects.length === 0
-                ? 'Keine kritischen Projekte. Aktuell gibt es keine roten strategischen Signale.'
-                : `${criticalPriorityProjects.length} mit kritischer Priorität · ${redTrafficLightProjects.length} mit roter Ampel. Projekte werden hier nur einmal geführt.`}
-            </SectionNote>
-            <ProjectCardList
-              projects={criticalProjects}
-              lifeAreas={lifeAreas}
-              tasks={tasks}
-              milestones={milestones}
-              emptyText="Keine kritischen Projekte. Aktuell gibt es keine roten strategischen Signale."
-              onProjectSelect={openProjectDetail}
-            />
-          </HqSection>
-
-          <HqSection title="Paused Projects" description="Projects intentionally held outside active focus without being lost or completed.">
-            <SectionNote>
-              {pausedProjects.length === 0
-                ? 'Keine pausierten Projekte. Alle sichtbaren Projekte sind aktuell eingeordnet.'
-                : `${pausedProjects.length} bewusst pausiert · ${pausedProjectsWithReviewDate.length} mit Wiedervorlage.`}
-            </SectionNote>
-            <ProjectCardList
-              projects={pausedProjects}
-              lifeAreas={lifeAreas}
-              tasks={tasks}
-              milestones={milestones}
-              emptyText="Keine pausierten Projekte. Alle sichtbaren Projekte sind aktuell eingeordnet."
-              onProjectSelect={openProjectDetail}
-            />
-          </HqSection>
-
-          <HqSection title="Strategic Signals" description="Quiet context signals for orientation, not a performance dashboard.">
-            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-              <SummaryMetric label="Completed" value={completedProjects.length} description="Closed strategic loops" />
-              <SummaryMetric label="Red Ampel" value={redTrafficLightProjects.length} tone="attention" description="Projects needing review" />
-              <SummaryMetric label="Milestones" value={milestones.length} description="Known project markers" />
+        <div className="lifehq-attention-card w-full p-6 lg:min-h-32 lg:max-w-[17rem]">
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#D6AD64]/40 text-lg text-[#D6AD64]" aria-hidden="true">!</div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#F5F1EA]">Bitte prüfen</p>
+              <p className="mt-2 text-3xl font-semibold text-[#D6AD64]">{criticalProjects.length}</p>
+              <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">
+                Projekte benötigen deine Aufmerksamkeit.
+              </p>
             </div>
-          </HqSection>
+          </div>
         </div>
-      </div>
+      </section>
+
+      <HqSection title="Lebensbereiche" prominence="primary">
+        <LifeAreaList lifeAreas={lifeAreas} projects={allStatusProjects} tasks={tasks} criticalProjects={criticalProjects} />
+      </HqSection>
+
+      <OrphanProjectList projects={orphanProjects} tasks={tasks} onProjectSelect={openProjectDetail} />
     </div>
   );
 }
