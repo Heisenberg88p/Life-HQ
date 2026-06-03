@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { LifeHQBrand } from './LifeHQBrand';
 
-const defaultIntroDurationMs = 850;
+const defaultIntroDurationMs = 1500;
 const reducedMotionIntroDurationMs = 260;
 
 function getIntroDuration() {
