@@ -381,6 +381,31 @@ export function HqPage() {
   };
 
 
+
+  function toggleLifeAreaForm() {
+    setIsLifeAreaFormOpen((current) => {
+      const nextIsOpen = !current;
+
+      if (nextIsOpen) {
+        setIsProjectFormOpen(false);
+      }
+
+      return nextIsOpen;
+    });
+  }
+
+  function toggleProjectForm() {
+    setIsProjectFormOpen((current) => {
+      const nextIsOpen = !current;
+
+      if (nextIsOpen) {
+        setIsLifeAreaFormOpen(false);
+      }
+
+      return nextIsOpen;
+    });
+  }
+
   function updateLifeAreaDraft(patch: Partial<LifeAreaDraft>) {
     setLifeAreaDraft((current) => ({ ...current, ...patch }));
     setLifeAreaError(undefined);
@@ -454,7 +479,7 @@ export function HqPage() {
 
   return (
     <div className="space-y-12">
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-center">
+      <section className={`grid gap-6 lg:items-center ${criticalProjects.length > 0 ? 'lg:grid-cols-[minmax(0,1fr)_17rem]' : ''}`}>
         <div className="max-w-3xl space-y-4">
           <h1 className="font-serif text-5xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4rem]">HQ</h1>
           <p className="max-w-2xl text-base leading-7 text-[#B8B1A7]">
@@ -462,24 +487,26 @@ export function HqPage() {
           </p>
         </div>
 
-        <div className="lifehq-attention-card w-full p-6 lg:min-h-32 lg:max-w-[17rem]">
-          <div className="flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#D6AD64]/40 text-lg text-[#D6AD64]" aria-hidden="true">!</div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-[#F5F1EA]">Bitte prüfen</p>
-              <p className="mt-2 text-3xl font-semibold text-[#D6AD64]">{criticalProjects.length}</p>
-              <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">
-                Projekte benötigen deine Aufmerksamkeit.
-              </p>
+        {criticalProjects.length > 0 && (
+          <div className="lifehq-attention-card w-full p-6 lg:min-h-32 lg:max-w-[17rem]">
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#D6AD64]/40 text-lg text-[#D6AD64]" aria-hidden="true">!</div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[#F5F1EA]">Bitte prüfen</p>
+                <p className="mt-2 text-3xl font-semibold text-[#D6AD64]">{criticalProjects.length}</p>
+                <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">
+                  Projekte benötigen deine Aufmerksamkeit.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
 
       <HqSection
         title="Lebensbereiche"
         prominence="primary"
-        action={<button type="button" onClick={() => setIsLifeAreaFormOpen((current) => !current)} className="lifehq-button-secondary w-fit">Lebensbereich hinzufügen</button>}
+        action={<button type="button" onClick={toggleLifeAreaForm} className="lifehq-button-secondary w-fit">Lebensbereich hinzufügen</button>}
       >
         {isLifeAreaFormOpen && (
           <form onSubmit={handleCreateLifeArea} className="lifehq-crud-panel mb-5">
@@ -515,7 +542,7 @@ export function HqPage() {
         projects={orphanProjects}
         tasks={tasks}
         onProjectSelect={openProjectDetail}
-        action={<button type="button" onClick={() => setIsProjectFormOpen((current) => !current)} className="lifehq-button-secondary w-fit">Projekt hinzufügen</button>}
+        action={<button type="button" onClick={toggleProjectForm} className="lifehq-button-secondary w-fit">Projekt hinzufügen</button>}
       >
         {isProjectFormOpen && (
           <form onSubmit={handleCreateProject} className="lifehq-crud-panel">

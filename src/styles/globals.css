@@ -292,6 +292,14 @@ textarea {
   .lifehq-empty-task-state {
     @apply min-w-0 rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-3 text-sm leading-6 text-[#7E776E];
   }
+
+  .lifehq-task-form-compact {
+    @apply p-4 sm:p-5;
+  }
+
+  .lifehq-task-form-compact .lifehq-task-form-control {
+    @apply rounded-xl px-3 py-2.5 text-sm;
+  }
 }
 
 @layer components {
@@ -310,7 +318,7 @@ textarea {
 
 @layer components {
   .lifehq-settings-section {
-    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-5 sm:p-6;
+    @apply min-w-0 rounded-[1.15rem] border border-white/[0.08] bg-white/[0.018] p-4 sm:p-5;
   }
 }
 

@@ -18,7 +18,7 @@ function SettingsSection({ title, eyebrow, children }: SettingsSectionProps) {
           <h2 className="mt-1 text-xl font-semibold tracking-tight text-[#F5F1EA]">{title}</h2>
         </div>
       </div>
-      <div className="mt-5 space-y-3 text-sm leading-6 text-[#B8B1A7]">{children}</div>
+      <div className="mt-3 space-y-2 text-sm leading-6 text-[#B8B1A7]">{children}</div>
     </section>
   );
 }
@@ -35,21 +35,21 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[56rem] space-y-8">
-      <div className="space-y-4">
+    <div className="mx-auto max-w-[56rem] space-y-5">
+      <div className="space-y-3">
         <Link to="/hq" className="lifehq-project-backlink">← Zurück zum HQ</Link>
-        <div className="space-y-3">
+        <div className="space-y-2">
           <p className="lifehq-label">Lokale Systemsteuerung</p>
-          <h1 className="font-serif text-5xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl">Einstellungen</h1>
-          <p className="max-w-2xl text-base leading-7 text-[#B8B1A7]">
+          <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-5xl">Einstellungen</h1>
+          <p className="max-w-2xl text-sm leading-6 text-[#B8B1A7]">
             Minimaler V1-Bereich für App-Info, lokale Speicherung und bewusstes Zurücksetzen deiner Browserdaten.
           </p>
         </div>
       </div>
 
-      <div className="grid gap-5">
+      <div className="grid gap-3">
         <SettingsSection title="App" eyebrow="LifeHQ">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-base font-semibold text-[#F5F1EA]">LifeHQ V1</p>
               <p className="mt-1 text-[#7E776E]">Lokale MVP-Version</p>
@@ -65,10 +65,10 @@ export function SettingsPage() {
 
         <SettingsSection title="Datenverwaltung" eyebrow="Reset">
           <p>Du kannst alle lokal gespeicherten Inhalte zurücksetzen.</p>
-          <div className="lifehq-danger-zone mt-5">
+          <div className="lifehq-danger-zone mt-3">
             <p className="font-semibold text-[#F5F1EA]">Daten zurücksetzen</p>
             {!isResetConfirmOpen ? (
-              <div className="mt-3 space-y-4">
+              <div className="mt-2 space-y-3">
                 <p className="text-sm leading-6 text-[#B8B1A7]">
                   Diese Aktion leert LifeHQ auf diesem Gerät und stellt keine Demo-Daten wieder her.
                 </p>
@@ -77,7 +77,7 @@ export function SettingsPage() {
                 </button>
               </div>
             ) : (
-              <div className="mt-3 space-y-4">
+              <div className="mt-2 space-y-3">
                 <p className="text-sm leading-6 text-[#B8B1A7]">
                   Alle lokal gespeicherten Lebensbereiche, Projekte, Aufgaben, Meilensteine und Verlaufseinträge werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
                 </p>

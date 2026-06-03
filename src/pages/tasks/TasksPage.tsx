@@ -408,6 +408,17 @@ function TaskList({ tasks, projects, lifeAreas, actions }: TaskListProps) {
 function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: WeekTaskSectionProps) {
   const unplannedTasks = sortTasksForPlanning(tasks.filter((task) => !task.plannedDate && task.status !== 'done'));
   const overdueTasks = sortOverdueTasks(getOverdueTasks(tasks));
+  const plannedDayGroups = weekDays
+    .map((day, index) => ({
+      day,
+      label: weekdayLabels[index],
+      tasks: sortTasksForPlanning(tasks.filter((task) => isSameDay(task.plannedDate, day))),
+    }))
+    .filter((group) => group.tasks.length > 0);
+
+  if (plannedDayGroups.length === 0) {
+    return <p className="lifehq-empty-task-state mt-5">Für diesen Zeitraum sind keine Aufgaben geplant.</p>;
+  }
 
   return (
     <div className="space-y-5">
@@ -419,26 +430,18 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: Week
       )}
 
       <div className="space-y-3">
-        {weekDays.map((day, index) => {
-          const dayTasks = sortTasksForPlanning(tasks.filter((task) => isSameDay(task.plannedDate, day)));
-
-          return (
-            <section key={day} className="lifehq-week-section">
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-                <div className="lifehq-section-title">
-                  <span aria-hidden="true" />
-                  <p className="text-sm font-semibold text-[#F5F1EA]">{weekdayLabels[index]}</p>
-                </div>
-                <p className="lifehq-label">{day}</p>
+        {plannedDayGroups.map((group) => (
+          <section key={group.day} className="lifehq-week-section">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+              <div className="lifehq-section-title">
+                <span aria-hidden="true" />
+                <p className="text-sm font-semibold text-[#F5F1EA]">{group.label}</p>
               </div>
-              {dayTasks.length === 0 ? (
-                <p className="lifehq-empty-task-state mt-4">Keine Aufgaben geplant.</p>
-              ) : (
-                <TaskList tasks={dayTasks} projects={projects} lifeAreas={lifeAreas} actions={actions} />
-              )}
-            </section>
-          );
-        })}
+              <p className="lifehq-label">{group.day}</p>
+            </div>
+            <TaskList tasks={group.tasks} projects={projects} lifeAreas={lifeAreas} actions={actions} />
+          </section>
+        ))}
       </div>
 
       {unplannedTasks.length > 0 && (
@@ -518,6 +521,7 @@ export function TasksPage() {
     });
 
     resetTaskDraft();
+    setIsCreateOpen(false);
   }
 
   return (
@@ -545,12 +549,12 @@ export function TasksPage() {
       </div>
 
       {isCreateOpen && (
-        <form id="task-create-form" onSubmit={handleCreateTask} className="lifehq-task-form">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <form id="task-create-form" onSubmit={handleCreateTask} className="lifehq-task-form lifehq-task-form-compact">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="lifehq-label">Neue Aufgabe</p>
-              <h3 className="mt-2 text-lg font-semibold text-[#F5F1EA]">Schnellen nächsten Schritt erfassen</h3>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#7E776E]">
+              <h3 className="mt-1 text-base font-semibold text-[#F5F1EA]">Schnellen nächsten Schritt erfassen</h3>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-[#7E776E]">
                 Lege nur den Titel fest oder ergänze optional Priorität, Zuordnung und einfache Datumsfelder.
               </p>
             </div>
@@ -566,8 +570,8 @@ export function TasksPage() {
             </button>
           </div>
 
-          <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,2fr)_1fr_1fr]">
-            <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-3">
+          <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,2fr)_1fr_1fr]">
+            <label className="space-y-1.5 text-sm text-[#B8B1A7] lg:col-span-3">
               <span className="lifehq-label">Titel</span>
               <input
                 value={taskDraft.title}
@@ -577,7 +581,7 @@ export function TasksPage() {
               />
             </label>
 
-            <label className="space-y-2 text-sm text-[#B8B1A7]">
+            <label className="space-y-1.5 text-sm text-[#B8B1A7]">
               <span className="lifehq-label">Priorität</span>
               <select
                 value={taskDraft.priority}
@@ -590,7 +594,7 @@ export function TasksPage() {
               </select>
             </label>
 
-            <label className="space-y-2 text-sm text-[#B8B1A7]">
+            <label className="space-y-1.5 text-sm text-[#B8B1A7]">
               <span className="lifehq-label">Projekt</span>
               <select
                 value={taskDraft.projectId}
@@ -604,7 +608,7 @@ export function TasksPage() {
               </select>
             </label>
 
-            <label className="space-y-2 text-sm text-[#B8B1A7]">
+            <label className="space-y-1.5 text-sm text-[#B8B1A7]">
               <span className="lifehq-label">Lebensbereich</span>
               <select
                 value={taskDraft.lifeAreaId}
@@ -619,7 +623,7 @@ export function TasksPage() {
               </select>
             </label>
 
-            <label className="space-y-2 text-sm text-[#B8B1A7]">
+            <label className="space-y-1.5 text-sm text-[#B8B1A7]">
               <span className="lifehq-label">Fälligkeit</span>
               <input
                 type="date"
@@ -629,7 +633,7 @@ export function TasksPage() {
               />
             </label>
 
-            <label className="space-y-2 text-sm text-[#B8B1A7]">
+            <label className="space-y-1.5 text-sm text-[#B8B1A7]">
               <span className="lifehq-label">Geplant</span>
               <input
                 type="date"
@@ -640,7 +644,7 @@ export function TasksPage() {
             </label>
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             {createError ? <p className="text-sm text-amber-100">{createError}</p> : <p className="text-sm text-[#7E776E]">Status startet als offen, Priorität standardmäßig mittel.</p>}
             <button
               type="submit"
@@ -670,7 +674,8 @@ export function TasksPage() {
         </div>
       </div>
 
-      <div className="lifehq-task-section">
+      {!isCreateOpen && (
+        <div className="lifehq-task-section">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="lifehq-section-title">
@@ -694,7 +699,8 @@ export function TasksPage() {
         ) : (
           <TaskList tasks={visibleTasks} projects={projects} lifeAreas={lifeAreas} actions={taskPlanningActions} />
         )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
