@@ -40,12 +40,12 @@ type TaskDateDraft = {
 
 const taskViews: Array<{ id: TaskView; label: string; description: string }> = [
   { id: 'today', label: 'Heute', description: 'Geplante Schritte für den aktuellen Tag.' },
-  { id: 'week', label: 'Diese Woche', description: 'Geplante Aufgaben innerhalb der aktuellen Woche.' },
+  { id: 'week', label: 'Diese Woche', description: 'Aufgaben, die in dieser Woche eingeordnet sind.' },
   { id: 'nextWeek', label: 'Nächste Woche', description: 'Geplante Aufgaben der kommenden Woche.' },
   { id: 'later', label: 'Später', description: 'Offene Aufgaben nach Ende der nächsten Woche.' },
-  { id: 'overdue', label: 'Überfällig', description: 'Fällige Aufgaben, die noch nicht erledigt sind.' },
-  { id: 'open', label: 'Offen', description: 'Alles, was offen oder in Arbeit ist.' },
-  { id: 'done', label: 'Erledigte Aufgaben', description: 'Abgeschlossene operative Schritte.' },
+  { id: 'overdue', label: 'Überfällig', description: 'Aufgaben, die ruhig geprüft und neu eingeordnet werden sollten.' },
+  { id: 'open', label: 'Offen', description: 'Alle offenen operativen Schritte.' },
+  { id: 'done', label: 'Erledigte Aufgaben', description: 'Abgeschlossene Schritte zur Nachverfolgung.' },
 ];
 
 const statusLabels: Record<TaskStatus, string> = {
@@ -113,9 +113,9 @@ function sortOverdueTasks(tasks: Task[]): Task[] {
 }
 
 const statusStyles: Record<TaskStatus, string> = {
-  open: 'border-slate-700/60 bg-slate-950/40 text-slate-300',
-  in_progress: 'border-sky-300/25 bg-sky-950/15 text-sky-100',
-  done: 'border-emerald-300/20 bg-emerald-950/15 text-emerald-100',
+  open: 'border-white/10 bg-white/[0.025] text-[#B8B1A7]',
+  in_progress: 'border-[#D6AD64]/25 bg-[#D6AD64]/10 text-[#F5F1EA]',
+  done: 'border-white/10 bg-white/[0.018] text-[#7E776E]',
 };
 
 interface TaskContextInfo {
@@ -125,9 +125,9 @@ interface TaskContextInfo {
 }
 
 const contextStyles: Record<TaskContextInfo['tone'], string> = {
-  project: 'border-sky-300/20 bg-sky-950/10 text-sky-100',
-  lifeArea: 'border-emerald-300/20 bg-emerald-950/10 text-emerald-100',
-  unassigned: 'border-slate-700/60 bg-slate-950/30 text-slate-400',
+  project: 'border-[#D6AD64]/20 bg-[#D6AD64]/10 text-[#F5F1EA]',
+  lifeArea: 'border-white/10 bg-white/[0.025] text-[#B8B1A7]',
+  unassigned: 'border-white/[0.08] bg-black/20 text-[#7E776E]',
 };
 
 const defaultTaskDraft: TaskDraft = {
@@ -259,148 +259,104 @@ function TaskCard({
   }
 
   return (
-    <article
-      className={`lifehq-card-soft p-4 transition-colors focus-within:border-slate-500/70 hover:border-slate-600/70 ${
-        isDone
-          ? 'border-slate-700/30 bg-slate-950/10 opacity-70'
-          : overdue
-            ? 'border-amber-300/25 border-l-4 border-l-amber-300/45 bg-amber-950/10'
-            : ''
-      }`}
-    >
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className={isDone ? 'text-sm font-semibold text-slate-400 line-through decoration-slate-600' : 'text-sm font-semibold text-slate-100'}>{task.title}</h3>
-            {overdue && <span className="lifehq-badge border-amber-300/25 bg-amber-950/20 text-amber-100">Überfällig</span>}
-          </div>
-          {task.description && <p className="text-sm leading-6 text-slate-400">{task.description}</p>}
-          <div className={`w-fit rounded-2xl border px-3 py-2 text-xs ${contextStyles[context.tone]}`}>
-            <p className="font-medium">{context.label}</p>
-            {context.detail && <p className="mt-1 text-[0.7rem] leading-4 text-slate-400">{context.detail}</p>}
+    <article className={`lifehq-task-row ${isDone ? 'opacity-65' : ''} ${overdue ? 'border-[#D6AD64]/35' : ''}`}>
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="flex min-w-0 flex-1 items-start gap-4">
+          <span className={`lifehq-task-status-dot ${task.status === 'in_progress' ? 'border-[#D6AD64]/35 bg-[#D6AD64]/15' : ''} ${isDone ? 'opacity-60' : ''}`} aria-hidden="true">
+            {isDone && <span className="h-1.5 w-1.5 rounded-full bg-[#7E776E]" />}
+            {task.status === 'in_progress' && <span className="h-1.5 w-1.5 rounded-full bg-[#D6AD64]" />}
+          </span>
+
+          <div className="min-w-0 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className={isDone ? 'text-base font-semibold leading-6 text-[#7E776E]' : 'text-base font-semibold leading-6 text-[#F5F1EA]'}>{task.title}</h3>
+              {overdue && <span className="lifehq-task-chip border-[#D6AD64]/30 bg-[#D6AD64]/10 text-[#F5F1EA]">Überfällig</span>}
+            </div>
+            {task.description && <p className="max-w-3xl text-sm leading-6 text-[#7E776E]">{task.description}</p>}
+            <div className={`lifehq-task-context ${contextStyles[context.tone]}`}>
+              <p className="font-medium">{context.label}</p>
+              {context.detail && <p className="mt-1 text-[0.72rem] leading-4 text-[#7E776E]">{context.detail}</p>}
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 text-xs text-slate-300 lg:justify-end">
-          <span className={`lifehq-badge ${statusStyles[task.status]}`}>{statusLabels[task.status]}</span>
-          <span className={task.priority === 'critical' ? 'lifehq-badge lifehq-badge-attention' : 'lifehq-badge'}>
+        <div className="grid gap-2 text-xs text-[#B8B1A7] sm:grid-cols-2 xl:min-w-[25rem] xl:grid-cols-4 xl:text-right">
+          <span className={`lifehq-task-chip ${statusStyles[task.status]}`}>{statusLabels[task.status]}</span>
+          <span className={task.priority === 'critical' ? 'lifehq-task-chip border-[#D6AD64]/30 bg-[#D6AD64]/10 text-[#F5F1EA]' : 'lifehq-task-chip'}>
             Priorität: {priorityLabels[task.priority]}
           </span>
+          <span className={`lifehq-task-chip ${overdue ? 'border-[#D6AD64]/25 bg-[#D6AD64]/10 text-[#F5F1EA]' : ''}`}>
+            Fällig: {task.dueDate ?? 'Keine Fälligkeit'}{overdue ? ' · prüfen' : ''}
+          </span>
+          <span className="lifehq-task-chip">Geplant: {task.plannedDate ?? 'Nicht geplant'}</span>
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
-        <div className={`lifehq-card-soft px-3 py-2 ${overdue ? 'border-amber-300/20 bg-amber-950/10' : ''}`}>
-          <p className="lifehq-label">Fälligkeit</p>
-          <p className={overdue ? 'mt-1 font-medium text-amber-100' : 'mt-1 text-slate-300'}>
-            {task.dueDate ?? 'Keine Fälligkeit'}{overdue ? ' · überfällig' : ''}
-          </p>
-        </div>
-        <div className="lifehq-card-soft px-3 py-2">
-          <p className="lifehq-label">Geplantes Datum</p>
-          <p className="mt-1 text-slate-300">{task.plannedDate ?? 'Nicht geplant'}</p>
-          {isDone && <p className="mt-1 text-slate-500">Erledigt: {task.completedAt ? task.completedAt.slice(0, 10) : 'Datum nicht gesetzt'}</p>}
-        </div>
-        <div className="flex flex-wrap gap-2 text-xs lg:justify-end" aria-label={`Status für ${task.title} ändern`}>
-          {task.status !== 'open' && (
-            <button
-              type="button"
-              onClick={() => onStatusChange(task.id, 'open')}
-              className="min-h-9 rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
-            >
-              Wieder öffnen
-            </button>
-          )}
-          {task.status !== 'in_progress' && (
-            <button
-              type="button"
-              onClick={() => onStatusChange(task.id, 'in_progress')}
-              className="min-h-9 rounded-xl border border-sky-300/20 bg-sky-950/10 px-3 py-2 text-xs font-medium text-sky-100 transition-colors hover:border-sky-300/40"
-            >
-              In Arbeit
-            </button>
-          )}
-          {task.status !== 'done' && (
-            <button
-              type="button"
-              onClick={() => onStatusChange(task.id, 'done')}
-              className="min-h-9 rounded-xl border border-emerald-300/20 bg-emerald-950/10 px-3 py-2 text-xs font-medium text-emerald-100 transition-colors hover:border-emerald-300/40"
-            >
-              Erledigen
-            </button>
-          )}
-        </div>
+      {isDone && <p className="mt-3 text-xs text-[#7E776E]">Erledigt: {task.completedAt ? task.completedAt.slice(0, 10) : 'Datum nicht gesetzt'}</p>}
+
+      <div className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.07] pt-4 text-xs" aria-label={`Status für ${task.title} ändern`}>
+        {task.status !== 'open' && (
+          <button type="button" onClick={() => onStatusChange(task.id, 'open')} className="lifehq-task-action-button">
+            Wieder öffnen
+          </button>
+        )}
+        {task.status !== 'in_progress' && (
+          <button type="button" onClick={() => onStatusChange(task.id, 'in_progress')} className="lifehq-task-action-button lifehq-task-action-button-gold">
+            In Arbeit
+          </button>
+        )}
+        {task.status !== 'done' && (
+          <button type="button" onClick={() => onStatusChange(task.id, 'done')} className="lifehq-task-action-button">
+            Erledigen
+          </button>
+        )}
       </div>
 
-      <div className="lifehq-card-soft mt-4 p-3">
+      <div className="lifehq-task-planning-panel">
         <p className="lifehq-label">Planung</p>
         <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
-          <label className="space-y-2 text-xs text-slate-400">
+          <label className="space-y-2 text-xs text-[#B8B1A7]">
             <span className="lifehq-label">Geplantes Datum</span>
             <input
               type="date"
               value={dateDraft.plannedDate}
               onChange={(event) => updateDateDraft({ plannedDate: event.target.value })}
-              className="min-h-10 w-full rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs text-slate-100 outline-none transition-colors focus:border-slate-400"
+              className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs"
             />
           </label>
-          <label className="space-y-2 text-xs text-slate-400">
+          <label className="space-y-2 text-xs text-[#B8B1A7]">
             <span className="lifehq-label">Fälligkeit</span>
             <input
               type="date"
               value={dateDraft.dueDate}
               onChange={(event) => updateDateDraft({ dueDate: event.target.value })}
-              className="min-h-10 w-full rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs text-slate-100 outline-none transition-colors focus:border-slate-400"
+              className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs"
             />
           </label>
           <div className="flex flex-wrap gap-2 lg:justify-end">
             {hasDateDraftChanges && (
               <>
-                <button
-                  type="button"
-                  onClick={saveDateDraft}
-                  className="min-h-9 rounded-xl border border-emerald-300/20 bg-emerald-950/15 px-3 py-2 text-xs font-medium text-emerald-100 transition-colors hover:border-emerald-300/40"
-                >
+                <button type="button" onClick={saveDateDraft} className="lifehq-task-action-button lifehq-task-action-button-gold">
                   Änderungen speichern
                 </button>
-                <button
-                  type="button"
-                  onClick={resetDateDraft}
-                  className="min-h-9 rounded-xl border border-slate-700/70 bg-slate-950/20 px-3 py-2 text-xs font-medium text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
-                >
+                <button type="button" onClick={resetDateDraft} className="lifehq-task-action-button">
                   Änderungen abbrechen
                 </button>
               </>
             )}
-            <button
-              type="button"
-              onClick={() => onPlanToday(task.id)}
-              className="min-h-9 rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
-            >
+            <button type="button" onClick={() => onPlanToday(task.id)} className="lifehq-task-action-button">
               Heute planen
             </button>
-            <button
-              type="button"
-              onClick={() => onPlanTomorrow(task.id)}
-              className="min-h-9 rounded-xl border border-slate-700/70 bg-slate-950/40 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
-            >
+            <button type="button" onClick={() => onPlanTomorrow(task.id)} className="lifehq-task-action-button">
               Morgen planen
             </button>
             {task.plannedDate && (
-              <button
-                type="button"
-                onClick={() => onClearPlannedDate(task.id)}
-                className="min-h-9 rounded-xl border border-slate-700/70 bg-slate-950/20 px-3 py-2 text-xs font-medium text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
-              >
+              <button type="button" onClick={() => onClearPlannedDate(task.id)} className="lifehq-task-action-button">
                 Planung entfernen
               </button>
             )}
             {task.dueDate && (
-              <button
-                type="button"
-                onClick={() => onClearDueDate(task.id)}
-                className="min-h-9 rounded-xl border border-slate-700/70 bg-slate-950/20 px-3 py-2 text-xs font-medium text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
-              >
+              <button type="button" onClick={() => onClearDueDate(task.id)} className="lifehq-task-action-button">
                 Fälligkeit entfernen
               </button>
             )}
@@ -454,11 +410,11 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: Week
   const overdueTasks = sortOverdueTasks(getOverdueTasks(tasks));
 
   return (
-    <div className="mt-5 space-y-5">
+    <div className="space-y-5">
       {overdueTasks.length > 0 && (
-        <div className="lifehq-note border-amber-300/20 bg-amber-950/10">
-          <p className="lifehq-label text-amber-100">Ruhiger Hinweis</p>
-          <p className="mt-2 text-sm text-slate-300">Es gibt überfällige Aufgaben. Sie bleiben sichtbar, ohne die Wochenplanung zu dominieren.</p>
+        <div className="lifehq-empty-task-state border-[#D6AD64]/20 bg-[#D6AD64]/10">
+          <p className="lifehq-label text-[#D6AD64]">Ruhiger Hinweis</p>
+          <p className="mt-2 text-sm text-[#B8B1A7]">Es gibt überfällige Aufgaben. Sie bleiben sichtbar, ohne die Wochenplanung zu dominieren.</p>
         </div>
       )}
 
@@ -467,13 +423,16 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: Week
           const dayTasks = sortTasksForPlanning(tasks.filter((task) => isSameDay(task.plannedDate, day)));
 
           return (
-            <section key={day} className="lifehq-card-soft p-4">
+            <section key={day} className="lifehq-week-section">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-                <p className="text-sm font-semibold text-slate-100">{weekdayLabels[index]}</p>
+                <div className="lifehq-section-title">
+                  <span aria-hidden="true" />
+                  <p className="text-sm font-semibold text-[#F5F1EA]">{weekdayLabels[index]}</p>
+                </div>
                 <p className="lifehq-label">{day}</p>
               </div>
               {dayTasks.length === 0 ? (
-                <p className="lifehq-empty-state mt-4">Dieser Tag ist frei für bewusste Planung.</p>
+                <p className="lifehq-empty-task-state mt-4">Keine Aufgaben geplant.</p>
               ) : (
                 <TaskList tasks={dayTasks} projects={projects} lifeAreas={lifeAreas} actions={actions} />
               )}
@@ -483,9 +442,9 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: Week
       </div>
 
       {unplannedTasks.length > 0 && (
-        <section className="lifehq-card-soft p-4">
+        <section className="lifehq-week-section">
           <p className="lifehq-label">Ohne geplantes Datum</p>
-          <p className="mt-2 text-sm leading-6 text-slate-400">Diese offenen Aufgaben sind noch keinem Tag zugeordnet und bleiben als ruhiger Planungsvorrat sichtbar.</p>
+          <p className="mt-2 text-sm leading-6 text-[#7E776E]">Diese offenen Aufgaben sind noch keinem Tag zugeordnet und bleiben als ruhiger Planungsvorrat sichtbar.</p>
           <TaskList tasks={unplannedTasks} projects={projects} lifeAreas={lifeAreas} actions={actions} />
         </section>
       )}
@@ -562,14 +521,14 @@ export function TasksPage() {
   }
 
   return (
-    <section className="space-y-6">
-      <div className="lifehq-panel-strong flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
+    <section className="space-y-8">
+      <div className="lifehq-tasks-hero">
         <div className="max-w-3xl space-y-3">
-          <p className="lifehq-label">Operational Execution</p>
+          <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/70">OPERATIVE EBENE</p>
           <div className="space-y-2">
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-50 sm:text-3xl">Tasks</h2>
-            <p className="max-w-2xl text-sm leading-6 text-slate-300">
-              Eine ruhige operative Arbeitsfläche für die nächsten konkreten Schritte — klar getrennt vom strategischen HQ.
+            <h1 className="font-serif text-5xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4rem]">Tasks</h1>
+            <p className="max-w-2xl text-base leading-7 text-[#B8B1A7]">
+              Eine ruhige operative Arbeitsfläche für die nächsten konkreten Schritte.
             </p>
           </div>
         </div>
@@ -586,12 +545,12 @@ export function TasksPage() {
       </div>
 
       {isCreateOpen && (
-        <form id="task-create-form" onSubmit={handleCreateTask} className="lifehq-panel p-5 sm:p-6">
+        <form id="task-create-form" onSubmit={handleCreateTask} className="lifehq-task-form">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="lifehq-label">Neue Aufgabe</p>
-              <h3 className="mt-2 text-lg font-semibold text-slate-100">Schnellen nächsten Schritt erfassen</h3>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+              <h3 className="mt-2 text-lg font-semibold text-[#F5F1EA]">Schnellen nächsten Schritt erfassen</h3>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#7E776E]">
                 Lege nur den Titel fest oder ergänze optional Priorität, Zuordnung und einfache Datumsfelder.
               </p>
             </div>
@@ -608,22 +567,22 @@ export function TasksPage() {
           </div>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,2fr)_1fr_1fr]">
-            <label className="space-y-2 text-sm text-slate-300 lg:col-span-3">
+            <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-3">
               <span className="lifehq-label">Titel</span>
               <input
                 value={taskDraft.title}
                 onChange={(event) => updateTaskDraft({ title: event.target.value })}
                 placeholder="Was ist der nächste konkrete Schritt?"
-                className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/40 px-4 py-3 text-sm text-slate-100 outline-none transition-colors placeholder:text-slate-600 focus:border-slate-400"
+                className="lifehq-task-form-control"
               />
             </label>
 
-            <label className="space-y-2 text-sm text-slate-300">
+            <label className="space-y-2 text-sm text-[#B8B1A7]">
               <span className="lifehq-label">Priorität</span>
               <select
                 value={taskDraft.priority}
                 onChange={(event) => updateTaskDraft({ priority: event.target.value as Priority })}
-                className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/40 px-4 py-3 text-sm text-slate-100 outline-none transition-colors focus:border-slate-400"
+                className="lifehq-task-form-control"
               >
                 {Object.entries(priorityLabels).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
@@ -631,12 +590,12 @@ export function TasksPage() {
               </select>
             </label>
 
-            <label className="space-y-2 text-sm text-slate-300">
+            <label className="space-y-2 text-sm text-[#B8B1A7]">
               <span className="lifehq-label">Projekt</span>
               <select
                 value={taskDraft.projectId}
                 onChange={(event) => updateTaskDraft({ projectId: event.target.value, lifeAreaId: event.target.value ? '' : taskDraft.lifeAreaId })}
-                className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/40 px-4 py-3 text-sm text-slate-100 outline-none transition-colors focus:border-slate-400"
+                className="lifehq-task-form-control"
               >
                 <option value="">Kein Projekt</option>
                 {projects.map((project) => (
@@ -645,13 +604,13 @@ export function TasksPage() {
               </select>
             </label>
 
-            <label className="space-y-2 text-sm text-slate-300">
+            <label className="space-y-2 text-sm text-[#B8B1A7]">
               <span className="lifehq-label">Lebensbereich</span>
               <select
                 value={taskDraft.lifeAreaId}
                 onChange={(event) => updateTaskDraft({ lifeAreaId: event.target.value })}
                 disabled={Boolean(taskDraft.projectId)}
-                className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/40 px-4 py-3 text-sm text-slate-100 outline-none transition-colors focus:border-slate-400 disabled:cursor-not-allowed disabled:text-slate-600"
+                className="lifehq-task-form-control disabled:cursor-not-allowed disabled:text-[#7E776E]"
               >
                 <option value="">Kein Lebensbereich</option>
                 {lifeAreas.map((lifeArea) => (
@@ -660,29 +619,29 @@ export function TasksPage() {
               </select>
             </label>
 
-            <label className="space-y-2 text-sm text-slate-300">
+            <label className="space-y-2 text-sm text-[#B8B1A7]">
               <span className="lifehq-label">Fälligkeit</span>
               <input
                 type="date"
                 value={taskDraft.dueDate}
                 onChange={(event) => updateTaskDraft({ dueDate: event.target.value })}
-                className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/40 px-4 py-3 text-sm text-slate-100 outline-none transition-colors focus:border-slate-400"
+                className="lifehq-task-form-control"
               />
             </label>
 
-            <label className="space-y-2 text-sm text-slate-300">
+            <label className="space-y-2 text-sm text-[#B8B1A7]">
               <span className="lifehq-label">Geplant</span>
               <input
                 type="date"
                 value={taskDraft.plannedDate}
                 onChange={(event) => updateTaskDraft({ plannedDate: event.target.value })}
-                className="w-full rounded-2xl border border-slate-700/70 bg-slate-950/40 px-4 py-3 text-sm text-slate-100 outline-none transition-colors focus:border-slate-400"
+                className="lifehq-task-form-control"
               />
             </label>
           </div>
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            {createError ? <p className="text-sm text-amber-100">{createError}</p> : <p className="text-sm text-slate-500">Status startet als offen, Priorität standardmäßig mittel.</p>}
+            {createError ? <p className="text-sm text-amber-100">{createError}</p> : <p className="text-sm text-[#7E776E]">Status startet als offen, Priorität standardmäßig mittel.</p>}
             <button
               type="submit"
               className="lifehq-button-primary w-fit"
@@ -693,17 +652,15 @@ export function TasksPage() {
         </form>
       )}
 
-      <div className="lifehq-panel p-3">
-        <div className="grid gap-2 md:grid-cols-4 xl:grid-cols-7">
+      <div className="lifehq-task-view-switcher">
+        <div className="flex gap-2 overflow-x-auto pb-1 md:grid md:grid-cols-4 md:overflow-visible md:pb-0 xl:grid-cols-7">
           {taskViews.map((view) => (
             <button
               key={view.id}
               type="button"
               onClick={() => setActiveView(view.id)}
-              className={`min-h-16 rounded-2xl border px-3 py-3 text-left text-sm transition-colors ${
-                activeView === view.id
-                  ? 'border-slate-200/20 bg-slate-100 text-slate-950 shadow-sm shadow-black/10'
-                  : 'border-transparent text-slate-300 hover:border-slate-700 hover:bg-slate-900/60 hover:text-white'
+              className={`lifehq-task-view-item ${
+                activeView === view.id ? 'lifehq-task-view-item-active' : ''
               }`}
             >
               <span className="block font-semibold">{view.label}</span>
@@ -713,12 +670,15 @@ export function TasksPage() {
         </div>
       </div>
 
-      <div className="lifehq-panel-strong p-5 sm:p-6">
+      <div className="lifehq-task-section">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="lifehq-label">Task View</p>
-            <h3 className="mt-2 text-lg font-semibold text-slate-100">{activeViewMeta.label}</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-400">{activeViewMeta.description}</p>
+            <div className="lifehq-section-title">
+              <span aria-hidden="true" />
+              <p className="lifehq-label">Aktive Ansicht</p>
+            </div>
+            <h2 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">{activeViewMeta.label}</h2>
+            <p className="mt-2 text-sm leading-6 text-[#7E776E]">{activeViewMeta.description}</p>
           </div>
           <p className="lifehq-badge w-fit">{visibleTasks.length} sichtbar</p>
         </div>
@@ -728,7 +688,7 @@ export function TasksPage() {
         ) : activeView === 'nextWeek' ? (
           <WeekTaskSection tasks={tasks} projects={projects} lifeAreas={lifeAreas} actions={taskPlanningActions} weekDays={getNextWeekDays()} />
         ) : visibleTasks.length === 0 ? (
-          <p className="lifehq-empty-state mt-5">
+          <p className="lifehq-empty-task-state mt-5">
             {emptyStateMessages[activeView]}
           </p>
         ) : (

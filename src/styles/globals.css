@@ -230,3 +230,66 @@ textarea {
     @apply w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
   }
 }
+
+@layer components {
+  .lifehq-tasks-hero {
+    @apply flex min-w-0 flex-col gap-5 lg:flex-row lg:items-end lg:justify-between;
+  }
+
+  .lifehq-task-view-switcher {
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-2;
+  }
+
+  .lifehq-task-view-item {
+    @apply min-h-16 min-w-[9.5rem] rounded-2xl border border-transparent px-3 py-3 text-left text-sm text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/25 hover:bg-white/[0.025] hover:text-[#F5F1EA];
+  }
+
+  .lifehq-task-view-item-active {
+    @apply border-[#D6AD64]/35 bg-[#0A0A0A] text-[#F5F1EA] shadow-[0_0_24px_rgba(214,173,100,0.06)];
+  }
+
+  .lifehq-task-section {
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-5 sm:p-6;
+  }
+
+  .lifehq-task-row {
+    @apply min-w-0 rounded-[1.25rem] border border-white/10 bg-[#090909] p-5 transition-colors hover:border-[#D6AD64]/25 hover:bg-[#0D0D0D];
+  }
+
+  .lifehq-task-status-dot {
+    @apply mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/30;
+  }
+
+  .lifehq-task-context {
+    @apply w-fit rounded-2xl border px-3 py-2 text-xs;
+  }
+
+  .lifehq-task-chip {
+    @apply inline-flex max-w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.025] px-2.5 py-1 text-xs font-medium leading-5 text-[#B8B1A7];
+  }
+
+  .lifehq-task-action-button {
+    @apply inline-flex min-h-9 items-center justify-center rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/30 hover:text-[#F5F1EA];
+  }
+
+  .lifehq-task-action-button-gold {
+    @apply border-[#D6AD64]/25 bg-[#D6AD64]/10 text-[#F5F1EA];
+  }
+
+  .lifehq-task-planning-panel {
+    @apply mt-4 rounded-[1rem] border border-white/[0.07] bg-black/20 p-3;
+  }
+
+  .lifehq-task-form,
+  .lifehq-week-section {
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-5 sm:p-6;
+  }
+
+  .lifehq-task-form-control {
+    @apply w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
+  }
+
+  .lifehq-empty-task-state {
+    @apply min-w-0 rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-3 text-sm leading-6 text-[#7E776E];
+  }
+}
