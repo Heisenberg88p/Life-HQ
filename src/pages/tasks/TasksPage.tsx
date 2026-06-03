@@ -44,7 +44,7 @@ const taskViews: Array<{ id: TaskView; label: string; description: string }> = [
   { id: 'nextWeek', label: 'Nächste Woche', description: 'Geplante Aufgaben der kommenden Woche.' },
   { id: 'later', label: 'Später', description: 'Offene Aufgaben nach Ende der nächsten Woche.' },
   { id: 'overdue', label: 'Überfällig', description: 'Aufgaben, die ruhig geprüft und neu eingeordnet werden sollten.' },
-  { id: 'open', label: 'Offen', description: 'Alle offenen operativen Schritte.' },
+  { id: 'open', label: 'Alle Aufgaben', description: 'Alle Aufgaben, die noch nicht erledigt sind.' },
   { id: 'done', label: 'Erledigte Aufgaben', description: 'Abgeschlossene Schritte zur Nachverfolgung.' },
 ];
 
@@ -67,7 +67,7 @@ const emptyStateMessages: Record<TaskView, string> = {
   nextWeek: 'Für nächste Woche sind noch keine Aufgaben geplant. Die kommende Woche ist bereit für ruhige Vorplanung.',
   later: 'Keine später geplanten Aufgaben. Aufgaben ohne aktuellen Fokus können bewusst offen bleiben.',
   overdue: 'Keine überfälligen Aufgaben — dein System ist aktuell ruhig.',
-  open: 'Keine offenen Aufgaben. Der operative Bereich ist im Moment frei.',
+  open: 'Keine Aufgaben in dieser Ansicht. Der operative Bereich ist im Moment frei.',
   done: 'Noch keine erledigten Aufgaben. Abgeschlossene Schritte erscheinen hier zurückgenommen.',
 };
 
