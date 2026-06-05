@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { priorityLabels, taskStatusLabels as statusLabels, taskStatusOptions } from '../../constants/displayLabels';
 import { getNextWeekDays, getWeekDays, isSameDay } from '../../logic/dateLogic';
+import { formatDateDisplay } from '../../utils/dateFormat';
 import type { FormEvent } from 'react';
 import type { Priority, TaskStatus } from '../../models/common';
 import type { LifeArea } from '../../models/lifeArea';
@@ -52,27 +54,14 @@ const taskViews: Array<{ id: TaskView; label: string; description: string }> = [
   { id: 'done', label: 'Erledigte Aufgaben', description: 'Abgeschlossene Schritte zur Nachverfolgung.' },
 ];
 
-const statusLabels: Record<TaskStatus, string> = {
-  open: 'Offen',
-  in_progress: 'In Arbeit',
-  done: 'Erledigt',
-};
-
-const priorityLabels: Record<Priority, string> = {
-  low: 'Niedrig',
-  medium: 'Mittel',
-  high: 'Hoch',
-  critical: 'Kritisch',
-};
-
 const emptyStateMessages: Record<TaskView, string> = {
-  today: 'Keine Aufgaben für heute geplant. Dieser Tag ist frei für bewusste Planung.',
-  week: 'Für diese Woche sind noch keine Aufgaben geplant. Verteile konkrete nächste Schritte auf die passenden Tage.',
-  nextWeek: 'Für nächste Woche sind noch keine Aufgaben geplant. Die kommende Woche ist bereit für ruhige Vorplanung.',
-  later: 'Keine später geplanten Aufgaben. Aufgaben ohne aktuellen Fokus können bewusst offen bleiben.',
-  overdue: 'Keine überfälligen Aufgaben — dein System ist aktuell ruhig.',
-  open: 'Keine Aufgaben in dieser Ansicht. Der operative Bereich ist im Moment frei.',
-  done: 'Noch keine erledigten Aufgaben. Abgeschlossene Schritte erscheinen hier zurückgenommen.',
+  today: 'Für heute sind keine Aufgaben geplant.',
+  week: 'Für diese Woche sind keine Aufgaben geplant.',
+  nextWeek: 'Für nächste Woche sind keine Aufgaben geplant.',
+  later: 'Keine später geplanten Aufgaben vorhanden.',
+  overdue: 'Keine überfälligen Aufgaben.',
+  open: 'Keine offenen Aufgaben vorhanden.',
+  done: 'Noch keine erledigten Aufgaben vorhanden.',
 };
 
 const prioritySortOrder: Record<Priority, number> = {
@@ -392,13 +381,13 @@ function TaskCard({
             Priorität: {priorityLabels[task.priority]}
           </span>
           <span className={`lifehq-task-chip ${overdue ? 'border-[#D6AD64]/25 bg-[#D6AD64]/10 text-[#F5F1EA]' : ''}`}>
-            Fällig: {task.dueDate ?? 'Keine Fälligkeit'}{overdue ? ' · prüfen' : ''}
+            Fällig: {formatDateDisplay(task.dueDate, 'Keine Fälligkeit')}{overdue ? ' · prüfen' : ''}
           </span>
-          <span className="lifehq-task-chip">Geplant: {task.plannedDate ?? 'Nicht geplant'}</span>
+          <span className="lifehq-task-chip">Geplant: {formatDateDisplay(task.plannedDate, 'Nicht geplant')}</span>
         </div>
       </div>
 
-      {isDone && <p className="mt-3 text-xs text-[#7E776E]">Erledigt: {task.completedAt ? task.completedAt.slice(0, 10) : 'Datum nicht gesetzt'}</p>}
+      {isDone && <p className="mt-3 text-xs text-[#7E776E]">Erledigt: {formatDateDisplay(task.completedAt, 'Kein Abschlussdatum')}</p>}
 
       <div className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.07] pt-4 text-xs" aria-label={`Status und Aktionen für ${task.title}`}>
         {task.status !== 'open' && (
@@ -408,7 +397,7 @@ function TaskCard({
         )}
         {task.status !== 'in_progress' && (
           <button type="button" onClick={() => onStatusChange(task.id, 'in_progress')} className="lifehq-task-action-button lifehq-task-action-button-gold">
-            In Arbeit
+            In Arbeit setzen
           </button>
         )}
         {task.status !== 'done' && (
@@ -453,7 +442,7 @@ function TaskCard({
             <label className="space-y-2 text-xs text-[#B8B1A7]">
               <span className="lifehq-label">Status</span>
               <select value={editDraft.status} onChange={(event) => updateEditDraft({ status: event.target.value as TaskStatus })} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs">
-                {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                {taskStatusOptions.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}
               </select>
             </label>
             <label className="space-y-2 text-xs text-[#B8B1A7] lg:col-span-2">
@@ -524,10 +513,10 @@ function TaskCard({
             {hasDateDraftChanges && (
               <>
                 <button type="button" onClick={saveDateDraft} className="lifehq-task-action-button lifehq-task-action-button-gold">
-                  Änderungen speichern
+                  Speichern
                 </button>
                 <button type="button" onClick={resetDateDraft} className="lifehq-task-action-button">
-                  Änderungen abbrechen
+                  Abbrechen
                 </button>
               </>
             )}
@@ -630,7 +619,7 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: Week
                   <span aria-hidden="true" />
                   <p className="text-sm font-semibold text-[#F5F1EA]">{group.label}</p>
                 </div>
-                <p className="lifehq-label">{group.day}</p>
+                <p className="lifehq-label">{formatDateDisplay(group.day)}</p>
               </div>
               <TaskList tasks={group.tasks} projects={projects} lifeAreas={lifeAreas} actions={actions} />
             </section>
@@ -729,7 +718,7 @@ export function TasksPage() {
         <div className="max-w-3xl space-y-3">
           <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/70">OPERATIVE EBENE</p>
           <div className="space-y-2">
-            <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4rem]">Tasks</h1>
+            <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4rem]">Aufgaben</h1>
             <p className="max-w-2xl text-base leading-7 text-[#B8B1A7]">
               Eine ruhige operative Arbeitsfläche für die nächsten konkreten Schritte.
             </p>

@@ -1,5 +1,16 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import {
+  milestoneStatusLabels,
+  milestoneStatusOptions,
+  priorityLabels,
+  priorityOptions,
+  projectStatusLabels,
+  projectStatusOptions,
+  taskStatusLabels,
+  trafficLightLabels,
+  trafficLightOptions,
+} from '../../constants/displayLabels';
 import type { MilestoneStatus, Priority, ProjectStatus, TaskStatus, TrafficLightStatus } from '../../models/common';
 import type { Milestone } from '../../models/milestone';
 import type { ProjectHistoryEntry, ProjectHistoryEntryType } from '../../models/projectHistory';
@@ -12,6 +23,7 @@ import {
   selectTasksByProjectId,
   useLifeHQStore,
 } from '../../store';
+import { formatDateDisplay } from '../../utils/dateFormat';
 
 type ReactivationStatus = Extract<ProjectStatus, 'active' | 'planned'>;
 
@@ -47,42 +59,10 @@ type MilestoneDraft = {
   targetDate: string;
 };
 
-const projectStatusLabels: Record<ProjectStatus, string> = {
-  planned: 'Geplant',
-  active: 'Aktiv',
-  paused: 'Pausiert',
-  completed: 'Abgeschlossen',
-};
-
-const priorityLabels: Record<Priority, string> = {
-  low: 'Niedrig',
-  medium: 'Mittel',
-  high: 'Hoch',
-  critical: 'Kritisch',
-};
-
-const trafficLightLabels: Record<TrafficLightStatus, string> = {
-  green: 'Grün',
-  yellow: 'Gelb',
-  red: 'Rot',
-};
-
 const trafficLightStyles: Record<TrafficLightStatus, string> = {
   green: 'bg-emerald-300/80 ring-emerald-300/20',
   yellow: 'bg-amber-300/80 ring-amber-300/20',
   red: 'bg-rose-300/80 ring-rose-300/25',
-};
-
-const milestoneStatusLabels: Record<MilestoneStatus, string> = {
-  open: 'Offen',
-  in_progress: 'In Arbeit',
-  done: 'Erledigt',
-};
-
-const taskStatusLabels: Record<TaskStatus, string> = {
-  open: 'Offen',
-  in_progress: 'In Arbeit',
-  done: 'Erledigt',
 };
 
 const historyTypeLabels: Record<ProjectHistoryEntryType, string> = {
@@ -105,10 +85,6 @@ const historyTypeLabels: Record<ProjectHistoryEntryType, string> = {
 };
 
 const reactivationStatusOptions: ReactivationStatus[] = ['active', 'planned'];
-const projectStatusOptions: ProjectStatus[] = ['planned', 'active', 'paused', 'completed'];
-const priorityOptions: Priority[] = ['low', 'medium', 'high', 'critical'];
-const trafficLightOptions: TrafficLightStatus[] = ['green', 'yellow', 'red'];
-
 const defaultPauseDraft: PauseDraft = {
   reason: '',
   note: '',
@@ -136,7 +112,7 @@ function ProjectStatusCard({ label, value, icon, children }: ProjectStatusCardPr
         <span className="lifehq-project-status-icon" aria-hidden="true">{icon}</span>
         <div className="min-w-0">
           <p className="lifehq-label">{label}</p>
-          <div className="mt-2 text-sm font-semibold leading-6 text-[#F5F1EA]">{children ?? value}</div>
+          <div className="mt-2 break-words text-sm font-semibold leading-6 text-[#F5F1EA]">{children ?? value}</div>
         </div>
       </div>
     </article>
@@ -165,6 +141,11 @@ function ProjectSection({ title, description, children, secondary = false }: Pro
       <div className="mt-5">{children}</div>
     </section>
   );
+}
+
+
+function formatHistoryValue(value: string): string {
+  return formatDateDisplay(value, value);
 }
 
 function getMilestoneMarkerClass(status: MilestoneStatus): string {
@@ -547,7 +528,7 @@ export function ProjectDetailPage() {
           ← Zurück zum HQ
         </Link>
         <section className="lifehq-panel p-6">
-          <p className="lifehq-label">Project Detail</p>
+          <p className="lifehq-label">Projektdetail</p>
           <h2 className="mt-3 text-2xl font-semibold text-slate-100">Projekt nicht gefunden</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
             Dieses Projekt ist im aktuellen HQ-State nicht vorhanden. Kehre zurück ins HQ und wähle ein vorhandenes Projekt aus.
@@ -591,9 +572,9 @@ export function ProjectDetailPage() {
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-[#F5F1EA]">Projekt pausiert</p>
                 <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">
-                  {project.pausedAt ? `Seit ${project.pausedAt}` : 'Bewusst zurückgestellt, nicht verloren.'}
+                  {project.pausedAt ? `Seit ${formatDateDisplay(project.pausedAt)}` : 'Bewusst zurückgestellt, nicht verloren.'}
                 </p>
-                {project.reviewDate && <p className="mt-1 text-xs text-[#7E776E]">Wiedervorlage: {project.reviewDate}</p>}
+                {project.reviewDate && <p className="mt-1 text-xs text-[#7E776E]">Wiedervorlage: {formatDateDisplay(project.reviewDate)}</p>}
               </div>
             </div>
             <button type="button" onClick={handleReactivateProject} className="lifehq-button-primary mt-5 w-full">
@@ -725,7 +706,7 @@ export function ProjectDetailPage() {
             <span>{trafficLightLabels[project.trafficLightStatus]}</span>
           </span>
         </ProjectStatusCard>
-        <ProjectStatusCard label="Zieltermin" value={project.targetDate ?? 'Kein Zieltermin'} icon="⌁" />
+        <ProjectStatusCard label="Zieltermin" value={formatDateDisplay(project.targetDate, 'Kein Zieltermin')} icon="⌁" />
         <ProjectStatusCard label="Offene Aufgaben" value={openTaskLabel} icon="□" />
         <ProjectStatusCard label="Nächster Meilenstein" value={nextRelevantMilestoneLabel} icon="◇" />
       </div>
@@ -752,7 +733,7 @@ export function ProjectDetailPage() {
               <label className="space-y-2 text-sm text-[#B8B1A7]">
                 <span className="lifehq-label">Status</span>
                 <select value={milestoneDraft.status} onChange={(event) => updateMilestoneDraft({ status: event.target.value as MilestoneStatus })} className="lifehq-project-form-control">
-                  {Object.entries(milestoneStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  {milestoneStatusOptions.map((status) => <option key={status} value={status}>{milestoneStatusLabels[status]}</option>)}
                 </select>
               </label>
               <label className="space-y-2 text-sm text-[#B8B1A7] xl:col-span-2">
@@ -795,8 +776,8 @@ export function ProjectDetailPage() {
                       </div>
                       <div className="flex flex-wrap gap-2 text-xs text-[#B8B1A7]">
                         <span className="lifehq-badge">{milestoneStatusLabels[milestone.status]}</span>
-                        <span className="lifehq-badge">Zieltermin: {milestone.targetDate ?? 'Kein Zieltermin'}</span>
-                        {milestone.completedAt && <span className="lifehq-badge">Erledigt: {milestone.completedAt.slice(0, 10)}</span>}
+                        <span className="lifehq-badge">Zieltermin: {formatDateDisplay(milestone.targetDate, 'Kein Zieltermin')}</span>
+                        {milestone.completedAt && <span className="lifehq-badge">Erledigt: {formatDateDisplay(milestone.completedAt)}</span>}
                       </div>
                       <div className="flex flex-wrap gap-2 border-t border-white/[0.07] pt-3 text-xs">
                         {milestone.status !== 'done' && (
@@ -836,7 +817,7 @@ export function ProjectDetailPage() {
                             <label className="space-y-2 text-sm text-[#B8B1A7]">
                               <span className="lifehq-label">Status</span>
                               <select value={milestoneEditDraft.status} onChange={(event) => updateMilestoneEditDraft({ status: event.target.value as MilestoneStatus })} className="lifehq-project-form-control">
-                                {Object.entries(milestoneStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                                {milestoneStatusOptions.map((status) => <option key={status} value={status}>{milestoneStatusLabels[status]}</option>)}
                               </select>
                             </label>
                             <label className="space-y-2 text-sm text-[#B8B1A7]">
@@ -882,8 +863,8 @@ export function ProjectDetailPage() {
                 <div className="grid w-full gap-2 text-xs text-[#B8B1A7] sm:grid-cols-2 lg:w-auto lg:min-w-[22rem] lg:grid-cols-4 lg:text-right">
                   <span>Status: {taskStatusLabels[task.status]}</span>
                   <span>Priorität: {priorityLabels[task.priority]}</span>
-                  <span>Fällig: {task.dueDate ?? 'Keine Fälligkeit'}</span>
-                  <span>Geplant: {task.plannedDate ?? 'Nicht geplant'}</span>
+                  <span>Fällig: {formatDateDisplay(task.dueDate, 'Keine Fälligkeit')}</span>
+                  <span>Geplant: {formatDateDisplay(task.plannedDate, 'Nicht geplant')}</span>
                 </div>
               </article>
             ))}
@@ -903,15 +884,15 @@ export function ProjectDetailPage() {
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#B8B1A7]">{historyTypeLabels[entry.type]}</p>
-                      <p className="text-xs text-[#7E776E] sm:text-right">{entry.date}</p>
+                      <p className="text-xs text-[#7E776E] sm:text-right">{formatDateDisplay(entry.date, 'Kein Datum')}</p>
                     </div>
                     <p className="text-sm leading-6 text-[#B8B1A7]">{entry.description}</p>
                     {(entry.taskId || entry.milestoneId || entry.oldValue || entry.newValue || entry.note) && (
                       <div className="flex flex-wrap gap-2 text-xs text-[#7E776E]">
-                        {entry.taskId && <span className="lifehq-badge">Task: {entry.taskId}</span>}
+                        {entry.taskId && <span className="lifehq-badge">Aufgabe: {entry.taskId}</span>}
                         {entry.milestoneId && <span className="lifehq-badge">Meilenstein: {entry.milestoneId}</span>}
-                        {entry.oldValue && <span className="lifehq-badge">Vorher: {entry.oldValue}</span>}
-                        {entry.newValue && <span className="lifehq-badge">Neu: {entry.newValue}</span>}
+                        {entry.oldValue && <span className="lifehq-badge">Vorher: {formatHistoryValue(entry.oldValue)}</span>}
+                        {entry.newValue && <span className="lifehq-badge">Neu: {formatHistoryValue(entry.newValue)}</span>}
                         {entry.note && <span className="lifehq-badge">Notiz: {entry.note}</span>}
                       </div>
                     )}
@@ -949,7 +930,7 @@ export function ProjectDetailPage() {
             {canPauseProject && (
               <div className="lifehq-project-action-panel">
                 <div className="max-w-2xl">
-                  <p className="lifehq-label">Focus Decision</p>
+                  <p className="lifehq-label">Fokusentscheidung</p>
                   <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Projekt pausieren</h4>
                   <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">
                     Pausieren nimmt dieses Projekt bewusst aus dem aktiven Fokus. Es bleibt gespeichert und kann später wieder aufgenommen werden.
@@ -996,7 +977,7 @@ export function ProjectDetailPage() {
             {hasPauseInformation && (
               <div className="lifehq-project-action-panel">
                 <div className="max-w-2xl">
-                  <p className="lifehq-label">Paused Project</p>
+                  <p className="lifehq-label">Pausiertes Projekt</p>
                   <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Pausierungsinformationen</h4>
                   <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">
                     Dieses Projekt ist bewusst pausiert oder wurde bewusst pausiert. Es bleibt gespeichert und kann später wieder aufgenommen werden.
@@ -1004,16 +985,16 @@ export function ProjectDetailPage() {
                 </div>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <ProjectStatusCard label="Pausierungsdatum" value={project.pausedAt ?? 'Kein Pausierungsdatum'} icon="Ⅱ" />
+                  <ProjectStatusCard label="Pausierungsdatum" value={formatDateDisplay(project.pausedAt, 'Kein Pausierungsdatum')} icon="Ⅱ" />
                   <ProjectStatusCard label="Pausierungsgrund" value={project.pauseReason ?? 'Kein Pausierungsgrund'} icon="✦" />
                   <ProjectStatusCard label="Pausierungsnotiz" value={project.pauseNote ?? 'Keine Pausierungsnotiz'} icon="◇" />
-                  <ProjectStatusCard label="Wiedervorlage" value={project.reviewDate ?? 'Keine Wiedervorlage'} icon="⌁" />
+                  <ProjectStatusCard label="Wiedervorlage" value={formatDateDisplay(project.reviewDate, 'Keine Wiedervorlage')} icon="⌁" />
                 </div>
 
                 {isPausedProject && (
                   <div className="lifehq-project-action-panel mt-5 border-[#D6AD64]/20 bg-black/25">
                     <div className="max-w-2xl">
-                      <p className="lifehq-label">Return to Focus</p>
+                      <p className="lifehq-label">Zurück in den Fokus</p>
                       <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Projekt reaktivieren</h4>
                       <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">
                         Reaktivieren bringt dieses Projekt zurück in den geplanten oder aktiven Arbeitszustand.
@@ -1100,14 +1081,14 @@ export function ProjectDetailPage() {
             {hasReactivationInformation && (
               <div className="lifehq-project-action-panel">
                 <div className="max-w-2xl">
-                  <p className="lifehq-label">Project Return</p>
+                  <p className="lifehq-label">Projektrückkehr</p>
                   <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Reaktivierungsinformationen</h4>
                   <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">
                     Diese Informationen halten fest, wann das Projekt wieder bewusst aufgenommen wurde.
                   </p>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <ProjectStatusCard label="Reaktivierungsdatum" value={project.reactivatedAt ?? 'Kein Reaktivierungsdatum'} icon="↺" />
+                  <ProjectStatusCard label="Reaktivierungsdatum" value={formatDateDisplay(project.reactivatedAt, 'Kein Reaktivierungsdatum')} icon="↺" />
                   <ProjectStatusCard label="Reaktivierungsnotiz" value={project.reactivationNote ?? 'Keine Reaktivierungsnotiz'} icon="✦" />
                 </div>
               </div>
