@@ -26,12 +26,16 @@ type TaskView = 'today' | 'week' | 'nextWeek' | 'later' | 'overdue' | 'open' | '
 
 type TaskDraft = {
   title: string;
+  description: string;
+  status: TaskStatus;
   priority: Priority;
   projectId: string;
   lifeAreaId: string;
   dueDate: string;
   plannedDate: string;
 };
+
+type TaskEditDraft = TaskDraft;
 
 type TaskDateDraft = {
   plannedDate: string;
@@ -132,6 +136,8 @@ const contextStyles: Record<TaskContextInfo['tone'], string> = {
 
 const defaultTaskDraft: TaskDraft = {
   title: '',
+  description: '',
+  status: 'open',
   priority: 'medium',
   projectId: '',
   lifeAreaId: '',
@@ -146,8 +152,45 @@ function getTaskDateDraft(task: Task): TaskDateDraft {
   };
 }
 
+function getTaskEditDraft(task: Task): TaskEditDraft {
+  return {
+    title: task.title,
+    description: task.description ?? '',
+    status: task.status,
+    priority: task.priority,
+    projectId: task.projectId ?? '',
+    lifeAreaId: task.lifeAreaId ?? '',
+    dueDate: task.dueDate ?? '',
+    plannedDate: task.plannedDate ?? '',
+  };
+}
+
+function getOptionalTaskText(value: string): string | undefined {
+  const trimmedValue = value.trim();
+
+  return trimmedValue ? trimmedValue : undefined;
+}
+
 function createTaskId(): string {
   return `t-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getUniqueTasks(tasks: Task[]): Task[] {
+  const uniqueTasks = new Map<string, Task>();
+
+  tasks.forEach((task) => {
+    uniqueTasks.set(task.id, task);
+  });
+
+  return Array.from(uniqueTasks.values());
+}
+
+function getUnplannedOpenTasks(tasks: Task[]): Task[] {
+  return tasks.filter((task) => !task.plannedDate && task.status !== 'done');
+}
+
+function getWeekViewTasks(tasks: Task[], plannedTasks: Task[]): Task[] {
+  return getUniqueTasks([...plannedTasks, ...getUnplannedOpenTasks(tasks), ...getOverdueTasks(tasks)]);
 }
 
 function getVisibleTasks(tasks: Task[], activeView: TaskView): Task[] {
@@ -155,9 +198,9 @@ function getVisibleTasks(tasks: Task[], activeView: TaskView): Task[] {
     case 'today':
       return sortTasksForPlanning(getTasksForToday(tasks));
     case 'week':
-      return sortTasksForPlanning(getTasksForCurrentWeek(tasks));
+      return sortTasksForPlanning(getWeekViewTasks(tasks, getTasksForCurrentWeek(tasks)));
     case 'nextWeek':
-      return sortTasksForPlanning(getTasksForNextWeek(tasks));
+      return sortTasksForPlanning(getWeekViewTasks(tasks, getTasksForNextWeek(tasks)));
     case 'later':
       return sortTasksForPlanning(getTasksForLater(tasks));
     case 'overdue':
@@ -201,6 +244,8 @@ function getTaskContext(task: Task, projects: Project[], lifeAreas: LifeArea[]):
 interface TaskCardProps {
   task: Task;
   context: TaskContextInfo;
+  projects: Project[];
+  lifeAreas: LifeArea[];
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onPlanToday: (taskId: string) => void;
   onPlanTomorrow: (taskId: string) => void;
@@ -208,11 +253,15 @@ interface TaskCardProps {
   onSetPlannedDate: (taskId: string, plannedDate: string) => void;
   onSetDueDate: (taskId: string, dueDate: string) => void;
   onClearDueDate: (taskId: string) => void;
+  onUpdateTask: (taskId: string, patch: Partial<Task>) => void;
+  onDeleteTask: (taskId: string) => void;
 }
 
 function TaskCard({
   task,
   context,
+  projects,
+  lifeAreas,
   onStatusChange,
   onPlanToday,
   onPlanTomorrow,
@@ -220,14 +269,27 @@ function TaskCard({
   onSetPlannedDate,
   onSetDueDate,
   onClearDueDate,
+  onUpdateTask,
+  onDeleteTask,
 }: TaskCardProps) {
   const overdue = isTaskOverdue(task);
   const isDone = task.status === 'done';
   const [dateDraft, setDateDraft] = useState<TaskDateDraft>(() => getTaskDateDraft(task));
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editDraft, setEditDraft] = useState<TaskEditDraft>(() => getTaskEditDraft(task));
+  const [editError, setEditError] = useState<string | undefined>();
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   useEffect(() => {
     setDateDraft(getTaskDateDraft(task));
   }, [task.dueDate, task.plannedDate]);
+
+  useEffect(() => {
+    setEditDraft(getTaskEditDraft(task));
+    setEditError(undefined);
+    setIsEditOpen(false);
+    setIsDeleteConfirmOpen(false);
+  }, [task.id]);
 
   const hasDateDraftChanges =
     dateDraft.plannedDate !== (task.plannedDate ?? '') || dateDraft.dueDate !== (task.dueDate ?? '');
@@ -238,6 +300,16 @@ function TaskCard({
 
   function resetDateDraft() {
     setDateDraft(getTaskDateDraft(task));
+  }
+
+  function updateEditDraft(patch: Partial<TaskEditDraft>) {
+    setEditDraft((current) => ({ ...current, ...patch }));
+    setEditError(undefined);
+  }
+
+  function resetEditDraft() {
+    setEditDraft(getTaskEditDraft(task));
+    setEditError(undefined);
   }
 
   function saveDateDraft() {
@@ -256,6 +328,40 @@ function TaskCard({
         onClearDueDate(task.id);
       }
     }
+  }
+
+  function handleSaveTaskEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const title = editDraft.title.trim();
+
+    if (!title) {
+      setEditError('Bitte gib einen Aufgabentitel ein.');
+      return;
+    }
+
+    const projectId = editDraft.projectId || undefined;
+
+    onUpdateTask(task.id, {
+      title,
+      description: getOptionalTaskText(editDraft.description),
+      priority: editDraft.priority,
+      dueDate: editDraft.dueDate || undefined,
+      plannedDate: editDraft.plannedDate || undefined,
+      projectId,
+      lifeAreaId: projectId ? undefined : editDraft.lifeAreaId || undefined,
+    });
+
+    if (editDraft.status !== task.status) {
+      onStatusChange(task.id, editDraft.status);
+    }
+
+    setEditError(undefined);
+    setIsEditOpen(false);
+  }
+
+  function handleDeleteTask() {
+    onDeleteTask(task.id);
   }
 
   return (
@@ -294,7 +400,7 @@ function TaskCard({
 
       {isDone && <p className="mt-3 text-xs text-[#7E776E]">Erledigt: {task.completedAt ? task.completedAt.slice(0, 10) : 'Datum nicht gesetzt'}</p>}
 
-      <div className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.07] pt-4 text-xs" aria-label={`Status für ${task.title} ändern`}>
+      <div className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.07] pt-4 text-xs" aria-label={`Status und Aktionen für ${task.title}`}>
         {task.status !== 'open' && (
           <button type="button" onClick={() => onStatusChange(task.id, 'open')} className="lifehq-task-action-button">
             Wieder öffnen
@@ -310,7 +416,88 @@ function TaskCard({
             Erledigen
           </button>
         )}
+        <button
+          type="button"
+          onClick={() => {
+            resetEditDraft();
+            setIsEditOpen((current) => !current);
+            setIsDeleteConfirmOpen(false);
+          }}
+          className="lifehq-task-action-button"
+        >
+          Bearbeiten
+        </button>
+        <button type="button" onClick={() => setIsDeleteConfirmOpen((current) => !current)} className="lifehq-task-action-button">
+          Löschen
+        </button>
       </div>
+
+      {isDeleteConfirmOpen && (
+        <div className="lifehq-danger-zone mt-4">
+          <p className="text-sm text-[#B8B1A7]">Diese Aufgabe wirklich löschen?</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" onClick={() => setIsDeleteConfirmOpen(false)} className="lifehq-task-action-button">Abbrechen</button>
+            <button type="button" onClick={handleDeleteTask} className="lifehq-task-action-button lifehq-task-action-button-gold">Endgültig löschen</button>
+          </div>
+        </div>
+      )}
+
+      {isEditOpen && (
+        <form onSubmit={handleSaveTaskEdit} className="lifehq-task-planning-panel">
+          <p className="lifehq-label">Aufgabe bearbeiten</p>
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            <label className="space-y-2 text-xs text-[#B8B1A7]">
+              <span className="lifehq-label">Titel</span>
+              <input value={editDraft.title} onChange={(event) => updateEditDraft({ title: event.target.value })} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs" />
+            </label>
+            <label className="space-y-2 text-xs text-[#B8B1A7]">
+              <span className="lifehq-label">Status</span>
+              <select value={editDraft.status} onChange={(event) => updateEditDraft({ status: event.target.value as TaskStatus })} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs">
+                {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </label>
+            <label className="space-y-2 text-xs text-[#B8B1A7] lg:col-span-2">
+              <span className="lifehq-label">Beschreibung</span>
+              <textarea value={editDraft.description} onChange={(event) => updateEditDraft({ description: event.target.value })} rows={3} className="lifehq-task-form-control min-h-20 px-3 py-2 text-xs" />
+            </label>
+            <label className="space-y-2 text-xs text-[#B8B1A7]">
+              <span className="lifehq-label">Priorität</span>
+              <select value={editDraft.priority} onChange={(event) => updateEditDraft({ priority: event.target.value as Priority })} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs">
+                {Object.entries(priorityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </label>
+            <label className="space-y-2 text-xs text-[#B8B1A7]">
+              <span className="lifehq-label">Projekt</span>
+              <select value={editDraft.projectId} onChange={(event) => updateEditDraft({ projectId: event.target.value, lifeAreaId: event.target.value ? '' : editDraft.lifeAreaId })} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs">
+                <option value="">Kein Projekt</option>
+                {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+              </select>
+            </label>
+            <label className="space-y-2 text-xs text-[#B8B1A7]">
+              <span className="lifehq-label">Lebensbereich</span>
+              <select value={editDraft.lifeAreaId} onChange={(event) => updateEditDraft({ lifeAreaId: event.target.value })} disabled={Boolean(editDraft.projectId)} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:text-[#7E776E]">
+                <option value="">Kein Lebensbereich</option>
+                {lifeAreas.map((lifeArea) => <option key={lifeArea.id} value={lifeArea.id}>{lifeArea.name}</option>)}
+              </select>
+            </label>
+            <label className="space-y-2 text-xs text-[#B8B1A7]">
+              <span className="lifehq-label">Fälligkeit</span>
+              <input type="date" value={editDraft.dueDate} onChange={(event) => updateEditDraft({ dueDate: event.target.value })} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs" />
+            </label>
+            <label className="space-y-2 text-xs text-[#B8B1A7]">
+              <span className="lifehq-label">Geplant</span>
+              <input type="date" value={editDraft.plannedDate} onChange={(event) => updateEditDraft({ plannedDate: event.target.value })} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs" />
+            </label>
+          </div>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            {editError ? <p className="text-sm text-amber-100">{editError}</p> : <p className="text-sm text-[#7E776E]">Änderungen werden direkt in allen Task-Ansichten übernommen.</p>}
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => { resetEditDraft(); setIsEditOpen(false); }} className="lifehq-task-action-button">Abbrechen</button>
+              <button type="submit" className="lifehq-task-action-button lifehq-task-action-button-gold">Speichern</button>
+            </div>
+          </div>
+        </form>
+      )}
 
       <div className="lifehq-task-planning-panel">
         <p className="lifehq-label">Planung</p>
@@ -384,6 +571,8 @@ interface TaskPlanningActions {
   onSetPlannedDate: (taskId: string, plannedDate: string) => void;
   onSetDueDate: (taskId: string, dueDate: string) => void;
   onClearDueDate: (taskId: string) => void;
+  onUpdateTask: (taskId: string, patch: Partial<Task>) => void;
+  onDeleteTask: (taskId: string) => void;
 }
 
 interface WeekTaskSectionProps extends TaskListProps {
@@ -398,6 +587,8 @@ function TaskList({ tasks, projects, lifeAreas, actions }: TaskListProps) {
           key={task.id}
           task={task}
           context={getTaskContext(task, projects, lifeAreas)}
+          projects={projects}
+          lifeAreas={lifeAreas}
           {...actions}
         />
       ))}
@@ -406,7 +597,7 @@ function TaskList({ tasks, projects, lifeAreas, actions }: TaskListProps) {
 }
 
 function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: WeekTaskSectionProps) {
-  const unplannedTasks = sortTasksForPlanning(tasks.filter((task) => !task.plannedDate && task.status !== 'done'));
+  const unplannedTasks = sortTasksForPlanning(getUnplannedOpenTasks(tasks));
   const overdueTasks = sortOverdueTasks(getOverdueTasks(tasks));
   const plannedDayGroups = weekDays
     .map((day, index) => ({
@@ -415,8 +606,9 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: Week
       tasks: sortTasksForPlanning(tasks.filter((task) => isSameDay(task.plannedDate, day))),
     }))
     .filter((group) => group.tasks.length > 0);
+  const hasRelevantWeekTasks = plannedDayGroups.length > 0 || unplannedTasks.length > 0 || overdueTasks.length > 0;
 
-  if (plannedDayGroups.length === 0) {
+  if (!hasRelevantWeekTasks) {
     return <p className="lifehq-empty-task-state mt-5">Für diesen Zeitraum sind keine Aufgaben geplant.</p>;
   }
 
@@ -429,20 +621,22 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: Week
         </div>
       )}
 
-      <div className="space-y-3">
-        {plannedDayGroups.map((group) => (
-          <section key={group.day} className="lifehq-week-section">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-              <div className="lifehq-section-title">
-                <span aria-hidden="true" />
-                <p className="text-sm font-semibold text-[#F5F1EA]">{group.label}</p>
+      {plannedDayGroups.length > 0 && (
+        <div className="space-y-3">
+          {plannedDayGroups.map((group) => (
+            <section key={group.day} className="lifehq-week-section">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+                <div className="lifehq-section-title">
+                  <span aria-hidden="true" />
+                  <p className="text-sm font-semibold text-[#F5F1EA]">{group.label}</p>
+                </div>
+                <p className="lifehq-label">{group.day}</p>
               </div>
-              <p className="lifehq-label">{group.day}</p>
-            </div>
-            <TaskList tasks={group.tasks} projects={projects} lifeAreas={lifeAreas} actions={actions} />
-          </section>
-        ))}
-      </div>
+              <TaskList tasks={group.tasks} projects={projects} lifeAreas={lifeAreas} actions={actions} />
+            </section>
+          ))}
+        </div>
+      )}
 
       {unplannedTasks.length > 0 && (
         <section className="lifehq-week-section">
@@ -471,6 +665,8 @@ export function TasksPage() {
   const setTaskPlannedDate = useLifeHQStore((state) => state.setTaskPlannedDate);
   const setTaskDueDate = useLifeHQStore((state) => state.setTaskDueDate);
   const clearTaskDueDate = useLifeHQStore((state) => state.clearTaskDueDate);
+  const updateTask = useLifeHQStore((state) => state.updateTask);
+  const deleteTask = useLifeHQStore((state) => state.deleteTask);
 
   const visibleTasks = useMemo(() => getVisibleTasks(tasks, activeView), [activeView, tasks]);
   const activeViewMeta = taskViews.find((view) => view.id === activeView) ?? taskViews[0];
@@ -482,6 +678,8 @@ export function TasksPage() {
     onSetPlannedDate: setTaskPlannedDate,
     onSetDueDate: setTaskDueDate,
     onClearDueDate: clearTaskDueDate,
+    onUpdateTask: updateTask,
+    onDeleteTask: deleteTask,
   };
 
   function updateTaskDraft(patch: Partial<TaskDraft>) {
@@ -510,6 +708,7 @@ export function TasksPage() {
     addTask({
       id: createTaskId(),
       title,
+      description: getOptionalTaskText(taskDraft.description),
       status: 'open',
       priority: taskDraft.priority,
       dueDate: taskDraft.dueDate || undefined,
@@ -577,6 +776,17 @@ export function TasksPage() {
                 value={taskDraft.title}
                 onChange={(event) => updateTaskDraft({ title: event.target.value })}
                 placeholder="Was ist der nächste konkrete Schritt?"
+                className="lifehq-task-form-control"
+              />
+            </label>
+
+            <label className="space-y-1.5 text-sm text-[#B8B1A7] lg:col-span-3">
+              <span className="lifehq-label">Beschreibung</span>
+              <textarea
+                value={taskDraft.description}
+                onChange={(event) => updateTaskDraft({ description: event.target.value })}
+                placeholder="Optionale Beschreibung"
+                rows={3}
                 className="lifehq-task-form-control"
               />
             </label>
