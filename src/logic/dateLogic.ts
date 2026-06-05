@@ -1,66 +1,108 @@
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-export function normalizeDate(date: string | Date): string {
+function padDatePart(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+function formatLocalDate(date: Date): string {
+  return `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}`;
+}
+
+export function isValidDateString(value: string): boolean {
+  if (!DATE_ONLY_REGEX.test(value)) {
+    return false;
+  }
+
+  const [yearPart, monthPart, dayPart] = value.split('-');
+  const year = Number(yearPart);
+  const month = Number(monthPart);
+  const day = Number(dayPart);
+  const localDate = new Date(year, month - 1, day);
+
+  return (
+    localDate.getFullYear() === year &&
+    localDate.getMonth() === month - 1 &&
+    localDate.getDate() === day
+  );
+}
+
+export function safeNormalizeDate(date?: string | Date): string | undefined {
+  if (!date) {
+    return undefined;
+  }
+
   if (typeof date === 'string' && DATE_ONLY_REGEX.test(date)) {
-    return date;
+    return isValidDateString(date) ? date : undefined;
   }
 
   const parsedDate = date instanceof Date ? date : new Date(date);
 
   if (Number.isNaN(parsedDate.getTime())) {
-    throw new Error('Invalid date value provided to normalizeDate');
+    return undefined;
   }
 
-  return parsedDate.toISOString().slice(0, 10);
+  return formatLocalDate(parsedDate);
 }
 
-function toUtcDate(date: string | Date): Date {
-  return new Date(`${normalizeDate(date)}T00:00:00.000Z`);
+export function normalizeDate(date: string | Date): string {
+  return safeNormalizeDate(date) ?? '';
+}
+
+function toLocalDate(date: string | Date): Date | undefined {
+  const normalizedDate = safeNormalizeDate(date);
+
+  if (!normalizedDate) {
+    return undefined;
+  }
+
+  const [yearPart, monthPart, dayPart] = normalizedDate.split('-');
+
+  return new Date(Number(yearPart), Number(monthPart) - 1, Number(dayPart));
 }
 
 export function getTodayDateString(): string {
-  return normalizeDate(new Date());
+  return formatLocalDate(new Date());
 }
 
 export function getTomorrowDateString(): string {
-  const tomorrow = toUtcDate(getTodayDateString());
-  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  const tomorrow = toLocalDate(getTodayDateString()) ?? new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
 
-  return normalizeDate(tomorrow);
+  return formatLocalDate(tomorrow);
 }
 
 export function getStartOfWeek(date: string | Date = new Date()): string {
-  const normalizedDate = toUtcDate(date);
-  const dayOfWeek = normalizedDate.getUTCDay();
+  const normalizedDate = toLocalDate(date) ?? toLocalDate(getTodayDateString()) ?? new Date();
+  const dayOfWeek = normalizedDate.getDay();
   const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
 
-  normalizedDate.setUTCDate(normalizedDate.getUTCDate() + mondayOffset);
+  normalizedDate.setDate(normalizedDate.getDate() + mondayOffset);
 
-  return normalizeDate(normalizedDate);
+  return formatLocalDate(normalizedDate);
 }
 
 export function getEndOfWeek(date: string | Date = new Date()): string {
-  const weekEnd = toUtcDate(getStartOfWeek(date));
-  weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+  const weekEnd = toLocalDate(getStartOfWeek(date)) ?? new Date();
+  weekEnd.setDate(weekEnd.getDate() + 6);
 
-  return normalizeDate(weekEnd);
+  return formatLocalDate(weekEnd);
 }
 
 export function getWeekDays(date: string | Date = new Date()): string[] {
-  const weekStart = toUtcDate(getStartOfWeek(date));
+  const weekStart = toLocalDate(getStartOfWeek(date)) ?? new Date();
 
   return Array.from({ length: 7 }, (_, index) => {
     const day = new Date(weekStart.getTime() + index * DAY_IN_MS);
-    return normalizeDate(day);
+    return formatLocalDate(day);
   });
 }
 
 function addDays(date: string | Date, days: number): string {
-  const targetDate = toUtcDate(date);
-  targetDate.setUTCDate(targetDate.getUTCDate() + days);
+  const targetDate = toLocalDate(date) ?? new Date();
+  targetDate.setDate(targetDate.getDate() + days);
 
-  return normalizeDate(targetDate);
+  return formatLocalDate(targetDate);
 }
 
 export function getNextWeekDays(date: string | Date = new Date()): string[] {
@@ -68,32 +110,40 @@ export function getNextWeekDays(date: string | Date = new Date()): string[] {
 }
 
 export function isNextWeek(date?: string | Date, referenceDate: string | Date = new Date()): boolean {
-  if (!date) {
+  const normalizedDate = safeNormalizeDate(date);
+  const normalizedReferenceDate = safeNormalizeDate(referenceDate);
+
+  if (!normalizedDate || !normalizedReferenceDate) {
     return false;
   }
 
-  const nextWeekDays = getNextWeekDays(referenceDate);
-  const normalizedDate = normalizeDate(date);
+  const nextWeekDays = getNextWeekDays(normalizedReferenceDate);
 
   return normalizedDate >= nextWeekDays[0] && normalizedDate <= nextWeekDays[nextWeekDays.length - 1];
 }
 
 export function isAfterNextWeek(date?: string | Date, referenceDate: string | Date = new Date()): boolean {
-  if (!date) {
+  const normalizedDate = safeNormalizeDate(date);
+  const normalizedReferenceDate = safeNormalizeDate(referenceDate);
+
+  if (!normalizedDate || !normalizedReferenceDate) {
     return false;
   }
 
-  const nextWeekDays = getNextWeekDays(referenceDate);
+  const nextWeekDays = getNextWeekDays(normalizedReferenceDate);
 
-  return normalizeDate(date) > nextWeekDays[nextWeekDays.length - 1];
+  return normalizedDate > nextWeekDays[nextWeekDays.length - 1];
 }
 
 export function isSameDay(dateA?: string | Date, dateB?: string | Date): boolean {
-  if (!dateA || !dateB) {
+  const normalizedDateA = safeNormalizeDate(dateA);
+  const normalizedDateB = safeNormalizeDate(dateB);
+
+  if (!normalizedDateA || !normalizedDateB) {
     return false;
   }
 
-  return normalizeDate(dateA) === normalizeDate(dateB);
+  return normalizedDateA === normalizedDateB;
 }
 
 export function isToday(date?: string | Date): boolean {
@@ -101,29 +151,29 @@ export function isToday(date?: string | Date): boolean {
 }
 
 export function isTomorrow(date?: string | Date): boolean {
-  if (!date) {
-    return false;
-  }
-
   return isSameDay(date, getTomorrowDateString());
 }
 
 export function isPastDate(date?: string | Date, referenceDate: string | Date = new Date()): boolean {
-  if (!date) {
+  const normalizedDate = safeNormalizeDate(date);
+  const normalizedReferenceDate = safeNormalizeDate(referenceDate);
+
+  if (!normalizedDate || !normalizedReferenceDate) {
     return false;
   }
 
-  return normalizeDate(date) < normalizeDate(referenceDate);
+  return normalizedDate < normalizedReferenceDate;
 }
 
 export function isThisWeek(date?: string | Date, referenceDate: string | Date = new Date()): boolean {
-  if (!date) {
+  const normalizedDate = safeNormalizeDate(date);
+  const normalizedReferenceDate = safeNormalizeDate(referenceDate);
+
+  if (!normalizedDate || !normalizedReferenceDate) {
     return false;
   }
 
-  const normalizedDate = normalizeDate(date);
-
-  return normalizedDate >= getStartOfWeek(referenceDate) && normalizedDate <= getEndOfWeek(referenceDate);
+  return normalizedDate >= getStartOfWeek(normalizedReferenceDate) && normalizedDate <= getEndOfWeek(normalizedReferenceDate);
 }
 
 export function isBeforeToday(date?: string | Date): boolean {

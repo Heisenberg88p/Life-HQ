@@ -4,6 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LifeHQ V1</title>
+    <script>
+      (function () {
+        var redirect = window.location.search;
+
+        if (redirect.slice(0, 2) !== '?/') {
+          return;
+        }
+
+        var route = redirect
+          .slice(2)
+          .split('&')
+          .map(function (part) {
+            return part.replace(/~and~/g, '&');
+          })
+          .join('?');
+
+        window.history.replaceState(null, '', window.location.pathname + route + window.location.hash);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

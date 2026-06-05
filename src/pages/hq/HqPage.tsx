@@ -4,6 +4,7 @@ import type { LifeArea } from '../../models/lifeArea';
 import type { Project } from '../../models/project';
 import type { Task } from '../../models/task';
 import type { Priority, ProjectStatus, TrafficLightStatus } from '../../models/common';
+import { priorityLabels, projectStatusLabels, trafficLightLabels } from '../../constants/displayLabels';
 import {
   selectActiveProjects,
   selectCompletedProjects,
@@ -40,26 +41,6 @@ const defaultProjectDraft: ProjectDraft = {
   priority: 'medium',
   trafficLightStatus: 'green',
   targetDate: '',
-};
-
-const projectStatusLabels: Record<ProjectStatus, string> = {
-  planned: 'Geplant',
-  active: 'Aktiv',
-  paused: 'Pausiert',
-  completed: 'Abgeschlossen',
-};
-
-const priorityLabels: Record<Priority, string> = {
-  low: 'Niedrig',
-  medium: 'Mittel',
-  high: 'Hoch',
-  critical: 'Kritisch',
-};
-
-const trafficLightLabels: Record<TrafficLightStatus, string> = {
-  green: 'Grün',
-  yellow: 'Gelb',
-  red: 'Rot',
 };
 
 function createEntityId(prefix: string): string {

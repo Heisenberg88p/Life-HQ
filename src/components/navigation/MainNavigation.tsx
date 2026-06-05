@@ -5,7 +5,7 @@ type NavigationIcon = 'hq' | 'tasks';
 
 const navigationItems: Array<{ to: string; label: string; description: string; icon: NavigationIcon }> = [
   { to: '/hq', label: 'HQ', description: 'Strategie', icon: 'hq' },
-  { to: '/tasks', label: 'Tasks', description: 'Umsetzung', icon: 'tasks' },
+  { to: '/tasks', label: 'Aufgaben', description: 'Umsetzung', icon: 'tasks' },
 ];
 
 interface MainNavigationProps {

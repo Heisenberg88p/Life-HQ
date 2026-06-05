@@ -16,7 +16,7 @@ export function createProjectHistoryEntry(input: CreateProjectHistoryEntryInput)
   const timestamp = input.date ?? new Date().toISOString();
 
   return {
-    id: `h-${Date.now()}`,
+    id: `h-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     projectId: input.projectId,
     type: input.type,
     date: timestamp,
