@@ -6,7 +6,7 @@ interface PageContainerProps {
 
 export function PageContainer({ children }: PageContainerProps) {
   return (
-    <div className="flex w-full max-w-[1320px] flex-1 flex-col px-5 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 sm:pb-[calc(8rem+env(safe-area-inset-bottom))] lg:px-10 lg:py-10 xl:px-12">
+    <div className="mx-auto flex w-full max-w-[1320px] flex-1 flex-col px-4 pb-[calc(8.5rem+env(safe-area-inset-bottom))] pt-5 sm:px-6 sm:pb-[calc(8.5rem+env(safe-area-inset-bottom))] lg:px-8 lg:py-10 xl:px-12">
       {children}
     </div>
   );
