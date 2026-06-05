@@ -175,14 +175,32 @@ function createTaskId(): string {
   return `t-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function getUniqueTasks(tasks: Task[]): Task[] {
+  const uniqueTasks = new Map<string, Task>();
+
+  tasks.forEach((task) => {
+    uniqueTasks.set(task.id, task);
+  });
+
+  return Array.from(uniqueTasks.values());
+}
+
+function getUnplannedOpenTasks(tasks: Task[]): Task[] {
+  return tasks.filter((task) => !task.plannedDate && task.status !== 'done');
+}
+
+function getWeekViewTasks(tasks: Task[], plannedTasks: Task[]): Task[] {
+  return getUniqueTasks([...plannedTasks, ...getUnplannedOpenTasks(tasks), ...getOverdueTasks(tasks)]);
+}
+
 function getVisibleTasks(tasks: Task[], activeView: TaskView): Task[] {
   switch (activeView) {
     case 'today':
       return sortTasksForPlanning(getTasksForToday(tasks));
     case 'week':
-      return sortTasksForPlanning(getTasksForCurrentWeek(tasks));
+      return sortTasksForPlanning(getWeekViewTasks(tasks, getTasksForCurrentWeek(tasks)));
     case 'nextWeek':
-      return sortTasksForPlanning(getTasksForNextWeek(tasks));
+      return sortTasksForPlanning(getWeekViewTasks(tasks, getTasksForNextWeek(tasks)));
     case 'later':
       return sortTasksForPlanning(getTasksForLater(tasks));
     case 'overdue':
@@ -579,7 +597,7 @@ function TaskList({ tasks, projects, lifeAreas, actions }: TaskListProps) {
 }
 
 function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: WeekTaskSectionProps) {
-  const unplannedTasks = sortTasksForPlanning(tasks.filter((task) => !task.plannedDate && task.status !== 'done'));
+  const unplannedTasks = sortTasksForPlanning(getUnplannedOpenTasks(tasks));
   const overdueTasks = sortOverdueTasks(getOverdueTasks(tasks));
   const plannedDayGroups = weekDays
     .map((day, index) => ({
@@ -588,8 +606,9 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: Week
       tasks: sortTasksForPlanning(tasks.filter((task) => isSameDay(task.plannedDate, day))),
     }))
     .filter((group) => group.tasks.length > 0);
+  const hasRelevantWeekTasks = plannedDayGroups.length > 0 || unplannedTasks.length > 0 || overdueTasks.length > 0;
 
-  if (plannedDayGroups.length === 0) {
+  if (!hasRelevantWeekTasks) {
     return <p className="lifehq-empty-task-state mt-5">Für diesen Zeitraum sind keine Aufgaben geplant.</p>;
   }
 
@@ -602,20 +621,22 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: Week
         </div>
       )}
 
-      <div className="space-y-3">
-        {plannedDayGroups.map((group) => (
-          <section key={group.day} className="lifehq-week-section">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-              <div className="lifehq-section-title">
-                <span aria-hidden="true" />
-                <p className="text-sm font-semibold text-[#F5F1EA]">{group.label}</p>
+      {plannedDayGroups.length > 0 && (
+        <div className="space-y-3">
+          {plannedDayGroups.map((group) => (
+            <section key={group.day} className="lifehq-week-section">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+                <div className="lifehq-section-title">
+                  <span aria-hidden="true" />
+                  <p className="text-sm font-semibold text-[#F5F1EA]">{group.label}</p>
+                </div>
+                <p className="lifehq-label">{group.day}</p>
               </div>
-              <p className="lifehq-label">{group.day}</p>
-            </div>
-            <TaskList tasks={group.tasks} projects={projects} lifeAreas={lifeAreas} actions={actions} />
-          </section>
-        ))}
-      </div>
+              <TaskList tasks={group.tasks} projects={projects} lifeAreas={lifeAreas} actions={actions} />
+            </section>
+          ))}
+        </div>
+      )}
 
       {unplannedTasks.length > 0 && (
         <section className="lifehq-week-section">
