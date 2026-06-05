@@ -359,7 +359,7 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
         milestones: state.milestones.map((item) => (item.id === id ? {
           ...item,
           status,
-          ...(status === 'done' ? { completedAt: timestamp } : {}),
+          completedAt: status === 'done' ? timestamp : undefined,
           updatedAt: timestamp,
         } : item)),
         ...(shouldCreateHistoryEntry ? {
