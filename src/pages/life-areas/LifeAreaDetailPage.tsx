@@ -371,14 +371,14 @@ export function LifeAreaDetailPage() {
       <Link to="/hq" className="lifehq-back-link">← Zurück zum HQ</Link>
 
       <section className="lifehq-life-area-header p-5 sm:p-7 lg:p-8">
-        <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
           <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-start">
             <div className="lifehq-gold-icon-frame shrink-0 text-3xl" aria-hidden="true">
               {getLifeAreaSymbol(currentLifeArea.name)}
             </div>
             <div className="min-w-0 space-y-4">
               <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/70">Lebensbereich</p>
-              <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-5xl lg:text-6xl">{displayName}</h1>
+              <h1 className="break-words font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-5xl lg:text-6xl">{displayName}</h1>
               <p className="max-w-3xl text-base leading-7 text-[#B8B1A7]">
                 {getLifeAreaDisplayDescription(currentLifeArea)}
               </p>

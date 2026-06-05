@@ -346,7 +346,7 @@ export function ProjectDetailPage() {
       <section className={isPausedProject ? 'lifehq-project-hero lg:grid-cols-[minmax(0,1fr)_20rem]' : 'lifehq-project-hero'}>
         <div className="min-w-0 space-y-5">
           <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/70">Projekt</p>
-          <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-5xl lg:text-6xl">{project.name}</h1>
+          <h1 className="break-words font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-5xl lg:text-6xl">{project.name}</h1>
           <p className="max-w-3xl text-base leading-7 text-[#B8B1A7] sm:text-[1.05rem]">
             {project.description ?? 'Für dieses Projekt ist noch keine Beschreibung oder Vision hinterlegt.'}
           </p>
@@ -431,7 +431,7 @@ export function ProjectDetailPage() {
                     {task.description && <p className="text-sm leading-6 text-[#7E776E]">{task.description}</p>}
                   </div>
                 </div>
-                <div className="grid w-full gap-2 text-xs text-[#B8B1A7] sm:w-auto sm:min-w-[22rem] sm:grid-cols-4 sm:text-right">
+                <div className="grid w-full gap-2 text-xs text-[#B8B1A7] sm:grid-cols-2 lg:w-auto lg:min-w-[22rem] lg:grid-cols-4 lg:text-right">
                   <span>Status: {taskStatusLabels[task.status]}</span>
                   <span>Priorität: {priorityLabels[task.priority]}</span>
                   <span>Fällig: {task.dueDate ?? 'Keine Fälligkeit'}</span>

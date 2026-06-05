@@ -280,7 +280,7 @@ function TaskCard({
           </div>
         </div>
 
-        <div className="grid gap-2 text-xs text-[#B8B1A7] sm:grid-cols-2 xl:min-w-[25rem] xl:grid-cols-4 xl:text-right">
+        <div className="grid w-full gap-2 text-xs text-[#B8B1A7] sm:grid-cols-2 xl:w-auto xl:min-w-[25rem] xl:grid-cols-4 xl:text-right">
           <span className={`lifehq-task-chip ${statusStyles[task.status]}`}>{statusLabels[task.status]}</span>
           <span className={task.priority === 'critical' ? 'lifehq-task-chip border-[#D6AD64]/30 bg-[#D6AD64]/10 text-[#F5F1EA]' : 'lifehq-task-chip'}>
             Priorität: {priorityLabels[task.priority]}
@@ -530,7 +530,7 @@ export function TasksPage() {
         <div className="max-w-3xl space-y-3">
           <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/70">OPERATIVE EBENE</p>
           <div className="space-y-2">
-            <h1 className="font-serif text-5xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4rem]">Tasks</h1>
+            <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4rem]">Tasks</h1>
             <p className="max-w-2xl text-base leading-7 text-[#B8B1A7]">
               Eine ruhige operative Arbeitsfläche für die nächsten konkreten Schritte.
             </p>
@@ -542,7 +542,7 @@ export function TasksPage() {
           aria-controls="task-create-form"
           aria-expanded={isCreateOpen}
           onClick={() => setIsCreateOpen((current) => !current)}
-          className="lifehq-button-primary w-fit"
+          className="lifehq-button-primary w-full sm:w-fit"
         >
           Neue Aufgabe
         </button>
@@ -657,7 +657,7 @@ export function TasksPage() {
       )}
 
       <div className="lifehq-task-view-switcher">
-        <div className="flex gap-2 overflow-x-auto pb-1 md:grid md:grid-cols-4 md:overflow-visible md:pb-0 xl:grid-cols-7">
+        <div className="lifehq-scrollbar-none flex gap-2 overflow-x-auto pb-1 md:grid md:grid-cols-4 md:overflow-visible md:pb-0 xl:grid-cols-7">
           {taskViews.map((view) => (
             <button
               key={view.id}

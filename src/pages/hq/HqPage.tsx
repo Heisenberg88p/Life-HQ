@@ -327,7 +327,7 @@ function OrphanProjectList({ projects, tasks, onProjectSelect, action, children 
           const projectOpenTaskCount = tasks.filter((task) => task.projectId === project.id && task.status !== 'done').length;
 
           return (
-            <button key={project.id} type="button" onClick={() => onProjectSelect(project.id)} className="lifehq-unassigned-project-card group flex items-center gap-4 p-6 text-left">
+            <button key={project.id} type="button" onClick={() => onProjectSelect(project.id)} className="lifehq-unassigned-project-card group flex flex-col items-start gap-4 p-4 text-left sm:flex-row sm:items-center sm:p-6">
               <div className="lifehq-gold-icon-frame shrink-0" aria-hidden="true">◎</div>
               <div className="min-w-0 flex-1">
                 <h4 className="text-base font-semibold text-[#F5F1EA]">{project.name}</h4>

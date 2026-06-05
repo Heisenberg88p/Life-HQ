@@ -157,7 +157,7 @@ textarea {
   }
 
   .lifehq-life-area-stat-panel {
-    @apply grid gap-3 rounded-[1.25rem] border border-white/10 bg-black/25 p-3 sm:grid-cols-3 lg:grid-cols-1;
+    @apply grid gap-3 rounded-[1.25rem] border border-white/10 bg-black/25 p-3 sm:grid-cols-3 xl:grid-cols-1;
   }
 
   .lifehq-life-area-stat {
@@ -191,11 +191,11 @@ textarea {
   }
 
   .lifehq-project-status-grid {
-    @apply grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7;
+    @apply grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7;
   }
 
   .lifehq-project-status-card {
-    @apply min-w-0 rounded-[1.1rem] border border-white/10 bg-[#090909] px-4 py-4;
+    @apply min-w-0 rounded-[1.1rem] border border-white/10 bg-[#090909] px-4 py-4 break-words;
   }
 
   .lifehq-project-status-icon {
@@ -203,7 +203,7 @@ textarea {
   }
 
   .lifehq-project-section {
-    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-5 sm:p-6;
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-4 sm:p-5 lg:p-6;
   }
 
   .lifehq-project-section-secondary {
@@ -450,5 +450,15 @@ textarea {
       opacity: 0;
       transform: scale(1.45);
     }
+  }
+}
+
+@layer utilities {
+  .lifehq-scrollbar-none {
+    scrollbar-width: none;
+  }
+
+  .lifehq-scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
