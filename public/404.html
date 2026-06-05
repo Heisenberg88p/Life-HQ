@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LifeHQ V1</title>
+    <script>
+      (function () {
+        var segmentCount = 1;
+        var location = window.location;
+        var repositoryBase = location.pathname.split('/').slice(0, 1 + segmentCount).join('/');
+        var routePath = location.pathname.slice(repositoryBase.length);
+        var query = location.search ? '&' + location.search.slice(1).replace(/&/g, '~and~') : '';
+
+        location.replace(repositoryBase + '/?/' + routePath.replace(/^\//, '') + query + location.hash);
+      })();
+    </script>
+  </head>
+  <body>
+    <p>LifeHQ wird geladen …</p>
+  </body>
+</html>

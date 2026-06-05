@@ -1,5 +1,16 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import {
+  milestoneStatusLabels,
+  milestoneStatusOptions,
+  priorityLabels,
+  priorityOptions,
+  projectStatusLabels,
+  projectStatusOptions,
+  taskStatusLabels,
+  trafficLightLabels,
+  trafficLightOptions,
+} from '../../constants/displayLabels';
 import type { MilestoneStatus, Priority, ProjectStatus, TaskStatus, TrafficLightStatus } from '../../models/common';
 import type { Milestone } from '../../models/milestone';
 import type { ProjectHistoryEntry, ProjectHistoryEntryType } from '../../models/projectHistory';
@@ -12,6 +23,7 @@ import {
   selectTasksByProjectId,
   useLifeHQStore,
 } from '../../store';
+import { formatDateDisplay } from '../../utils/dateFormat';
 
 type ReactivationStatus = Extract<ProjectStatus, 'active' | 'planned'>;
 
@@ -40,42 +52,17 @@ type ProjectEditDraft = {
   targetDate: string;
 };
 
-const projectStatusLabels: Record<ProjectStatus, string> = {
-  planned: 'Geplant',
-  active: 'Aktiv',
-  paused: 'Pausiert',
-  completed: 'Abgeschlossen',
-};
-
-const priorityLabels: Record<Priority, string> = {
-  low: 'Niedrig',
-  medium: 'Mittel',
-  high: 'Hoch',
-  critical: 'Kritisch',
-};
-
-const trafficLightLabels: Record<TrafficLightStatus, string> = {
-  green: 'Grün',
-  yellow: 'Gelb',
-  red: 'Rot',
+type MilestoneDraft = {
+  title: string;
+  description: string;
+  status: MilestoneStatus;
+  targetDate: string;
 };
 
 const trafficLightStyles: Record<TrafficLightStatus, string> = {
   green: 'bg-emerald-300/80 ring-emerald-300/20',
   yellow: 'bg-amber-300/80 ring-amber-300/20',
   red: 'bg-rose-300/80 ring-rose-300/25',
-};
-
-const milestoneStatusLabels: Record<MilestoneStatus, string> = {
-  open: 'Offen',
-  in_progress: 'In Arbeit',
-  done: 'Erledigt',
-};
-
-const taskStatusLabels: Record<TaskStatus, string> = {
-  open: 'Offen',
-  in_progress: 'In Arbeit',
-  done: 'Erledigt',
 };
 
 const historyTypeLabels: Record<ProjectHistoryEntryType, string> = {
@@ -98,14 +85,17 @@ const historyTypeLabels: Record<ProjectHistoryEntryType, string> = {
 };
 
 const reactivationStatusOptions: ReactivationStatus[] = ['active', 'planned'];
-const projectStatusOptions: ProjectStatus[] = ['planned', 'active', 'paused', 'completed'];
-const priorityOptions: Priority[] = ['low', 'medium', 'high', 'critical'];
-const trafficLightOptions: TrafficLightStatus[] = ['green', 'yellow', 'red'];
-
 const defaultPauseDraft: PauseDraft = {
   reason: '',
   note: '',
   reviewDate: '',
+};
+
+const defaultMilestoneDraft: MilestoneDraft = {
+  title: '',
+  description: '',
+  status: 'open',
+  targetDate: '',
 };
 
 interface ProjectStatusCardProps {
@@ -122,7 +112,7 @@ function ProjectStatusCard({ label, value, icon, children }: ProjectStatusCardPr
         <span className="lifehq-project-status-icon" aria-hidden="true">{icon}</span>
         <div className="min-w-0">
           <p className="lifehq-label">{label}</p>
-          <div className="mt-2 text-sm font-semibold leading-6 text-[#F5F1EA]">{children ?? value}</div>
+          <div className="mt-2 break-words text-sm font-semibold leading-6 text-[#F5F1EA]">{children ?? value}</div>
         </div>
       </div>
     </article>
@@ -151,6 +141,11 @@ function ProjectSection({ title, description, children, secondary = false }: Pro
       <div className="mt-5">{children}</div>
     </section>
   );
+}
+
+
+function formatHistoryValue(value: string): string {
+  return formatDateDisplay(value, value);
 }
 
 function getMilestoneMarkerClass(status: MilestoneStatus): string {
@@ -260,6 +255,19 @@ function getOptionalValue(value: string): string | undefined {
   return trimmedValue ? trimmedValue : undefined;
 }
 
+function createEntityId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getMilestoneDraft(milestone: Milestone): MilestoneDraft {
+  return {
+    title: milestone.title,
+    description: milestone.description ?? '',
+    status: milestone.status,
+    targetDate: milestone.targetDate ?? '',
+  };
+}
+
 export function ProjectDetailPage() {
   const navigate = useNavigate();
   const { projectId } = useParams();
@@ -272,12 +280,24 @@ export function ProjectDetailPage() {
   const pauseProject = useLifeHQStore((state) => state.pauseProject);
   const reactivateProject = useLifeHQStore((state) => state.reactivateProject);
   const deleteProject = useLifeHQStore((state) => state.deleteProject);
+  const addMilestone = useLifeHQStore((state) => state.addMilestone);
+  const updateMilestone = useLifeHQStore((state) => state.updateMilestone);
+  const updateMilestoneStatus = useLifeHQStore((state) => state.updateMilestoneStatus);
+  const completeMilestone = useLifeHQStore((state) => state.completeMilestone);
+  const deleteMilestone = useLifeHQStore((state) => state.deleteMilestone);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editDraft, setEditDraft] = useState<ProjectEditDraft>(() => getInitialProjectEditDraft());
   const [editError, setEditError] = useState<string>();
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [pauseDraft, setPauseDraft] = useState<PauseDraft>(defaultPauseDraft);
   const [reactivationDraft, setReactivationDraft] = useState<ReactivationDraft>(() => getInitialReactivationDraft());
+  const [isMilestoneFormOpen, setIsMilestoneFormOpen] = useState(false);
+  const [milestoneDraft, setMilestoneDraft] = useState<MilestoneDraft>(defaultMilestoneDraft);
+  const [milestoneError, setMilestoneError] = useState<string | undefined>();
+  const [editingMilestoneId, setEditingMilestoneId] = useState<string | undefined>();
+  const [milestoneEditDraft, setMilestoneEditDraft] = useState<MilestoneDraft>(defaultMilestoneDraft);
+  const [milestoneEditError, setMilestoneEditError] = useState<string | undefined>();
+  const [deleteMilestoneConfirmId, setDeleteMilestoneConfirmId] = useState<string | undefined>();
   const projectLifeAreaId = project?.lifeAreaId?.trim();
   const lifeArea = projectLifeAreaId ? lifeAreas.find((area) => area.id === projectLifeAreaId) : undefined;
   const lifeAreaDisplayName = lifeArea ? getLifeAreaDisplayName(lifeArea.name) : undefined;
@@ -299,6 +319,13 @@ export function ProjectDetailPage() {
     setEditDraft(getInitialProjectEditDraft(project));
     setEditError(undefined);
     setIsEditOpen(false);
+    setIsMilestoneFormOpen(false);
+    setMilestoneDraft(defaultMilestoneDraft);
+    setMilestoneError(undefined);
+    setEditingMilestoneId(undefined);
+    setMilestoneEditDraft(defaultMilestoneDraft);
+    setMilestoneEditError(undefined);
+    setDeleteMilestoneConfirmId(undefined);
   }, [project?.id, project?.status]);
 
   function updateEditDraft(patch: Partial<ProjectEditDraft>) {
@@ -387,6 +414,102 @@ export function ProjectDetailPage() {
   }
 
 
+  function updateMilestoneDraft(patch: Partial<MilestoneDraft>) {
+    setMilestoneDraft((current) => ({ ...current, ...patch }));
+    setMilestoneError(undefined);
+  }
+
+  function resetMilestoneDraft() {
+    setMilestoneDraft(defaultMilestoneDraft);
+    setMilestoneError(undefined);
+  }
+
+  function handleCreateMilestone(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!project) {
+      return;
+    }
+
+    const title = milestoneDraft.title.trim();
+
+    if (!title) {
+      setMilestoneError('Bitte gib einen Meilenstein-Titel ein.');
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+
+    addMilestone({
+      id: createEntityId('m'),
+      projectId: project.id,
+      title,
+      description: getOptionalValue(milestoneDraft.description),
+      status: milestoneDraft.status,
+      targetDate: milestoneDraft.targetDate || undefined,
+      completedAt: milestoneDraft.status === 'done' ? timestamp : undefined,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+
+    resetMilestoneDraft();
+    setIsMilestoneFormOpen(false);
+  }
+
+  function openMilestoneEdit(milestone: Milestone) {
+    setEditingMilestoneId((current) => (current === milestone.id ? undefined : milestone.id));
+    setMilestoneEditDraft(getMilestoneDraft(milestone));
+    setMilestoneEditError(undefined);
+    setDeleteMilestoneConfirmId(undefined);
+  }
+
+  function updateMilestoneEditDraft(patch: Partial<MilestoneDraft>) {
+    setMilestoneEditDraft((current) => ({ ...current, ...patch }));
+    setMilestoneEditError(undefined);
+  }
+
+  function cancelMilestoneEdit() {
+    setEditingMilestoneId(undefined);
+    setMilestoneEditDraft(defaultMilestoneDraft);
+    setMilestoneEditError(undefined);
+  }
+
+  function handleUpdateMilestone(event: FormEvent<HTMLFormElement>, milestone: Milestone) {
+    event.preventDefault();
+
+    const title = milestoneEditDraft.title.trim();
+
+    if (!title) {
+      setMilestoneEditError('Bitte gib einen Meilenstein-Titel ein.');
+      return;
+    }
+
+    updateMilestone(milestone.id, {
+      title,
+      description: getOptionalValue(milestoneEditDraft.description),
+      targetDate: milestoneEditDraft.targetDate || undefined,
+    });
+
+    if (milestoneEditDraft.status !== milestone.status) {
+      updateMilestoneStatus(milestone.id, milestoneEditDraft.status);
+    }
+
+    cancelMilestoneEdit();
+  }
+
+  function handleCompleteMilestone(milestoneId: string) {
+    completeMilestone(milestoneId);
+    setEditingMilestoneId(undefined);
+    setDeleteMilestoneConfirmId(undefined);
+  }
+
+  function handleDeleteMilestone(milestoneId: string) {
+    deleteMilestone(milestoneId);
+    setDeleteMilestoneConfirmId(undefined);
+    setEditingMilestoneId(undefined);
+  }
+
+
   function handleDeleteProject() {
     if (!project) {
       return;
@@ -405,7 +528,7 @@ export function ProjectDetailPage() {
           ← Zurück zum HQ
         </Link>
         <section className="lifehq-panel p-6">
-          <p className="lifehq-label">Project Detail</p>
+          <p className="lifehq-label">Projektdetail</p>
           <h2 className="mt-3 text-2xl font-semibold text-slate-100">Projekt nicht gefunden</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
             Dieses Projekt ist im aktuellen HQ-State nicht vorhanden. Kehre zurück ins HQ und wähle ein vorhandenes Projekt aus.
@@ -449,9 +572,9 @@ export function ProjectDetailPage() {
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-[#F5F1EA]">Projekt pausiert</p>
                 <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">
-                  {project.pausedAt ? `Seit ${project.pausedAt}` : 'Bewusst zurückgestellt, nicht verloren.'}
+                  {project.pausedAt ? `Seit ${formatDateDisplay(project.pausedAt)}` : 'Bewusst zurückgestellt, nicht verloren.'}
                 </p>
-                {project.reviewDate && <p className="mt-1 text-xs text-[#7E776E]">Wiedervorlage: {project.reviewDate}</p>}
+                {project.reviewDate && <p className="mt-1 text-xs text-[#7E776E]">Wiedervorlage: {formatDateDisplay(project.reviewDate)}</p>}
               </div>
             </div>
             <button type="button" onClick={handleReactivateProject} className="lifehq-button-primary mt-5 w-full">
@@ -583,35 +706,139 @@ export function ProjectDetailPage() {
             <span>{trafficLightLabels[project.trafficLightStatus]}</span>
           </span>
         </ProjectStatusCard>
-        <ProjectStatusCard label="Zieltermin" value={project.targetDate ?? 'Kein Zieltermin'} icon="⌁" />
+        <ProjectStatusCard label="Zieltermin" value={formatDateDisplay(project.targetDate, 'Kein Zieltermin')} icon="⌁" />
         <ProjectStatusCard label="Offene Aufgaben" value={openTaskLabel} icon="□" />
         <ProjectStatusCard label="Nächster Meilenstein" value={nextRelevantMilestoneLabel} icon="◇" />
       </div>
 
       <ProjectSection title="Meilensteine" description="Größere Fortschrittspunkte dieses Projekts, ruhig und strategisch eingeordnet.">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm leading-6 text-[#7E776E]">Erfasse, bearbeite und schließe die wichtigsten Projektetappen direkt hier.</p>
+          <button type="button" onClick={() => { resetMilestoneDraft(); setIsMilestoneFormOpen((current) => !current); }} className="lifehq-button-secondary w-fit">
+            Meilenstein hinzufügen
+          </button>
+        </div>
+
+        {isMilestoneFormOpen && (
+          <form onSubmit={handleCreateMilestone} className="lifehq-project-edit-panel mb-5">
+            <div className="space-y-2">
+              <p className="lifehq-label">Neuer Meilenstein</p>
+              <h4 className="text-base font-semibold text-[#F5F1EA]">Projektetappe erfassen</h4>
+            </div>
+            <div className="lifehq-project-edit-grid">
+              <label className="space-y-2 text-sm text-[#B8B1A7] xl:col-span-2">
+                <span className="lifehq-label">Titel</span>
+                <input value={milestoneDraft.title} onChange={(event) => updateMilestoneDraft({ title: event.target.value })} className="lifehq-project-form-control" />
+              </label>
+              <label className="space-y-2 text-sm text-[#B8B1A7]">
+                <span className="lifehq-label">Status</span>
+                <select value={milestoneDraft.status} onChange={(event) => updateMilestoneDraft({ status: event.target.value as MilestoneStatus })} className="lifehq-project-form-control">
+                  {milestoneStatusOptions.map((status) => <option key={status} value={status}>{milestoneStatusLabels[status]}</option>)}
+                </select>
+              </label>
+              <label className="space-y-2 text-sm text-[#B8B1A7] xl:col-span-2">
+                <span className="lifehq-label">Beschreibung</span>
+                <textarea value={milestoneDraft.description} onChange={(event) => updateMilestoneDraft({ description: event.target.value })} rows={3} className="lifehq-project-form-control" />
+              </label>
+              <label className="space-y-2 text-sm text-[#B8B1A7]">
+                <span className="lifehq-label">Zieltermin</span>
+                <input type="date" value={milestoneDraft.targetDate} onChange={(event) => updateMilestoneDraft({ targetDate: event.target.value })} className="lifehq-project-form-control" />
+              </label>
+            </div>
+            <div className="lifehq-project-edit-actions">
+              {milestoneError ? <p className="text-sm leading-6 text-amber-200/90">{milestoneError}</p> : <p className="text-sm leading-6 text-[#7E776E]">Der Meilenstein wird automatisch diesem Projekt zugeordnet.</p>}
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => { resetMilestoneDraft(); setIsMilestoneFormOpen(false); }} className="lifehq-button-secondary">Abbrechen</button>
+                <button type="submit" className="lifehq-button-primary">Speichern</button>
+              </div>
+            </div>
+          </form>
+        )}
+
         {milestones.length === 0 ? (
           <p className="lifehq-empty-state">Noch keine Meilensteine vorhanden.</p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {milestones.map((milestone) => (
-              <article key={milestone.id} className={`lifehq-project-milestone-card ${milestone.status === 'done' ? 'opacity-70' : ''}`}>
-                <div className="flex items-start gap-4">
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm ${getMilestoneMarkerClass(milestone.status)}`} aria-hidden="true">
-                    {milestone.status === 'done' ? '✓' : milestone.status === 'in_progress' ? '•' : '○'}
-                  </span>
-                  <div className="min-w-0 space-y-3">
-                    <div className="space-y-2">
-                      <h4 className="text-base font-semibold tracking-tight text-[#F5F1EA]">{milestone.title}</h4>
-                      {milestone.description && <p className="text-sm leading-6 text-[#B8B1A7]">{milestone.description}</p>}
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-xs text-[#B8B1A7]">
-                      <span className="lifehq-badge">{milestoneStatusLabels[milestone.status]}</span>
-                      <span className="lifehq-badge">Zieltermin: {milestone.targetDate ?? 'Kein Zieltermin'}</span>
+            {milestones.map((milestone) => {
+              const isEditingMilestone = editingMilestoneId === milestone.id;
+              const isDeletingMilestone = deleteMilestoneConfirmId === milestone.id;
+
+              return (
+                <article key={milestone.id} className={`lifehq-project-milestone-card ${milestone.status === 'done' ? 'opacity-70' : ''}`}>
+                  <div className="flex items-start gap-4">
+                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm ${getMilestoneMarkerClass(milestone.status)}`} aria-hidden="true">
+                      {milestone.status === 'done' ? '✓' : milestone.status === 'in_progress' ? '•' : '○'}
+                    </span>
+                    <div className="min-w-0 flex-1 space-y-3">
+                      <div className="space-y-2">
+                        <h4 className="text-base font-semibold tracking-tight text-[#F5F1EA]">{milestone.title}</h4>
+                        {milestone.description && <p className="text-sm leading-6 text-[#B8B1A7]">{milestone.description}</p>}
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs text-[#B8B1A7]">
+                        <span className="lifehq-badge">{milestoneStatusLabels[milestone.status]}</span>
+                        <span className="lifehq-badge">Zieltermin: {formatDateDisplay(milestone.targetDate, 'Kein Zieltermin')}</span>
+                        {milestone.completedAt && <span className="lifehq-badge">Erledigt: {formatDateDisplay(milestone.completedAt)}</span>}
+                      </div>
+                      <div className="flex flex-wrap gap-2 border-t border-white/[0.07] pt-3 text-xs">
+                        {milestone.status !== 'done' && (
+                          <button type="button" onClick={() => handleCompleteMilestone(milestone.id)} className="lifehq-task-action-button lifehq-task-action-button-gold">
+                            Erledigen
+                          </button>
+                        )}
+                        <button type="button" onClick={() => openMilestoneEdit(milestone)} className="lifehq-task-action-button">
+                          Bearbeiten
+                        </button>
+                        <button type="button" onClick={() => { setDeleteMilestoneConfirmId((current) => current === milestone.id ? undefined : milestone.id); setEditingMilestoneId(undefined); }} className="lifehq-task-action-button">
+                          Löschen
+                        </button>
+                      </div>
+
+                      {isDeletingMilestone && (
+                        <div className="lifehq-danger-zone">
+                          <p className="text-sm leading-6 text-[#B8B1A7]">Diesen Meilenstein wirklich löschen?</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button type="button" onClick={() => setDeleteMilestoneConfirmId(undefined)} className="lifehq-button-secondary">Abbrechen</button>
+                            <button type="button" onClick={() => handleDeleteMilestone(milestone.id)} className="lifehq-button-primary">Endgültig löschen</button>
+                          </div>
+                        </div>
+                      )}
+
+                      {isEditingMilestone && (
+                        <form onSubmit={(event) => handleUpdateMilestone(event, milestone)} className="lifehq-project-edit-panel p-4">
+                          <div className="grid gap-3">
+                            <label className="space-y-2 text-sm text-[#B8B1A7]">
+                              <span className="lifehq-label">Titel</span>
+                              <input value={milestoneEditDraft.title} onChange={(event) => updateMilestoneEditDraft({ title: event.target.value })} className="lifehq-project-form-control" />
+                            </label>
+                            <label className="space-y-2 text-sm text-[#B8B1A7]">
+                              <span className="lifehq-label">Beschreibung</span>
+                              <textarea value={milestoneEditDraft.description} onChange={(event) => updateMilestoneEditDraft({ description: event.target.value })} rows={3} className="lifehq-project-form-control" />
+                            </label>
+                            <label className="space-y-2 text-sm text-[#B8B1A7]">
+                              <span className="lifehq-label">Status</span>
+                              <select value={milestoneEditDraft.status} onChange={(event) => updateMilestoneEditDraft({ status: event.target.value as MilestoneStatus })} className="lifehq-project-form-control">
+                                {milestoneStatusOptions.map((status) => <option key={status} value={status}>{milestoneStatusLabels[status]}</option>)}
+                              </select>
+                            </label>
+                            <label className="space-y-2 text-sm text-[#B8B1A7]">
+                              <span className="lifehq-label">Zieltermin</span>
+                              <input type="date" value={milestoneEditDraft.targetDate} onChange={(event) => updateMilestoneEditDraft({ targetDate: event.target.value })} className="lifehq-project-form-control" />
+                            </label>
+                          </div>
+                          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            {milestoneEditError ? <p className="text-sm text-amber-100">{milestoneEditError}</p> : <p className="text-sm text-[#7E776E]">Änderungen bleiben im Projekt gespeichert.</p>}
+                            <div className="flex flex-wrap gap-2">
+                              <button type="button" onClick={cancelMilestoneEdit} className="lifehq-button-secondary">Abbrechen</button>
+                              <button type="submit" className="lifehq-button-primary">Speichern</button>
+                            </div>
+                          </div>
+                        </form>
+                      )}
                     </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </ProjectSection>
@@ -636,8 +863,8 @@ export function ProjectDetailPage() {
                 <div className="grid w-full gap-2 text-xs text-[#B8B1A7] sm:grid-cols-2 lg:w-auto lg:min-w-[22rem] lg:grid-cols-4 lg:text-right">
                   <span>Status: {taskStatusLabels[task.status]}</span>
                   <span>Priorität: {priorityLabels[task.priority]}</span>
-                  <span>Fällig: {task.dueDate ?? 'Keine Fälligkeit'}</span>
-                  <span>Geplant: {task.plannedDate ?? 'Nicht geplant'}</span>
+                  <span>Fällig: {formatDateDisplay(task.dueDate, 'Keine Fälligkeit')}</span>
+                  <span>Geplant: {formatDateDisplay(task.plannedDate, 'Nicht geplant')}</span>
                 </div>
               </article>
             ))}
@@ -657,15 +884,15 @@ export function ProjectDetailPage() {
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#B8B1A7]">{historyTypeLabels[entry.type]}</p>
-                      <p className="text-xs text-[#7E776E] sm:text-right">{entry.date}</p>
+                      <p className="text-xs text-[#7E776E] sm:text-right">{formatDateDisplay(entry.date, 'Kein Datum')}</p>
                     </div>
                     <p className="text-sm leading-6 text-[#B8B1A7]">{entry.description}</p>
                     {(entry.taskId || entry.milestoneId || entry.oldValue || entry.newValue || entry.note) && (
                       <div className="flex flex-wrap gap-2 text-xs text-[#7E776E]">
-                        {entry.taskId && <span className="lifehq-badge">Task: {entry.taskId}</span>}
+                        {entry.taskId && <span className="lifehq-badge">Aufgabe: {entry.taskId}</span>}
                         {entry.milestoneId && <span className="lifehq-badge">Meilenstein: {entry.milestoneId}</span>}
-                        {entry.oldValue && <span className="lifehq-badge">Vorher: {entry.oldValue}</span>}
-                        {entry.newValue && <span className="lifehq-badge">Neu: {entry.newValue}</span>}
+                        {entry.oldValue && <span className="lifehq-badge">Vorher: {formatHistoryValue(entry.oldValue)}</span>}
+                        {entry.newValue && <span className="lifehq-badge">Neu: {formatHistoryValue(entry.newValue)}</span>}
                         {entry.note && <span className="lifehq-badge">Notiz: {entry.note}</span>}
                       </div>
                     )}
@@ -703,7 +930,7 @@ export function ProjectDetailPage() {
             {canPauseProject && (
               <div className="lifehq-project-action-panel">
                 <div className="max-w-2xl">
-                  <p className="lifehq-label">Focus Decision</p>
+                  <p className="lifehq-label">Fokusentscheidung</p>
                   <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Projekt pausieren</h4>
                   <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">
                     Pausieren nimmt dieses Projekt bewusst aus dem aktiven Fokus. Es bleibt gespeichert und kann später wieder aufgenommen werden.
@@ -750,7 +977,7 @@ export function ProjectDetailPage() {
             {hasPauseInformation && (
               <div className="lifehq-project-action-panel">
                 <div className="max-w-2xl">
-                  <p className="lifehq-label">Paused Project</p>
+                  <p className="lifehq-label">Pausiertes Projekt</p>
                   <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Pausierungsinformationen</h4>
                   <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">
                     Dieses Projekt ist bewusst pausiert oder wurde bewusst pausiert. Es bleibt gespeichert und kann später wieder aufgenommen werden.
@@ -758,16 +985,16 @@ export function ProjectDetailPage() {
                 </div>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <ProjectStatusCard label="Pausierungsdatum" value={project.pausedAt ?? 'Kein Pausierungsdatum'} icon="Ⅱ" />
+                  <ProjectStatusCard label="Pausierungsdatum" value={formatDateDisplay(project.pausedAt, 'Kein Pausierungsdatum')} icon="Ⅱ" />
                   <ProjectStatusCard label="Pausierungsgrund" value={project.pauseReason ?? 'Kein Pausierungsgrund'} icon="✦" />
                   <ProjectStatusCard label="Pausierungsnotiz" value={project.pauseNote ?? 'Keine Pausierungsnotiz'} icon="◇" />
-                  <ProjectStatusCard label="Wiedervorlage" value={project.reviewDate ?? 'Keine Wiedervorlage'} icon="⌁" />
+                  <ProjectStatusCard label="Wiedervorlage" value={formatDateDisplay(project.reviewDate, 'Keine Wiedervorlage')} icon="⌁" />
                 </div>
 
                 {isPausedProject && (
                   <div className="lifehq-project-action-panel mt-5 border-[#D6AD64]/20 bg-black/25">
                     <div className="max-w-2xl">
-                      <p className="lifehq-label">Return to Focus</p>
+                      <p className="lifehq-label">Zurück in den Fokus</p>
                       <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Projekt reaktivieren</h4>
                       <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">
                         Reaktivieren bringt dieses Projekt zurück in den geplanten oder aktiven Arbeitszustand.
@@ -854,14 +1081,14 @@ export function ProjectDetailPage() {
             {hasReactivationInformation && (
               <div className="lifehq-project-action-panel">
                 <div className="max-w-2xl">
-                  <p className="lifehq-label">Project Return</p>
+                  <p className="lifehq-label">Projektrückkehr</p>
                   <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Reaktivierungsinformationen</h4>
                   <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">
                     Diese Informationen halten fest, wann das Projekt wieder bewusst aufgenommen wurde.
                   </p>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <ProjectStatusCard label="Reaktivierungsdatum" value={project.reactivatedAt ?? 'Kein Reaktivierungsdatum'} icon="↺" />
+                  <ProjectStatusCard label="Reaktivierungsdatum" value={formatDateDisplay(project.reactivatedAt, 'Kein Reaktivierungsdatum')} icon="↺" />
                   <ProjectStatusCard label="Reaktivierungsnotiz" value={project.reactivationNote ?? 'Keine Reaktivierungsnotiz'} icon="✦" />
                 </div>
               </div>
