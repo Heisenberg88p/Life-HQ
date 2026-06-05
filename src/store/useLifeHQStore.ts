@@ -59,6 +59,62 @@ function getReactivateProjectInput(input?: ReactivateProjectInput | string): Rea
   return input ?? {};
 }
 
+
+const getHistoryValue = (value: string | undefined) => value ?? 'none';
+
+const hasProjectPatchValue = <K extends keyof Project>(patch: Partial<Project>, key: K): patch is Partial<Project> & Pick<Project, K> =>
+  Object.prototype.hasOwnProperty.call(patch, key);
+
+function getProjectUpdateHistoryEntries(project: Project, patch: Partial<Project>, timestamp: string): ProjectHistoryEntry[] {
+  const entries: ProjectHistoryEntry[] = [];
+
+  if (hasProjectPatchValue(patch, 'status') && patch.status !== project.status) {
+    entries.push(createProjectHistoryEntry({
+      projectId: project.id,
+      type: 'status_changed',
+      oldValue: project.status,
+      newValue: patch.status,
+      description: `Status changed: ${project.status} → ${patch.status}.`,
+      date: timestamp,
+    }));
+  }
+
+  if (hasProjectPatchValue(patch, 'priority') && patch.priority !== project.priority) {
+    entries.push(createProjectHistoryEntry({
+      projectId: project.id,
+      type: 'priority_changed',
+      oldValue: project.priority,
+      newValue: patch.priority,
+      description: `Priority changed: ${project.priority} → ${patch.priority}.`,
+      date: timestamp,
+    }));
+  }
+
+  if (hasProjectPatchValue(patch, 'trafficLightStatus') && patch.trafficLightStatus !== project.trafficLightStatus) {
+    entries.push(createProjectHistoryEntry({
+      projectId: project.id,
+      type: 'traffic_light_changed',
+      oldValue: project.trafficLightStatus,
+      newValue: patch.trafficLightStatus,
+      description: `Traffic light changed: ${project.trafficLightStatus} → ${patch.trafficLightStatus}.`,
+      date: timestamp,
+    }));
+  }
+
+  if (hasProjectPatchValue(patch, 'targetDate') && patch.targetDate !== project.targetDate) {
+    entries.push(createProjectHistoryEntry({
+      projectId: project.id,
+      type: 'target_date_changed',
+      oldValue: getHistoryValue(project.targetDate),
+      newValue: getHistoryValue(patch.targetDate),
+      description: `Target date changed: ${getHistoryValue(project.targetDate)} → ${getHistoryValue(patch.targetDate)}.`,
+      date: timestamp,
+    }));
+  }
+
+  return entries;
+}
+
 const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
   ...getInitialLifeHQData(),
 
@@ -69,7 +125,21 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
 
   addProject: (project: Project) => set((state) => ({ projects: [...state.projects, project] })),
   updateProject: (id: string, patch: Partial<Project>) =>
-    set((state) => ({ projects: state.projects.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
+    set((state) => {
+      const project = state.projects.find((item) => item.id === id);
+
+      if (!project) {
+        return {};
+      }
+
+      const timestamp = now();
+      const historyEntries = getProjectUpdateHistoryEntries(project, patch, timestamp);
+
+      return {
+        projects: state.projects.map((item) => (item.id === id ? { ...item, ...patch, updatedAt: timestamp } : item)),
+        ...(historyEntries.length > 0 ? { historyEntries: [...state.historyEntries, ...historyEntries] } : {}),
+      };
+    }),
   deleteProject: (id: string) => set((state) => ({
     projects: state.projects.filter((item) => item.id !== id),
     tasks: state.tasks.filter((item) => item.projectId !== id),
@@ -174,7 +244,7 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
             type: 'status_changed',
             oldValue: project.status,
             newValue: status,
-            description: 'Project status changed.',
+            description: `Status changed: ${project.status} → ${status}.`,
             date: timestamp,
           }),
         ],
@@ -203,7 +273,7 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
             type: 'priority_changed',
             oldValue: project.priority,
             newValue: priority,
-            description: 'Project priority changed.',
+            description: `Priority changed: ${project.priority} → ${priority}.`,
             date: timestamp,
           }),
         ],
@@ -232,14 +302,28 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
             type: 'traffic_light_changed',
             oldValue: project.trafficLightStatus,
             newValue: trafficLightStatus,
-            description: 'Project traffic light changed.',
+            description: `Traffic light changed: ${project.trafficLightStatus} → ${trafficLightStatus}.`,
             date: timestamp,
           }),
         ],
       };
     }),
 
-  addTask: (task: Task) => set((state) => ({ tasks: [...state.tasks, task] })),
+  addTask: (task: Task) => set((state) => ({
+    tasks: [...state.tasks, task],
+    ...(task.projectId ? {
+      historyEntries: [
+        ...state.historyEntries,
+        createProjectHistoryEntry({
+          projectId: task.projectId,
+          type: 'task_created',
+          taskId: task.id,
+          description: `Task created: ${task.title}.`,
+          date: task.createdAt,
+        }),
+      ],
+    } : {}),
+  })),
   updateTask: (id: string, patch: Partial<Task>) =>
     set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
   deleteTask: (id: string) => set((state) => ({ tasks: state.tasks.filter((item) => item.id !== id) })),
@@ -340,9 +424,49 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
       }) : item)),
     })),
 
-  addMilestone: (milestone: Milestone) => set((state) => ({ milestones: [...state.milestones, milestone] })),
+  addMilestone: (milestone: Milestone) => set((state) => ({
+    milestones: [...state.milestones, milestone],
+    historyEntries: [
+      ...state.historyEntries,
+      createProjectHistoryEntry({
+        projectId: milestone.projectId,
+        type: 'milestone_created',
+        milestoneId: milestone.id,
+        description: `Milestone created: ${milestone.title}.`,
+        date: milestone.createdAt,
+      }),
+    ],
+  })),
   updateMilestone: (id: string, patch: Partial<Milestone>) =>
-    set((state) => ({ milestones: state.milestones.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
+    set((state) => {
+      const milestone = state.milestones.find((item) => item.id === id);
+
+      if (!milestone) {
+        return {};
+      }
+
+      const hasChanged = Object.entries(patch).some(([key, value]) => milestone[key as keyof Milestone] !== value);
+
+      if (!hasChanged) {
+        return {};
+      }
+
+      const timestamp = now();
+
+      return {
+        milestones: state.milestones.map((item) => (item.id === id ? { ...item, ...patch, updatedAt: timestamp } : item)),
+        historyEntries: [
+          ...state.historyEntries,
+          createProjectHistoryEntry({
+            projectId: milestone.projectId,
+            type: 'milestone_updated',
+            milestoneId: milestone.id,
+            description: `Milestone updated: ${patch.title ?? milestone.title}.`,
+            date: timestamp,
+          }),
+        ],
+      };
+    }),
   deleteMilestone: (id: string) => set((state) => ({ milestones: state.milestones.filter((item) => item.id !== id) })),
   updateMilestoneStatus: (id: string, status: MilestoneStatus) =>
     set((state) => {
