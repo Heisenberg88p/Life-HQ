@@ -40,6 +40,13 @@ type ProjectEditDraft = {
   targetDate: string;
 };
 
+type MilestoneDraft = {
+  title: string;
+  description: string;
+  status: MilestoneStatus;
+  targetDate: string;
+};
+
 const projectStatusLabels: Record<ProjectStatus, string> = {
   planned: 'Geplant',
   active: 'Aktiv',
@@ -106,6 +113,13 @@ const defaultPauseDraft: PauseDraft = {
   reason: '',
   note: '',
   reviewDate: '',
+};
+
+const defaultMilestoneDraft: MilestoneDraft = {
+  title: '',
+  description: '',
+  status: 'open',
+  targetDate: '',
 };
 
 interface ProjectStatusCardProps {
@@ -260,6 +274,19 @@ function getOptionalValue(value: string): string | undefined {
   return trimmedValue ? trimmedValue : undefined;
 }
 
+function createEntityId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getMilestoneDraft(milestone: Milestone): MilestoneDraft {
+  return {
+    title: milestone.title,
+    description: milestone.description ?? '',
+    status: milestone.status,
+    targetDate: milestone.targetDate ?? '',
+  };
+}
+
 export function ProjectDetailPage() {
   const navigate = useNavigate();
   const { projectId } = useParams();
@@ -272,12 +299,24 @@ export function ProjectDetailPage() {
   const pauseProject = useLifeHQStore((state) => state.pauseProject);
   const reactivateProject = useLifeHQStore((state) => state.reactivateProject);
   const deleteProject = useLifeHQStore((state) => state.deleteProject);
+  const addMilestone = useLifeHQStore((state) => state.addMilestone);
+  const updateMilestone = useLifeHQStore((state) => state.updateMilestone);
+  const updateMilestoneStatus = useLifeHQStore((state) => state.updateMilestoneStatus);
+  const completeMilestone = useLifeHQStore((state) => state.completeMilestone);
+  const deleteMilestone = useLifeHQStore((state) => state.deleteMilestone);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editDraft, setEditDraft] = useState<ProjectEditDraft>(() => getInitialProjectEditDraft());
   const [editError, setEditError] = useState<string>();
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [pauseDraft, setPauseDraft] = useState<PauseDraft>(defaultPauseDraft);
   const [reactivationDraft, setReactivationDraft] = useState<ReactivationDraft>(() => getInitialReactivationDraft());
+  const [isMilestoneFormOpen, setIsMilestoneFormOpen] = useState(false);
+  const [milestoneDraft, setMilestoneDraft] = useState<MilestoneDraft>(defaultMilestoneDraft);
+  const [milestoneError, setMilestoneError] = useState<string | undefined>();
+  const [editingMilestoneId, setEditingMilestoneId] = useState<string | undefined>();
+  const [milestoneEditDraft, setMilestoneEditDraft] = useState<MilestoneDraft>(defaultMilestoneDraft);
+  const [milestoneEditError, setMilestoneEditError] = useState<string | undefined>();
+  const [deleteMilestoneConfirmId, setDeleteMilestoneConfirmId] = useState<string | undefined>();
   const projectLifeAreaId = project?.lifeAreaId?.trim();
   const lifeArea = projectLifeAreaId ? lifeAreas.find((area) => area.id === projectLifeAreaId) : undefined;
   const lifeAreaDisplayName = lifeArea ? getLifeAreaDisplayName(lifeArea.name) : undefined;
@@ -299,6 +338,13 @@ export function ProjectDetailPage() {
     setEditDraft(getInitialProjectEditDraft(project));
     setEditError(undefined);
     setIsEditOpen(false);
+    setIsMilestoneFormOpen(false);
+    setMilestoneDraft(defaultMilestoneDraft);
+    setMilestoneError(undefined);
+    setEditingMilestoneId(undefined);
+    setMilestoneEditDraft(defaultMilestoneDraft);
+    setMilestoneEditError(undefined);
+    setDeleteMilestoneConfirmId(undefined);
   }, [project?.id, project?.status]);
 
   function updateEditDraft(patch: Partial<ProjectEditDraft>) {
@@ -384,6 +430,102 @@ export function ProjectDetailPage() {
       description: getOptionalValue(reactivationDraft.description),
       note: getOptionalValue(reactivationDraft.note),
     });
+  }
+
+
+  function updateMilestoneDraft(patch: Partial<MilestoneDraft>) {
+    setMilestoneDraft((current) => ({ ...current, ...patch }));
+    setMilestoneError(undefined);
+  }
+
+  function resetMilestoneDraft() {
+    setMilestoneDraft(defaultMilestoneDraft);
+    setMilestoneError(undefined);
+  }
+
+  function handleCreateMilestone(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!project) {
+      return;
+    }
+
+    const title = milestoneDraft.title.trim();
+
+    if (!title) {
+      setMilestoneError('Bitte gib einen Meilenstein-Titel ein.');
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+
+    addMilestone({
+      id: createEntityId('m'),
+      projectId: project.id,
+      title,
+      description: getOptionalValue(milestoneDraft.description),
+      status: milestoneDraft.status,
+      targetDate: milestoneDraft.targetDate || undefined,
+      completedAt: milestoneDraft.status === 'done' ? timestamp : undefined,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+
+    resetMilestoneDraft();
+    setIsMilestoneFormOpen(false);
+  }
+
+  function openMilestoneEdit(milestone: Milestone) {
+    setEditingMilestoneId((current) => (current === milestone.id ? undefined : milestone.id));
+    setMilestoneEditDraft(getMilestoneDraft(milestone));
+    setMilestoneEditError(undefined);
+    setDeleteMilestoneConfirmId(undefined);
+  }
+
+  function updateMilestoneEditDraft(patch: Partial<MilestoneDraft>) {
+    setMilestoneEditDraft((current) => ({ ...current, ...patch }));
+    setMilestoneEditError(undefined);
+  }
+
+  function cancelMilestoneEdit() {
+    setEditingMilestoneId(undefined);
+    setMilestoneEditDraft(defaultMilestoneDraft);
+    setMilestoneEditError(undefined);
+  }
+
+  function handleUpdateMilestone(event: FormEvent<HTMLFormElement>, milestone: Milestone) {
+    event.preventDefault();
+
+    const title = milestoneEditDraft.title.trim();
+
+    if (!title) {
+      setMilestoneEditError('Bitte gib einen Meilenstein-Titel ein.');
+      return;
+    }
+
+    updateMilestone(milestone.id, {
+      title,
+      description: getOptionalValue(milestoneEditDraft.description),
+      targetDate: milestoneEditDraft.targetDate || undefined,
+    });
+
+    if (milestoneEditDraft.status !== milestone.status) {
+      updateMilestoneStatus(milestone.id, milestoneEditDraft.status);
+    }
+
+    cancelMilestoneEdit();
+  }
+
+  function handleCompleteMilestone(milestoneId: string) {
+    completeMilestone(milestoneId);
+    setEditingMilestoneId(undefined);
+    setDeleteMilestoneConfirmId(undefined);
+  }
+
+  function handleDeleteMilestone(milestoneId: string) {
+    deleteMilestone(milestoneId);
+    setDeleteMilestoneConfirmId(undefined);
+    setEditingMilestoneId(undefined);
   }
 
 
@@ -589,29 +731,133 @@ export function ProjectDetailPage() {
       </div>
 
       <ProjectSection title="Meilensteine" description="Größere Fortschrittspunkte dieses Projekts, ruhig und strategisch eingeordnet.">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm leading-6 text-[#7E776E]">Erfasse, bearbeite und schließe die wichtigsten Projektetappen direkt hier.</p>
+          <button type="button" onClick={() => { resetMilestoneDraft(); setIsMilestoneFormOpen((current) => !current); }} className="lifehq-button-secondary w-fit">
+            Meilenstein hinzufügen
+          </button>
+        </div>
+
+        {isMilestoneFormOpen && (
+          <form onSubmit={handleCreateMilestone} className="lifehq-project-edit-panel mb-5">
+            <div className="space-y-2">
+              <p className="lifehq-label">Neuer Meilenstein</p>
+              <h4 className="text-base font-semibold text-[#F5F1EA]">Projektetappe erfassen</h4>
+            </div>
+            <div className="lifehq-project-edit-grid">
+              <label className="space-y-2 text-sm text-[#B8B1A7] xl:col-span-2">
+                <span className="lifehq-label">Titel</span>
+                <input value={milestoneDraft.title} onChange={(event) => updateMilestoneDraft({ title: event.target.value })} className="lifehq-project-form-control" />
+              </label>
+              <label className="space-y-2 text-sm text-[#B8B1A7]">
+                <span className="lifehq-label">Status</span>
+                <select value={milestoneDraft.status} onChange={(event) => updateMilestoneDraft({ status: event.target.value as MilestoneStatus })} className="lifehq-project-form-control">
+                  {Object.entries(milestoneStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
+              <label className="space-y-2 text-sm text-[#B8B1A7] xl:col-span-2">
+                <span className="lifehq-label">Beschreibung</span>
+                <textarea value={milestoneDraft.description} onChange={(event) => updateMilestoneDraft({ description: event.target.value })} rows={3} className="lifehq-project-form-control" />
+              </label>
+              <label className="space-y-2 text-sm text-[#B8B1A7]">
+                <span className="lifehq-label">Zieltermin</span>
+                <input type="date" value={milestoneDraft.targetDate} onChange={(event) => updateMilestoneDraft({ targetDate: event.target.value })} className="lifehq-project-form-control" />
+              </label>
+            </div>
+            <div className="lifehq-project-edit-actions">
+              {milestoneError ? <p className="text-sm leading-6 text-amber-200/90">{milestoneError}</p> : <p className="text-sm leading-6 text-[#7E776E]">Der Meilenstein wird automatisch diesem Projekt zugeordnet.</p>}
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => { resetMilestoneDraft(); setIsMilestoneFormOpen(false); }} className="lifehq-button-secondary">Abbrechen</button>
+                <button type="submit" className="lifehq-button-primary">Speichern</button>
+              </div>
+            </div>
+          </form>
+        )}
+
         {milestones.length === 0 ? (
           <p className="lifehq-empty-state">Noch keine Meilensteine vorhanden.</p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {milestones.map((milestone) => (
-              <article key={milestone.id} className={`lifehq-project-milestone-card ${milestone.status === 'done' ? 'opacity-70' : ''}`}>
-                <div className="flex items-start gap-4">
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm ${getMilestoneMarkerClass(milestone.status)}`} aria-hidden="true">
-                    {milestone.status === 'done' ? '✓' : milestone.status === 'in_progress' ? '•' : '○'}
-                  </span>
-                  <div className="min-w-0 space-y-3">
-                    <div className="space-y-2">
-                      <h4 className="text-base font-semibold tracking-tight text-[#F5F1EA]">{milestone.title}</h4>
-                      {milestone.description && <p className="text-sm leading-6 text-[#B8B1A7]">{milestone.description}</p>}
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-xs text-[#B8B1A7]">
-                      <span className="lifehq-badge">{milestoneStatusLabels[milestone.status]}</span>
-                      <span className="lifehq-badge">Zieltermin: {milestone.targetDate ?? 'Kein Zieltermin'}</span>
+            {milestones.map((milestone) => {
+              const isEditingMilestone = editingMilestoneId === milestone.id;
+              const isDeletingMilestone = deleteMilestoneConfirmId === milestone.id;
+
+              return (
+                <article key={milestone.id} className={`lifehq-project-milestone-card ${milestone.status === 'done' ? 'opacity-70' : ''}`}>
+                  <div className="flex items-start gap-4">
+                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm ${getMilestoneMarkerClass(milestone.status)}`} aria-hidden="true">
+                      {milestone.status === 'done' ? '✓' : milestone.status === 'in_progress' ? '•' : '○'}
+                    </span>
+                    <div className="min-w-0 flex-1 space-y-3">
+                      <div className="space-y-2">
+                        <h4 className="text-base font-semibold tracking-tight text-[#F5F1EA]">{milestone.title}</h4>
+                        {milestone.description && <p className="text-sm leading-6 text-[#B8B1A7]">{milestone.description}</p>}
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs text-[#B8B1A7]">
+                        <span className="lifehq-badge">{milestoneStatusLabels[milestone.status]}</span>
+                        <span className="lifehq-badge">Zieltermin: {milestone.targetDate ?? 'Kein Zieltermin'}</span>
+                        {milestone.completedAt && <span className="lifehq-badge">Erledigt: {milestone.completedAt.slice(0, 10)}</span>}
+                      </div>
+                      <div className="flex flex-wrap gap-2 border-t border-white/[0.07] pt-3 text-xs">
+                        {milestone.status !== 'done' && (
+                          <button type="button" onClick={() => handleCompleteMilestone(milestone.id)} className="lifehq-task-action-button lifehq-task-action-button-gold">
+                            Erledigen
+                          </button>
+                        )}
+                        <button type="button" onClick={() => openMilestoneEdit(milestone)} className="lifehq-task-action-button">
+                          Bearbeiten
+                        </button>
+                        <button type="button" onClick={() => { setDeleteMilestoneConfirmId((current) => current === milestone.id ? undefined : milestone.id); setEditingMilestoneId(undefined); }} className="lifehq-task-action-button">
+                          Löschen
+                        </button>
+                      </div>
+
+                      {isDeletingMilestone && (
+                        <div className="lifehq-danger-zone">
+                          <p className="text-sm leading-6 text-[#B8B1A7]">Diesen Meilenstein wirklich löschen?</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button type="button" onClick={() => setDeleteMilestoneConfirmId(undefined)} className="lifehq-button-secondary">Abbrechen</button>
+                            <button type="button" onClick={() => handleDeleteMilestone(milestone.id)} className="lifehq-button-primary">Endgültig löschen</button>
+                          </div>
+                        </div>
+                      )}
+
+                      {isEditingMilestone && (
+                        <form onSubmit={(event) => handleUpdateMilestone(event, milestone)} className="lifehq-project-edit-panel p-4">
+                          <div className="grid gap-3">
+                            <label className="space-y-2 text-sm text-[#B8B1A7]">
+                              <span className="lifehq-label">Titel</span>
+                              <input value={milestoneEditDraft.title} onChange={(event) => updateMilestoneEditDraft({ title: event.target.value })} className="lifehq-project-form-control" />
+                            </label>
+                            <label className="space-y-2 text-sm text-[#B8B1A7]">
+                              <span className="lifehq-label">Beschreibung</span>
+                              <textarea value={milestoneEditDraft.description} onChange={(event) => updateMilestoneEditDraft({ description: event.target.value })} rows={3} className="lifehq-project-form-control" />
+                            </label>
+                            <label className="space-y-2 text-sm text-[#B8B1A7]">
+                              <span className="lifehq-label">Status</span>
+                              <select value={milestoneEditDraft.status} onChange={(event) => updateMilestoneEditDraft({ status: event.target.value as MilestoneStatus })} className="lifehq-project-form-control">
+                                {Object.entries(milestoneStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                              </select>
+                            </label>
+                            <label className="space-y-2 text-sm text-[#B8B1A7]">
+                              <span className="lifehq-label">Zieltermin</span>
+                              <input type="date" value={milestoneEditDraft.targetDate} onChange={(event) => updateMilestoneEditDraft({ targetDate: event.target.value })} className="lifehq-project-form-control" />
+                            </label>
+                          </div>
+                          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            {milestoneEditError ? <p className="text-sm text-amber-100">{milestoneEditError}</p> : <p className="text-sm text-[#7E776E]">Änderungen bleiben im Projekt gespeichert.</p>}
+                            <div className="flex flex-wrap gap-2">
+                              <button type="button" onClick={cancelMilestoneEdit} className="lifehq-button-secondary">Abbrechen</button>
+                              <button type="submit" className="lifehq-button-primary">Speichern</button>
+                            </div>
+                          </div>
+                        </form>
+                      )}
                     </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </ProjectSection>
