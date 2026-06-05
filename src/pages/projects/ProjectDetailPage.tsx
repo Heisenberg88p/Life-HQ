@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { MilestoneStatus, Priority, ProjectStatus, TaskStatus, TrafficLightStatus } from '../../models/common';
 import type { Milestone } from '../../models/milestone';
@@ -28,6 +28,16 @@ type ReactivationDraft = {
   targetDate: string;
   description: string;
   note: string;
+};
+
+type ProjectEditDraft = {
+  name: string;
+  description: string;
+  lifeAreaId: string;
+  status: ProjectStatus;
+  priority: Priority;
+  trafficLightStatus: TrafficLightStatus;
+  targetDate: string;
 };
 
 const projectStatusLabels: Record<ProjectStatus, string> = {
@@ -88,6 +98,7 @@ const historyTypeLabels: Record<ProjectHistoryEntryType, string> = {
 };
 
 const reactivationStatusOptions: ReactivationStatus[] = ['active', 'planned'];
+const projectStatusOptions: ProjectStatus[] = ['planned', 'active', 'paused', 'completed'];
 const priorityOptions: Priority[] = ['low', 'medium', 'high', 'critical'];
 const trafficLightOptions: TrafficLightStatus[] = ['green', 'yellow', 'red'];
 
@@ -223,6 +234,26 @@ function getInitialReactivationDraft(project?: {
   };
 }
 
+function getInitialProjectEditDraft(project?: {
+  name: string;
+  description?: string;
+  lifeAreaId?: string;
+  status: ProjectStatus;
+  priority: Priority;
+  trafficLightStatus: TrafficLightStatus;
+  targetDate?: string;
+}): ProjectEditDraft {
+  return {
+    name: project?.name ?? '',
+    description: project?.description ?? '',
+    lifeAreaId: project?.lifeAreaId ?? '',
+    status: project?.status ?? 'planned',
+    priority: project?.priority ?? 'medium',
+    trafficLightStatus: project?.trafficLightStatus ?? 'green',
+    targetDate: project?.targetDate ?? '',
+  };
+}
+
 function getOptionalValue(value: string): string | undefined {
   const trimmedValue = value.trim();
 
@@ -237,9 +268,13 @@ export function ProjectDetailPage() {
   const milestones = useLifeHQStore(selectMilestonesByProjectId(project?.id ?? ''));
   const tasks = useLifeHQStore(selectTasksByProjectId(project?.id ?? ''));
   const historyEntries = useLifeHQStore(selectHistoryByProjectId(project?.id ?? ''));
+  const updateProject = useLifeHQStore((state) => state.updateProject);
   const pauseProject = useLifeHQStore((state) => state.pauseProject);
   const reactivateProject = useLifeHQStore((state) => state.reactivateProject);
   const deleteProject = useLifeHQStore((state) => state.deleteProject);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editDraft, setEditDraft] = useState<ProjectEditDraft>(() => getInitialProjectEditDraft());
+  const [editError, setEditError] = useState<string>();
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [pauseDraft, setPauseDraft] = useState<PauseDraft>(defaultPauseDraft);
   const [reactivationDraft, setReactivationDraft] = useState<ReactivationDraft>(() => getInitialReactivationDraft());
@@ -261,7 +296,59 @@ export function ProjectDetailPage() {
   useEffect(() => {
     setPauseDraft(defaultPauseDraft);
     setReactivationDraft(getInitialReactivationDraft(project));
+    setEditDraft(getInitialProjectEditDraft(project));
+    setEditError(undefined);
+    setIsEditOpen(false);
   }, [project?.id, project?.status]);
+
+  function updateEditDraft(patch: Partial<ProjectEditDraft>) {
+    setEditDraft((current) => ({ ...current, ...patch }));
+    setEditError(undefined);
+  }
+
+  function handleOpenProjectEdit() {
+    if (!project) {
+      return;
+    }
+
+    setEditDraft(getInitialProjectEditDraft(project));
+    setEditError(undefined);
+    setIsEditOpen((current) => !current);
+  }
+
+  function handleCancelProjectEdit() {
+    setEditDraft(getInitialProjectEditDraft(project));
+    setEditError(undefined);
+    setIsEditOpen(false);
+  }
+
+  function handleUpdateProject(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!project) {
+      return;
+    }
+
+    const projectName = editDraft.name.trim();
+
+    if (!projectName) {
+      setEditError('Bitte gib einen Projektnamen ein.');
+      return;
+    }
+
+    updateProject(project.id, {
+      name: projectName,
+      description: getOptionalValue(editDraft.description),
+      lifeAreaId: getOptionalValue(editDraft.lifeAreaId),
+      status: editDraft.status,
+      priority: editDraft.priority,
+      trafficLightStatus: editDraft.trafficLightStatus,
+      targetDate: editDraft.targetDate || undefined,
+    });
+
+    setEditError(undefined);
+    setIsEditOpen(false);
+  }
 
   function updatePauseDraft(patch: Partial<PauseDraft>) {
     setPauseDraft((current) => ({ ...current, ...patch }));
@@ -350,6 +437,9 @@ export function ProjectDetailPage() {
           <p className="max-w-3xl text-base leading-7 text-[#B8B1A7] sm:text-[1.05rem]">
             {project.description ?? 'Für dieses Projekt ist noch keine Beschreibung oder Vision hinterlegt.'}
           </p>
+          <button type="button" onClick={handleOpenProjectEdit} className="lifehq-button-secondary w-full sm:w-fit">
+            Projekt bearbeiten
+          </button>
         </div>
 
         {isPausedProject && (
@@ -370,6 +460,118 @@ export function ProjectDetailPage() {
           </aside>
         )}
       </section>
+
+      {isEditOpen && (
+        <form onSubmit={handleUpdateProject} className="lifehq-project-edit-panel">
+          <div className="space-y-2">
+            <p className="lifehq-label">Projekt bearbeiten</p>
+            <h2 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">Grunddaten ruhig nachführen</h2>
+            <p className="max-w-2xl text-sm leading-6 text-[#B8B1A7]">
+              Passe Name, Kontext und Statuswerte an, ohne den Projektfluss zu verlassen.
+            </p>
+          </div>
+
+          <div className="lifehq-project-edit-grid">
+            <label className="space-y-2 text-sm text-[#B8B1A7] xl:col-span-2">
+              <span className="lifehq-label">Projektname</span>
+              <input
+                type="text"
+                value={editDraft.name}
+                onChange={(event) => updateEditDraft({ name: event.target.value })}
+                className="lifehq-project-form-control"
+                required
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-[#B8B1A7]">
+              <span className="lifehq-label">Lebensbereich</span>
+              <select
+                value={editDraft.lifeAreaId}
+                onChange={(event) => updateEditDraft({ lifeAreaId: event.target.value })}
+                className="lifehq-project-form-control"
+              >
+                <option value="">Ohne Lebensbereich</option>
+                {lifeAreas.map((area) => (
+                  <option key={area.id} value={area.id}>{getLifeAreaDisplayName(area.name)}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-2 text-sm text-[#B8B1A7] md:col-span-2 xl:col-span-3">
+              <span className="lifehq-label">Beschreibung</span>
+              <textarea
+                value={editDraft.description}
+                onChange={(event) => updateEditDraft({ description: event.target.value })}
+                className="lifehq-project-form-control min-h-24 resize-y"
+                rows={3}
+              />
+            </label>
+
+            <label className="space-y-2 text-sm text-[#B8B1A7]">
+              <span className="lifehq-label">Status</span>
+              <select
+                value={editDraft.status}
+                onChange={(event) => updateEditDraft({ status: event.target.value as ProjectStatus })}
+                className="lifehq-project-form-control"
+              >
+                {projectStatusOptions.map((status) => (
+                  <option key={status} value={status}>{projectStatusLabels[status]}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-2 text-sm text-[#B8B1A7]">
+              <span className="lifehq-label">Priorität</span>
+              <select
+                value={editDraft.priority}
+                onChange={(event) => updateEditDraft({ priority: event.target.value as Priority })}
+                className="lifehq-project-form-control"
+              >
+                {priorityOptions.map((priority) => (
+                  <option key={priority} value={priority}>{priorityLabels[priority]}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-2 text-sm text-[#B8B1A7]">
+              <span className="lifehq-label">Ampelstatus</span>
+              <select
+                value={editDraft.trafficLightStatus}
+                onChange={(event) => updateEditDraft({ trafficLightStatus: event.target.value as TrafficLightStatus })}
+                className="lifehq-project-form-control"
+              >
+                {trafficLightOptions.map((status) => (
+                  <option key={status} value={status}>{trafficLightLabels[status]}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-2 text-sm text-[#B8B1A7]">
+              <span className="lifehq-label">Zieltermin</span>
+              <input
+                type="date"
+                value={editDraft.targetDate}
+                onChange={(event) => updateEditDraft({ targetDate: event.target.value })}
+                className="lifehq-project-form-control"
+              />
+            </label>
+          </div>
+
+          <div className="lifehq-project-edit-actions">
+            <p className={editError ? 'text-sm leading-6 text-amber-200/90' : 'text-sm leading-6 text-[#7E776E]'}>
+              {editError ?? 'Speichern aktualisiert die Projektansicht direkt, ohne die Seite zu wechseln.'}
+            </p>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <button type="button" onClick={handleCancelProjectEdit} className="lifehq-button-secondary">
+                Abbrechen
+              </button>
+              <button type="submit" className="lifehq-button-primary">
+                Speichern
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
 
       <div className="lifehq-project-status-grid">
         <ProjectStatusCard label="Lebensbereich" value={lifeAreaDisplayValue} icon="◎" />
