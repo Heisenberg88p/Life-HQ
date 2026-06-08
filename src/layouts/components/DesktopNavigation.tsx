@@ -15,7 +15,7 @@ export function DesktopNavigation() {
           <div>
             <p className="font-semibold text-[#F5F1EA]">Hinweis</p>
             <p className="mt-1 text-[#B8B1A7]">HQ für Orientierung.</p>
-            <p className="text-[#B8B1A7]">Tasks für Umsetzung.</p>
+            <p className="text-[#B8B1A7]">Aufgaben für Umsetzung.</p>
           </div>
         </div>
       </div>
