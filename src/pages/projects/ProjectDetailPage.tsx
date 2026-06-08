@@ -8,6 +8,7 @@ import {
   projectStatusLabels,
   projectStatusOptions,
   taskStatusLabels,
+  taskStatusOptions,
   trafficLightLabels,
   trafficLightOptions,
 } from '../../constants/displayLabels';
@@ -59,6 +60,15 @@ type MilestoneDraft = {
   targetDate: string;
 };
 
+type ProjectTaskDraft = {
+  title: string;
+  description: string;
+  status: TaskStatus;
+  priority: Priority;
+  dueDate: string;
+  plannedDate: string;
+};
+
 const trafficLightStyles: Record<TrafficLightStatus, string> = {
   green: 'bg-emerald-300/80 ring-emerald-300/20',
   yellow: 'bg-amber-300/80 ring-amber-300/20',
@@ -96,6 +106,15 @@ const defaultMilestoneDraft: MilestoneDraft = {
   description: '',
   status: 'open',
   targetDate: '',
+};
+
+const defaultProjectTaskDraft: ProjectTaskDraft = {
+  title: '',
+  description: '',
+  status: 'open',
+  priority: 'medium',
+  dueDate: '',
+  plannedDate: '',
 };
 
 interface ProjectStatusCardProps {
@@ -268,6 +287,17 @@ function getMilestoneDraft(milestone: Milestone): MilestoneDraft {
   };
 }
 
+function getProjectTaskDraft(task: Task): ProjectTaskDraft {
+  return {
+    title: task.title,
+    description: task.description ?? '',
+    status: task.status,
+    priority: task.priority,
+    dueDate: task.dueDate ?? '',
+    plannedDate: task.plannedDate ?? '',
+  };
+}
+
 export function ProjectDetailPage() {
   const navigate = useNavigate();
   const { projectId } = useParams();
@@ -285,6 +315,12 @@ export function ProjectDetailPage() {
   const updateMilestoneStatus = useLifeHQStore((state) => state.updateMilestoneStatus);
   const completeMilestone = useLifeHQStore((state) => state.completeMilestone);
   const deleteMilestone = useLifeHQStore((state) => state.deleteMilestone);
+  const addTask = useLifeHQStore((state) => state.addTask);
+  const updateTask = useLifeHQStore((state) => state.updateTask);
+  const updateTaskStatus = useLifeHQStore((state) => state.updateTaskStatus);
+  const deleteTask = useLifeHQStore((state) => state.deleteTask);
+  const clearTaskPlannedDate = useLifeHQStore((state) => state.clearTaskPlannedDate);
+  const clearTaskDueDate = useLifeHQStore((state) => state.clearTaskDueDate);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editDraft, setEditDraft] = useState<ProjectEditDraft>(() => getInitialProjectEditDraft());
   const [editError, setEditError] = useState<string>();
@@ -298,6 +334,13 @@ export function ProjectDetailPage() {
   const [milestoneEditDraft, setMilestoneEditDraft] = useState<MilestoneDraft>(defaultMilestoneDraft);
   const [milestoneEditError, setMilestoneEditError] = useState<string | undefined>();
   const [deleteMilestoneConfirmId, setDeleteMilestoneConfirmId] = useState<string | undefined>();
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [taskDraft, setTaskDraft] = useState<ProjectTaskDraft>(defaultProjectTaskDraft);
+  const [taskError, setTaskError] = useState<string | undefined>();
+  const [editingTaskId, setEditingTaskId] = useState<string | undefined>();
+  const [taskEditDraft, setTaskEditDraft] = useState<ProjectTaskDraft>(defaultProjectTaskDraft);
+  const [taskEditError, setTaskEditError] = useState<string | undefined>();
+  const [deleteTaskConfirmId, setDeleteTaskConfirmId] = useState<string | undefined>();
   const projectLifeAreaId = project?.lifeAreaId?.trim();
   const lifeArea = projectLifeAreaId ? lifeAreas.find((area) => area.id === projectLifeAreaId) : undefined;
   const lifeAreaDisplayName = lifeArea ? getLifeAreaDisplayName(lifeArea.name) : undefined;
@@ -326,6 +369,13 @@ export function ProjectDetailPage() {
     setMilestoneEditDraft(defaultMilestoneDraft);
     setMilestoneEditError(undefined);
     setDeleteMilestoneConfirmId(undefined);
+    setIsTaskFormOpen(false);
+    setTaskDraft(defaultProjectTaskDraft);
+    setTaskError(undefined);
+    setEditingTaskId(undefined);
+    setTaskEditDraft(defaultProjectTaskDraft);
+    setTaskEditError(undefined);
+    setDeleteTaskConfirmId(undefined);
   }, [project?.id, project?.status]);
 
   function updateEditDraft(patch: Partial<ProjectEditDraft>) {
@@ -507,6 +557,113 @@ export function ProjectDetailPage() {
     deleteMilestone(milestoneId);
     setDeleteMilestoneConfirmId(undefined);
     setEditingMilestoneId(undefined);
+  }
+
+  function updateTaskDraft(patch: Partial<ProjectTaskDraft>) {
+    setTaskDraft((current) => ({ ...current, ...patch }));
+    setTaskError(undefined);
+  }
+
+  function updateTaskEditDraft(patch: Partial<ProjectTaskDraft>) {
+    setTaskEditDraft((current) => ({ ...current, ...patch }));
+    setTaskEditError(undefined);
+  }
+
+  function resetTaskDraft() {
+    setTaskDraft(defaultProjectTaskDraft);
+    setTaskError(undefined);
+  }
+
+  function handleCreateProjectTask(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!project) {
+      return;
+    }
+
+    const title = taskDraft.title.trim();
+
+    if (!title) {
+      setTaskError('Bitte gib einen Aufgabentitel ein.');
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+    const taskId = createEntityId('t');
+
+    addTask({
+      id: taskId,
+      title,
+      description: getOptionalValue(taskDraft.description),
+      status: 'open',
+      priority: taskDraft.priority,
+      dueDate: taskDraft.dueDate || undefined,
+      plannedDate: taskDraft.plannedDate || undefined,
+      projectId: project.id,
+      lifeAreaId: undefined,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+
+    if (taskDraft.status !== 'open') {
+      updateTaskStatus(taskId, taskDraft.status);
+    }
+
+    resetTaskDraft();
+    setIsTaskFormOpen(false);
+  }
+
+  function openTaskEdit(task: Task) {
+    setEditingTaskId(task.id);
+    setTaskEditDraft(getProjectTaskDraft(task));
+    setTaskEditError(undefined);
+    setDeleteTaskConfirmId(undefined);
+  }
+
+  function cancelTaskEdit() {
+    setEditingTaskId(undefined);
+    setTaskEditDraft(defaultProjectTaskDraft);
+    setTaskEditError(undefined);
+  }
+
+  function handleUpdateProjectTask(event: FormEvent<HTMLFormElement>, task: Task) {
+    event.preventDefault();
+
+    const title = taskEditDraft.title.trim();
+
+    if (!title) {
+      setTaskEditError('Bitte gib einen Aufgabentitel ein.');
+      return;
+    }
+
+    updateTask(task.id, {
+      title,
+      description: getOptionalValue(taskEditDraft.description),
+      priority: taskEditDraft.priority,
+      dueDate: taskEditDraft.dueDate || undefined,
+      plannedDate: taskEditDraft.plannedDate || undefined,
+      projectId: project?.id ?? task.projectId,
+      lifeAreaId: undefined,
+    });
+
+    if (taskEditDraft.status !== task.status) {
+      updateTaskStatus(task.id, taskEditDraft.status);
+    }
+
+    cancelTaskEdit();
+  }
+
+  function handleProjectTaskStatusChange(task: Task, status: TaskStatus) {
+    updateTaskStatus(task.id, status);
+  }
+
+  function handleDeleteProjectTask(taskId: string) {
+    deleteTask(taskId);
+    setDeleteTaskConfirmId(undefined);
+
+    if (editingTaskId === taskId) {
+      cancelTaskEdit();
+    }
   }
 
 
@@ -844,30 +1001,155 @@ export function ProjectDetailPage() {
       </ProjectSection>
 
       <ProjectSection title="Projektaufgaben" description="Operative Bezugspunkte dieses Projekts als ruhige Ausführungszeilen.">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm leading-6 text-[#7E776E]">Neue Aufgaben werden automatisch diesem Projekt zugeordnet.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setIsTaskFormOpen((current) => !current);
+              setEditingTaskId(undefined);
+              setDeleteTaskConfirmId(undefined);
+              setTaskError(undefined);
+            }}
+            className="lifehq-button-secondary w-fit"
+          >
+            Neue Aufgabe
+          </button>
+        </div>
+
+        {isTaskFormOpen && (
+          <form onSubmit={handleCreateProjectTask} className="lifehq-project-edit-panel mb-5 p-4">
+            <div className="lifehq-project-edit-grid">
+              <label className="space-y-2 text-sm text-[#B8B1A7] xl:col-span-2">
+                <span className="lifehq-label">Titel</span>
+                <input value={taskDraft.title} onChange={(event) => updateTaskDraft({ title: event.target.value })} className="lifehq-project-form-control" />
+              </label>
+              <label className="space-y-2 text-sm text-[#B8B1A7]">
+                <span className="lifehq-label">Status</span>
+                <select value={taskDraft.status} onChange={(event) => updateTaskDraft({ status: event.target.value as TaskStatus })} className="lifehq-project-form-control">
+                  {taskStatusOptions.map((status) => <option key={status} value={status}>{taskStatusLabels[status]}</option>)}
+                </select>
+              </label>
+              <label className="space-y-2 text-sm text-[#B8B1A7] xl:col-span-2">
+                <span className="lifehq-label">Beschreibung</span>
+                <textarea value={taskDraft.description} onChange={(event) => updateTaskDraft({ description: event.target.value })} rows={3} className="lifehq-project-form-control" />
+              </label>
+              <label className="space-y-2 text-sm text-[#B8B1A7]">
+                <span className="lifehq-label">Priorität</span>
+                <select value={taskDraft.priority} onChange={(event) => updateTaskDraft({ priority: event.target.value as Priority })} className="lifehq-project-form-control">
+                  {priorityOptions.map((priority) => <option key={priority} value={priority}>{priorityLabels[priority]}</option>)}
+                </select>
+              </label>
+              <label className="space-y-2 text-sm text-[#B8B1A7]">
+                <span className="lifehq-label">Fälligkeit</span>
+                <input type="date" value={taskDraft.dueDate} onChange={(event) => updateTaskDraft({ dueDate: event.target.value })} className="lifehq-project-form-control" />
+              </label>
+              <label className="space-y-2 text-sm text-[#B8B1A7]">
+                <span className="lifehq-label">Geplantes Datum</span>
+                <input type="date" value={taskDraft.plannedDate} onChange={(event) => updateTaskDraft({ plannedDate: event.target.value })} className="lifehq-project-form-control" />
+              </label>
+            </div>
+            <div className="lifehq-project-edit-actions">
+              {taskError ? <p className="text-sm leading-6 text-amber-200/90">{taskError}</p> : <p className="text-sm leading-6 text-[#7E776E]">Die Aufgabe erscheint auch im globalen Aufgabenbereich.</p>}
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => { resetTaskDraft(); setIsTaskFormOpen(false); }} className="lifehq-button-secondary">Abbrechen</button>
+                <button type="submit" className="lifehq-button-primary">Speichern</button>
+              </div>
+            </div>
+          </form>
+        )}
+
         {tasks.length === 0 ? (
           <p className="lifehq-empty-state">Noch keine Aufgaben für dieses Projekt vorhanden.</p>
         ) : (
           <div className="space-y-3">
-            {tasks.map((task) => (
-              <article key={task.id} className={`lifehq-project-task-row ${task.status === 'done' ? 'opacity-70' : ''}`}>
-                <div className="flex min-w-0 flex-1 items-start gap-4">
-                  <span className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${getTaskMarkerClass(task.status)}`} aria-hidden="true">
-                    {task.status === 'done' && <span className="h-1.5 w-1.5 rounded-full bg-[#7E776E]" />}
-                    {task.status === 'in_progress' && <span className="h-1.5 w-1.5 rounded-full bg-[#D6AD64]" />}
-                  </span>
-                  <div className="min-w-0 space-y-2">
-                    <h4 className="text-sm font-semibold leading-6 text-[#F5F1EA]">{task.title}</h4>
-                    {task.description && <p className="text-sm leading-6 text-[#7E776E]">{task.description}</p>}
+            {tasks.map((task) => {
+              const isEditingTask = editingTaskId === task.id;
+              const isDeletingTask = deleteTaskConfirmId === task.id;
+
+              return (
+                <article key={task.id} className={`lifehq-project-task-row ${task.status === 'done' ? 'opacity-70' : ''}`}>
+                  <div className="flex min-w-0 flex-1 items-start gap-4">
+                    <span className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${getTaskMarkerClass(task.status)}`} aria-hidden="true">
+                      {task.status === 'done' && <span className="h-1.5 w-1.5 rounded-full bg-[#7E776E]" />}
+                      {task.status === 'in_progress' && <span className="h-1.5 w-1.5 rounded-full bg-[#D6AD64]" />}
+                    </span>
+                    <div className="min-w-0 space-y-2">
+                      <h4 className="break-words text-sm font-semibold leading-6 text-[#F5F1EA]">{task.title}</h4>
+                      {task.description && <p className="break-words text-sm leading-6 text-[#7E776E]">{task.description}</p>}
+                    </div>
                   </div>
-                </div>
-                <div className="grid w-full gap-2 text-xs text-[#B8B1A7] sm:grid-cols-2 lg:w-auto lg:min-w-[22rem] lg:grid-cols-4 lg:text-right">
-                  <span>Status: {taskStatusLabels[task.status]}</span>
-                  <span>Priorität: {priorityLabels[task.priority]}</span>
-                  <span>Fällig: {formatDateDisplay(task.dueDate, 'Keine Fälligkeit')}</span>
-                  <span>Geplant: {formatDateDisplay(task.plannedDate, 'Nicht geplant')}</span>
-                </div>
-              </article>
-            ))}
+                  <div className="grid w-full gap-2 text-xs text-[#B8B1A7] sm:grid-cols-2 lg:w-auto lg:min-w-[22rem] lg:grid-cols-4 lg:text-right">
+                    <span>Status: {taskStatusLabels[task.status]}</span>
+                    <span>Priorität: {priorityLabels[task.priority]}</span>
+                    <span>Fällig: {formatDateDisplay(task.dueDate, 'Keine Fälligkeit')}</span>
+                    <span>Geplant: {formatDateDisplay(task.plannedDate, 'Nicht geplant')}</span>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.07] pt-3 text-xs">
+                    {task.status !== 'open' && <button type="button" onClick={() => handleProjectTaskStatusChange(task, 'open')} className="lifehq-task-action-button">Wieder öffnen</button>}
+                    {task.status !== 'in_progress' && <button type="button" onClick={() => handleProjectTaskStatusChange(task, 'in_progress')} className="lifehq-task-action-button lifehq-task-action-button-gold">In Arbeit setzen</button>}
+                    {task.status !== 'done' && <button type="button" onClick={() => handleProjectTaskStatusChange(task, 'done')} className="lifehq-task-action-button">Erledigen</button>}
+                    <button type="button" onClick={() => openTaskEdit(task)} className="lifehq-task-action-button">Bearbeiten</button>
+                    {task.plannedDate && <button type="button" onClick={() => clearTaskPlannedDate(task.id)} className="lifehq-task-action-button">Planung entfernen</button>}
+                    {task.dueDate && <button type="button" onClick={() => clearTaskDueDate(task.id)} className="lifehq-task-action-button">Fälligkeit entfernen</button>}
+                    <button type="button" onClick={() => { setDeleteTaskConfirmId((current) => current === task.id ? undefined : task.id); setEditingTaskId(undefined); }} className="lifehq-task-action-button">Löschen</button>
+                  </div>
+
+                  {isDeletingTask && (
+                    <div className="lifehq-danger-zone mt-4">
+                      <p className="text-sm leading-6 text-[#B8B1A7]">Diese Aufgabe wirklich löschen?</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button type="button" onClick={() => setDeleteTaskConfirmId(undefined)} className="lifehq-button-secondary">Abbrechen</button>
+                        <button type="button" onClick={() => handleDeleteProjectTask(task.id)} className="lifehq-button-primary">Endgültig löschen</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {isEditingTask && (
+                    <form onSubmit={(event) => handleUpdateProjectTask(event, task)} className="lifehq-project-edit-panel mt-4 p-4">
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <label className="space-y-2 text-sm text-[#B8B1A7]">
+                          <span className="lifehq-label">Titel</span>
+                          <input value={taskEditDraft.title} onChange={(event) => updateTaskEditDraft({ title: event.target.value })} className="lifehq-project-form-control" />
+                        </label>
+                        <label className="space-y-2 text-sm text-[#B8B1A7]">
+                          <span className="lifehq-label">Status</span>
+                          <select value={taskEditDraft.status} onChange={(event) => updateTaskEditDraft({ status: event.target.value as TaskStatus })} className="lifehq-project-form-control">
+                            {taskStatusOptions.map((status) => <option key={status} value={status}>{taskStatusLabels[status]}</option>)}
+                          </select>
+                        </label>
+                        <label className="space-y-2 text-sm text-[#B8B1A7] md:col-span-2">
+                          <span className="lifehq-label">Beschreibung</span>
+                          <textarea value={taskEditDraft.description} onChange={(event) => updateTaskEditDraft({ description: event.target.value })} rows={3} className="lifehq-project-form-control" />
+                        </label>
+                        <label className="space-y-2 text-sm text-[#B8B1A7]">
+                          <span className="lifehq-label">Priorität</span>
+                          <select value={taskEditDraft.priority} onChange={(event) => updateTaskEditDraft({ priority: event.target.value as Priority })} className="lifehq-project-form-control">
+                            {priorityOptions.map((priority) => <option key={priority} value={priority}>{priorityLabels[priority]}</option>)}
+                          </select>
+                        </label>
+                        <label className="space-y-2 text-sm text-[#B8B1A7]">
+                          <span className="lifehq-label">Fälligkeit</span>
+                          <input type="date" value={taskEditDraft.dueDate} onChange={(event) => updateTaskEditDraft({ dueDate: event.target.value })} className="lifehq-project-form-control" />
+                        </label>
+                        <label className="space-y-2 text-sm text-[#B8B1A7]">
+                          <span className="lifehq-label">Geplantes Datum</span>
+                          <input type="date" value={taskEditDraft.plannedDate} onChange={(event) => updateTaskEditDraft({ plannedDate: event.target.value })} className="lifehq-project-form-control" />
+                        </label>
+                      </div>
+                      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        {taskEditError ? <p className="text-sm text-amber-100">{taskEditError}</p> : <p className="text-sm text-[#7E776E]">Änderungen bleiben im Projekt und im Aufgabenbereich sichtbar.</p>}
+                        <div className="flex flex-wrap gap-2">
+                          <button type="button" onClick={cancelTaskEdit} className="lifehq-button-secondary">Abbrechen</button>
+                          <button type="submit" className="lifehq-button-primary">Speichern</button>
+                        </div>
+                      </div>
+                    </form>
+                  )}
+                </article>
+              );
+            })}
           </div>
         )}
       </ProjectSection>

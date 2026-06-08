@@ -123,7 +123,18 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
     set((state) => ({ lifeAreas: state.lifeAreas.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
   deleteLifeArea: (id: string) => set((state) => ({ lifeAreas: state.lifeAreas.filter((item) => item.id !== id) })),
 
-  addProject: (project: Project) => set((state) => ({ projects: [...state.projects, project] })),
+  addProject: (project: Project) => set((state) => ({
+    projects: [...state.projects, project],
+    historyEntries: [
+      ...state.historyEntries,
+      createProjectHistoryEntry({
+        projectId: project.id,
+        type: 'created',
+        description: `Projekt erstellt: ${project.name}.`,
+        date: project.createdAt,
+      }),
+    ],
+  })),
   updateProject: (id: string, patch: Partial<Project>) =>
     set((state) => {
       const project = state.projects.find((item) => item.id === id);
