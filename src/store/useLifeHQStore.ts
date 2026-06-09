@@ -10,6 +10,7 @@ import type { Project } from '../models/project';
 import type { ProjectHistoryEntry } from '../models/projectHistory';
 import type { Task } from '../models/task';
 import { createProjectHistoryEntry } from './helpers/historyHelpers';
+import type { PersistableLifeHQState } from './persistence';
 import {
   createLifeHQStorage,
   getPersistedLifeHQState,
@@ -28,6 +29,7 @@ import type { UISlice } from './slices/uiSlice';
 interface AppDataSlice {
   resetAppData: () => void;
   clearAllUserData: () => void;
+  replaceAppData: (data: PersistableLifeHQState) => void;
 }
 
 type LifeHQState = LifeAreaSlice & ProjectSlice & TaskSlice & MilestoneSlice & HistorySlice & UISlice & AppDataSlice;
@@ -560,6 +562,24 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
     historyEntries: [],
     uiState: { ...state.uiState, selectedProjectId: undefined },
   })),
+  replaceAppData: (data: PersistableLifeHQState) => set((state) => {
+    const sanitizedData = sanitizePersistedLifeHQState(data, {
+      lifeAreas: [],
+      projects: [],
+      tasks: [],
+      milestones: [],
+      historyEntries: [],
+    });
+
+    return {
+      lifeAreas: sanitizedData.lifeAreas,
+      projects: sanitizedData.projects,
+      tasks: sanitizedData.tasks,
+      milestones: sanitizedData.milestones,
+      historyEntries: sanitizedData.historyEntries,
+      uiState: { ...state.uiState, selectedProjectId: undefined },
+    };
+  }),
 });
 
 export const useLifeHQStore = create<LifeHQState>()(
