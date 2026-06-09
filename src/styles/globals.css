@@ -239,7 +239,7 @@ textarea {
   }
 
   .lifehq-project-form-control {
-    @apply w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
+    @apply min-w-0 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
   }
 }
 
@@ -265,7 +265,7 @@ textarea {
   }
 
   .lifehq-task-row {
-    @apply min-w-0 rounded-[1.25rem] border border-white/10 bg-[#090909] p-5 transition-colors hover:border-[#D6AD64]/25 hover:bg-[#0D0D0D];
+    @apply min-w-0 break-words rounded-[1.25rem] border border-white/10 bg-[#090909] p-5 transition-colors hover:border-[#D6AD64]/25 hover:bg-[#0D0D0D];
   }
 
   .lifehq-task-status-dot {
@@ -273,15 +273,15 @@ textarea {
   }
 
   .lifehq-task-context {
-    @apply w-fit rounded-2xl border px-3 py-2 text-xs;
+    @apply w-fit max-w-full break-words rounded-2xl border px-3 py-2 text-xs;
   }
 
   .lifehq-task-chip {
-    @apply inline-flex max-w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.025] px-2.5 py-1 text-xs font-medium leading-5 text-[#B8B1A7];
+    @apply inline-flex max-w-full items-center justify-center break-words rounded-full border border-white/10 bg-white/[0.025] px-2.5 py-1 text-xs font-medium leading-5 text-[#B8B1A7];
   }
 
   .lifehq-task-action-button {
-    @apply inline-flex min-h-9 items-center justify-center rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/30 hover:text-[#F5F1EA];
+    @apply inline-flex min-h-9 max-w-full items-center justify-center whitespace-normal rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-center text-xs font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/30 hover:text-[#F5F1EA];
   }
 
   .lifehq-task-action-button-gold {
@@ -289,7 +289,17 @@ textarea {
   }
 
   .lifehq-task-planning-panel {
-    @apply mt-4 rounded-[1rem] border border-white/[0.07] bg-black/20 p-3;
+    @apply mt-4 box-border min-w-0 w-full max-w-full rounded-[1rem] border border-white/[0.07] bg-black/20 p-4;
+  }
+
+  .lifehq-task-planning-panel input[type='date'] {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
   }
 
   .lifehq-task-form,
@@ -298,7 +308,7 @@ textarea {
   }
 
   .lifehq-task-form-control {
-    @apply w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
+    @apply min-w-0 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
   }
 
   .lifehq-empty-task-state {
@@ -320,7 +330,7 @@ textarea {
   }
 
   .lifehq-crud-control {
-    @apply w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
+    @apply min-w-0 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
   }
 
   .lifehq-danger-zone {
