@@ -490,26 +490,26 @@ function TaskCard({
 
       <div className="lifehq-task-planning-panel">
         <p className="lifehq-label">Planung</p>
-        <div className="mt-3 grid min-w-0 max-w-full gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
-          <label className="min-w-0 max-w-full space-y-2 text-xs text-[#B8B1A7]">
+        <div className="mt-3 grid w-full min-w-0 max-w-full grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end">
+          <label className="block w-full min-w-0 max-w-full space-y-2 text-xs text-[#B8B1A7]">
             <span className="lifehq-label">Geplantes Datum</span>
             <input
               type="date"
               value={dateDraft.plannedDate}
               onChange={(event) => updateDateDraft({ plannedDate: event.target.value })}
-              className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs"
+              className="lifehq-task-form-control block min-h-10 w-full max-w-full min-w-0 box-border px-3 py-2 text-xs"
             />
           </label>
-          <label className="min-w-0 max-w-full space-y-2 text-xs text-[#B8B1A7]">
+          <label className="block w-full min-w-0 max-w-full space-y-2 text-xs text-[#B8B1A7]">
             <span className="lifehq-label">Fälligkeit</span>
             <input
               type="date"
               value={dateDraft.dueDate}
               onChange={(event) => updateDateDraft({ dueDate: event.target.value })}
-              className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs"
+              className="lifehq-task-form-control block min-h-10 w-full max-w-full min-w-0 box-border px-3 py-2 text-xs"
             />
           </label>
-          <div className="flex min-w-0 max-w-full flex-wrap gap-2 lg:justify-end">
+          <div className="flex w-full min-w-0 max-w-full flex-wrap gap-2 md:col-span-2 xl:col-span-1 xl:justify-end">
             {hasDateDraftChanges && (
               <>
                 <button type="button" onClick={saveDateDraft} className="lifehq-task-action-button lifehq-task-action-button-gold">
