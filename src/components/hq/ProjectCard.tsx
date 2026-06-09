@@ -1,28 +1,10 @@
 import type { LifeArea } from '../../models/lifeArea';
 import type { Milestone } from '../../models/milestone';
-import type { Priority, ProjectStatus, TrafficLightStatus } from '../../models/common';
+import type { TrafficLightStatus } from '../../models/common';
+import { priorityLabels, projectStatusLabels, trafficLightLabels } from '../../constants/displayLabels';
+import { formatDateDisplay } from '../../utils/dateFormat';
 import type { Project } from '../../models/project';
 import type { Task } from '../../models/task';
-
-const projectStatusLabels: Record<ProjectStatus, string> = {
-  planned: 'Geplant',
-  active: 'Aktiv',
-  paused: 'Pausiert',
-  completed: 'Abgeschlossen',
-};
-
-const priorityLabels: Record<Priority, string> = {
-  low: 'Niedrig',
-  medium: 'Mittel',
-  high: 'Hoch',
-  critical: 'Kritisch',
-};
-
-const trafficLightLabels: Record<TrafficLightStatus, string> = {
-  green: 'Grün',
-  yellow: 'Gelb',
-  red: 'Rot',
-};
 
 const trafficLightStyles: Record<TrafficLightStatus, string> = {
   green: 'bg-[#8E9B72] ring-[#8E9B72]/20',
@@ -137,7 +119,7 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
 
           <div className="lifehq-card-soft border-white/10 bg-black/20 px-3 py-3">
             <p className="lifehq-label">Zieltermin</p>
-            <p className="mt-2 font-medium text-[#F5F1EA]">{project.targetDate ?? 'Kein Zieltermin'}</p>
+            <p className="mt-2 font-medium text-[#F5F1EA]">{formatDateDisplay(project.targetDate, 'Kein Zieltermin')}</p>
           </div>
         </div>
 
@@ -154,7 +136,7 @@ export function ProjectCard({ project, lifeArea, tasks, milestones, onClick }: P
           <div className="lifehq-card-soft border-amber-200/10 bg-black/20 px-3 py-3 text-sm leading-6 text-[#B8B1A7]">
             <p className="font-medium text-[#F5F1EA]">Bewusst pausiert, nicht abgeschlossen.</p>
             {project.pauseReason && <p className="mt-1 line-clamp-2">Grund: {project.pauseReason}</p>}
-            {project.reviewDate && <p className="mt-1">Wiedervorlage: {project.reviewDate}</p>}
+            {project.reviewDate && <p className="mt-1">Wiedervorlage: {formatDateDisplay(project.reviewDate)}</p>}
           </div>
         )}
       </div>
