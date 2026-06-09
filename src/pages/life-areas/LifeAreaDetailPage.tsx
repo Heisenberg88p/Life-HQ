@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { priorityLabels, projectStatusLabels, trafficLightLabels } from '../../constants/displayLabels';
 import type { Milestone } from '../../models/milestone';
 import type { Priority, ProjectStatus, TrafficLightStatus } from '../../models/common';
 import type { LifeArea } from '../../models/lifeArea';
@@ -12,6 +13,7 @@ import {
   selectTasks,
   useLifeHQStore,
 } from '../../store';
+import { formatDateDisplay } from '../../utils/dateFormat';
 
 
 type LifeAreaEditDraft = {
@@ -46,26 +48,6 @@ function getOptionalFormValue(value: string): string | undefined {
 
   return trimmedValue ? trimmedValue : undefined;
 }
-
-const projectStatusLabels: Record<ProjectStatus, string> = {
-  planned: 'Geplant',
-  active: 'Aktiv',
-  paused: 'Pausiert',
-  completed: 'Abgeschlossen',
-};
-
-const priorityLabels: Record<Priority, string> = {
-  low: 'Niedrig',
-  medium: 'Mittel',
-  high: 'Hoch',
-  critical: 'Kritisch',
-};
-
-const trafficLightLabels: Record<TrafficLightStatus, string> = {
-  green: 'Grün',
-  yellow: 'Gelb',
-  red: 'Rot',
-};
 
 const trafficLightStyles: Record<TrafficLightStatus, string> = {
   green: 'bg-emerald-300/80 ring-emerald-300/20',
@@ -139,7 +121,7 @@ function getOpenTaskLabel(openTaskCount: number): string {
 }
 
 function getAttentionProjectLabel(attentionProjectCount: number): string {
-  if (attentionProjectCount === 0) return 'Kein Projekt bitte prüfen';
+  if (attentionProjectCount === 0) return 'Kein Projekt zu prüfen';
 
   return attentionProjectCount === 1 ? '1 Projekt bitte prüfen' : `${attentionProjectCount} Projekte bitte prüfen`;
 }
@@ -219,7 +201,7 @@ function LifeAreaProjectCard({ project, milestones, openTaskCount, onProjectSele
           </div>
           <div className="lifehq-life-area-project-meta">
             <p className="lifehq-label">Zieltermin</p>
-            <p>{project.targetDate ?? 'Kein Zieltermin'}</p>
+            <p>{formatDateDisplay(project.targetDate, 'Kein Zieltermin')}</p>
           </div>
           <div className="lifehq-life-area-project-meta">
             <p className="lifehq-label">Offene Aufgaben</p>
