@@ -490,8 +490,8 @@ function TaskCard({
 
       <div className="lifehq-task-planning-panel">
         <p className="lifehq-label">Planung</p>
-        <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
-          <label className="space-y-2 text-xs text-[#B8B1A7]">
+        <div className="mt-3 grid min-w-0 max-w-full gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
+          <label className="min-w-0 max-w-full space-y-2 text-xs text-[#B8B1A7]">
             <span className="lifehq-label">Geplantes Datum</span>
             <input
               type="date"
@@ -500,7 +500,7 @@ function TaskCard({
               className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs"
             />
           </label>
-          <label className="space-y-2 text-xs text-[#B8B1A7]">
+          <label className="min-w-0 max-w-full space-y-2 text-xs text-[#B8B1A7]">
             <span className="lifehq-label">Fälligkeit</span>
             <input
               type="date"
@@ -509,7 +509,7 @@ function TaskCard({
               className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs"
             />
           </label>
-          <div className="flex flex-wrap gap-2 lg:justify-end">
+          <div className="flex min-w-0 max-w-full flex-wrap gap-2 lg:justify-end">
             {hasDateDraftChanges && (
               <>
                 <button type="button" onClick={saveDateDraft} className="lifehq-task-action-button lifehq-task-action-button-gold">
