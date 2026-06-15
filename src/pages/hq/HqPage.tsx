@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { Focus, FocusPriority, FocusStatus } from '../../models/focus';
 import type { LifeArea } from '../../models/lifeArea';
 import type { Project } from '../../models/project';
 import type { Task } from '../../models/task';
@@ -10,6 +11,7 @@ import {
   selectActiveProjects,
   selectCompletedProjects,
   selectCriticalProjects,
+  selectFocuses,
   selectLifeAreas,
   selectPausedProjects,
   selectTasks,
@@ -18,6 +20,16 @@ import {
   useLifeHQStore,
 } from '../../store';
 
+
+type FocusDraft = {
+  title: string;
+  description: string;
+  status: FocusStatus;
+  priority: FocusPriority;
+  startDate: string;
+  targetDate: string;
+  trueNorthReference: string;
+};
 
 type TrueNorthDraft = {
   title: string;
@@ -38,6 +50,31 @@ type ProjectDraft = {
   trafficLightStatus: TrafficLightStatus;
   targetDate: string;
 };
+
+const focusStatusLabels: Record<FocusStatus, string> = {
+  Active: 'Aktueller Fokus',
+  Paused: 'Zurückgenommen',
+  Completed: 'Abgeschlossen',
+  Archived: 'Archiviert',
+};
+
+const focusPriorityLabels: Record<FocusPriority, string> = {
+  High: 'Hoch',
+  Medium: 'Mittel',
+  Low: 'Niedrig',
+};
+
+const getTodayDateOnly = () => new Date().toISOString().slice(0, 10);
+
+const createDefaultFocusDraft = (): FocusDraft => ({
+  title: '',
+  description: '',
+  status: 'Active',
+  priority: 'Medium',
+  startDate: getTodayDateOnly(),
+  targetDate: '',
+  trueNorthReference: '',
+});
 
 const defaultTrueNorthDraft: TrueNorthDraft = { title: '', description: '' };
 const defaultLifeAreaDraft: LifeAreaDraft = { name: '', description: '' };
@@ -108,6 +145,140 @@ function HqPlaceholder({ children }: { children: ReactNode }) {
   );
 }
 
+
+interface FocusListProps {
+  focuses: Focus[];
+  trueNorths: TrueNorth[];
+  editingFocusId?: string;
+  editDraft: FocusDraft;
+  editError?: string;
+  onEditStart: (focus: Focus) => void;
+  onEditCancel: () => void;
+  onEditDraftChange: (patch: Partial<FocusDraft>) => void;
+  onEditSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onArchive: (id: string) => void;
+}
+
+function getTrueNorthTitle(trueNorths: TrueNorth[], trueNorthReference?: string): string | undefined {
+  return trueNorths.find((trueNorth) => trueNorth.id === trueNorthReference)?.title;
+}
+
+function FocusFields({ draft, trueNorths, onChange }: { draft: FocusDraft; trueNorths: TrueNorth[]; onChange: (patch: Partial<FocusDraft>) => void }) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-2">
+        <span className="lifehq-label">Titel</span>
+        <input value={draft.title} onChange={(event) => onChange({ title: event.target.value })} className="lifehq-crud-control" placeholder="z. B. Gesundheit stabilisieren" />
+      </label>
+      <label className="space-y-2 text-sm text-[#B8B1A7]">
+        <span className="lifehq-label">Status</span>
+        <select value={draft.status} onChange={(event) => onChange({ status: event.target.value as FocusStatus })} className="lifehq-crud-control">
+          {Object.entries(focusStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </label>
+      <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-3">
+        <span className="lifehq-label">Beschreibung</span>
+        <textarea value={draft.description} onChange={(event) => onChange({ description: event.target.value })} className="lifehq-crud-control" rows={3} placeholder="Optionale Einordnung dieses Fokusthemas" />
+      </label>
+      <label className="space-y-2 text-sm text-[#B8B1A7]">
+        <span className="lifehq-label">Priorität</span>
+        <select value={draft.priority} onChange={(event) => onChange({ priority: event.target.value as FocusPriority })} className="lifehq-crud-control">
+          {Object.entries(focusPriorityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </label>
+      <label className="space-y-2 text-sm text-[#B8B1A7]">
+        <span className="lifehq-label">Startdatum</span>
+        <input type="date" value={draft.startDate} onChange={(event) => onChange({ startDate: event.target.value })} className="lifehq-crud-control" />
+      </label>
+      <label className="space-y-2 text-sm text-[#B8B1A7]">
+        <span className="lifehq-label">Zieldatum</span>
+        <input type="date" value={draft.targetDate} onChange={(event) => onChange({ targetDate: event.target.value })} className="lifehq-crud-control" />
+      </label>
+      <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-3">
+        <span className="lifehq-label">True North Bezug</span>
+        <select value={draft.trueNorthReference} onChange={(event) => onChange({ trueNorthReference: event.target.value })} className="lifehq-crud-control">
+          <option value="">Ohne True North Bezug</option>
+          {trueNorths.map((trueNorth) => <option key={trueNorth.id} value={trueNorth.id}>{trueNorth.title}</option>)}
+        </select>
+      </label>
+    </div>
+  );
+}
+
+function FocusList({ focuses, trueNorths, editingFocusId, editDraft, editError, onEditStart, onEditCancel, onEditDraftChange, onEditSubmit, onArchive }: FocusListProps) {
+  const activeFocuses = focuses.filter((focus) => focus.status === 'Active');
+  const visibleFocuses = focuses.filter((focus) => focus.status !== 'Archived');
+  const archivedFocuses = focuses.filter((focus) => focus.status === 'Archived');
+
+  if (focuses.length === 0) {
+    return <EmptyState>Lege deinen ersten aktuellen Fokus fest.</EmptyState>;
+  }
+
+  return (
+    <div className="space-y-5">
+      {activeFocuses.length === 0 && (
+        <div className="lifehq-card-soft border-[#D6AD64]/20 bg-[#D6AD64]/[0.04] px-4 py-4 text-sm leading-6 text-[#B8B1A7]">
+          Kein aktiver Fokus vorhanden. Lege einen aktiven Fokus fest, wenn du ein Thema bewusst priorisieren möchtest.
+        </div>
+      )}
+
+      {visibleFocuses.length > 0 && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {visibleFocuses.map((focus) => {
+            const isEditing = editingFocusId === focus.id;
+            const trueNorthTitle = getTrueNorthTitle(trueNorths, focus.trueNorthReference);
+
+            return (
+              <article key={focus.id} className="lifehq-premium-card p-4 sm:p-5">
+                {isEditing ? (
+                  <form onSubmit={onEditSubmit} className="space-y-4">
+                    <FocusFields draft={editDraft} trueNorths={trueNorths} onChange={onEditDraftChange} />
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      {editError ? <p className="text-sm text-[#D6AD64]">{editError}</p> : <p className="text-sm text-[#7E776E]">Maximal fünf aktive Fokusse möglich.</p>}
+                      <div className="flex flex-wrap gap-2">
+                        <button type="button" onClick={onEditCancel} className="lifehq-button-secondary">Abbrechen</button>
+                        <button type="submit" className="lifehq-button-primary">Speichern</button>
+                      </div>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="flex h-full flex-col justify-between gap-5">
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2 text-xs text-[#B8B1A7]">
+                        <span className="lifehq-badge">{focusStatusLabels[focus.status]}</span>
+                        <span className="lifehq-badge">Priorität: {focusPriorityLabels[focus.priority]}</span>
+                      </div>
+                      <h4 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">{focus.title}</h4>
+                      {focus.description && <p className="text-sm leading-6 text-[#B8B1A7]">{focus.description}</p>}
+                      <div className="grid gap-2 text-xs leading-5 text-[#7E776E] sm:grid-cols-2">
+                        <p>Start: {focus.startDate}</p>
+                        <p>Ziel: {focus.targetDate ?? 'Offen'}</p>
+                        <p className="sm:col-span-2">True North: {trueNorthTitle ?? 'Nicht zugeordnet'}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 border-t border-white/[0.08] pt-4">
+                      <button type="button" onClick={() => onEditStart(focus)} className="lifehq-button-secondary">Bearbeiten</button>
+                      <button type="button" onClick={() => onArchive(focus.id)} className="lifehq-button-secondary">Archivieren</button>
+                    </div>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      {archivedFocuses.length > 0 && (
+        <details className="lifehq-card-soft border-white/10 bg-black/10 px-4 py-3 text-sm text-[#B8B1A7]">
+          <summary className="cursor-pointer font-medium text-[#F5F1EA]">Archivierte Fokusse ({archivedFocuses.length})</summary>
+          <div className="mt-3 space-y-2">
+            {archivedFocuses.map((focus) => <p key={focus.id}>{focus.title}</p>)}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
 
 interface TrueNorthListProps {
   trueNorths: TrueNorth[];
@@ -422,6 +593,7 @@ function OrphanProjectList({ projects, tasks, onProjectSelect, action, children 
 
 export function HqPage() {
   const navigate = useNavigate();
+  const focuses = useLifeHQStore(selectFocuses);
   const trueNorths = useLifeHQStore(selectTrueNorths);
   const lifeAreas = useLifeHQStore(selectLifeAreas);
   const activeProjects = useLifeHQStore(selectActiveProjects);
@@ -430,11 +602,20 @@ export function HqPage() {
   const completedProjects = useLifeHQStore(selectCompletedProjects);
   const criticalProjects = useLifeHQStore(selectCriticalProjects);
   const tasks = useLifeHQStore(selectTasks);
+  const createFocus = useLifeHQStore((state) => state.createFocus);
+  const updateFocus = useLifeHQStore((state) => state.updateFocus);
+  const archiveFocus = useLifeHQStore((state) => state.archiveFocus);
   const addTrueNorth = useLifeHQStore((state) => state.addTrueNorth);
   const updateTrueNorth = useLifeHQStore((state) => state.updateTrueNorth);
   const deleteTrueNorth = useLifeHQStore((state) => state.deleteTrueNorth);
   const addLifeArea = useLifeHQStore((state) => state.addLifeArea);
   const addProject = useLifeHQStore((state) => state.addProject);
+  const [isFocusFormOpen, setIsFocusFormOpen] = useState(false);
+  const [focusDraft, setFocusDraft] = useState<FocusDraft>(createDefaultFocusDraft);
+  const [focusError, setFocusError] = useState<string | undefined>();
+  const [editingFocusId, setEditingFocusId] = useState<string | undefined>();
+  const [focusEditDraft, setFocusEditDraft] = useState<FocusDraft>(createDefaultFocusDraft);
+  const [focusEditError, setFocusEditError] = useState<string | undefined>();
   const [isTrueNorthFormOpen, setIsTrueNorthFormOpen] = useState(false);
   const [trueNorthDraft, setTrueNorthDraft] = useState<TrueNorthDraft>(defaultTrueNorthDraft);
   const [trueNorthError, setTrueNorthError] = useState<string | undefined>();
@@ -462,6 +643,144 @@ export function HqPage() {
   const openLifeAreaDetail = (lifeAreaId: string) => {
     navigate(`/life-areas/${lifeAreaId}`);
   };
+
+  function getActiveFocusCount(excludedFocusId?: string) {
+    return focuses.filter((focus) => focus.status === 'Active' && focus.id !== excludedFocusId).length;
+  }
+
+  function getFocusLimitError(draft: FocusDraft, excludedFocusId?: string): string | undefined {
+    if (draft.status === 'Active' && getActiveFocusCount(excludedFocusId) >= 5) {
+      return 'Maximal fünf aktive Fokusse möglich. Archiviere oder pausiere zuerst einen bestehenden Fokus.';
+    }
+
+    return undefined;
+  }
+
+  function getFocusPatchFromDraft(draft: FocusDraft) {
+    return {
+      title: draft.title.trim(),
+      description: getOptionalFormValue(draft.description),
+      status: draft.status,
+      priority: draft.priority,
+      startDate: draft.startDate,
+      targetDate: draft.targetDate || undefined,
+      trueNorthReference: getOptionalFormValue(draft.trueNorthReference),
+    };
+  }
+
+  function toggleFocusForm() {
+    setIsFocusFormOpen((current) => !current);
+    setEditingFocusId(undefined);
+    setFocusEditError(undefined);
+  }
+
+  function updateFocusDraft(patch: Partial<FocusDraft>) {
+    setFocusDraft((current) => ({ ...current, ...patch }));
+    setFocusError(undefined);
+  }
+
+  function resetFocusDraft() {
+    setFocusDraft(createDefaultFocusDraft());
+    setFocusError(undefined);
+  }
+
+  function handleCreateFocus(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const title = focusDraft.title.trim();
+
+    if (!title) {
+      setFocusError('Bitte gib einen Titel ein.');
+      return;
+    }
+
+    if (!focusDraft.startDate) {
+      setFocusError('Bitte wähle ein Startdatum.');
+      return;
+    }
+
+    const limitError = getFocusLimitError(focusDraft);
+
+    if (limitError) {
+      setFocusError(limitError);
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+
+    createFocus({
+      id: createEntityId('f'),
+      ...getFocusPatchFromDraft(focusDraft),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+    resetFocusDraft();
+    setIsFocusFormOpen(false);
+  }
+
+  function startEditingFocus(focus: Focus) {
+    setEditingFocusId(focus.id);
+    setFocusEditDraft({
+      title: focus.title,
+      description: focus.description ?? '',
+      status: focus.status,
+      priority: focus.priority,
+      startDate: focus.startDate,
+      targetDate: focus.targetDate ?? '',
+      trueNorthReference: focus.trueNorthReference ?? '',
+    });
+    setFocusEditError(undefined);
+    setIsFocusFormOpen(false);
+  }
+
+  function updateFocusEditDraft(patch: Partial<FocusDraft>) {
+    setFocusEditDraft((current) => ({ ...current, ...patch }));
+    setFocusEditError(undefined);
+  }
+
+  function cancelEditingFocus() {
+    setEditingFocusId(undefined);
+    setFocusEditDraft(createDefaultFocusDraft());
+    setFocusEditError(undefined);
+  }
+
+  function handleUpdateFocus(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!editingFocusId) {
+      return;
+    }
+
+    const title = focusEditDraft.title.trim();
+
+    if (!title) {
+      setFocusEditError('Bitte gib einen Titel ein.');
+      return;
+    }
+
+    if (!focusEditDraft.startDate) {
+      setFocusEditError('Bitte wähle ein Startdatum.');
+      return;
+    }
+
+    const limitError = getFocusLimitError(focusEditDraft, editingFocusId);
+
+    if (limitError) {
+      setFocusEditError(limitError);
+      return;
+    }
+
+    updateFocus(editingFocusId, getFocusPatchFromDraft(focusEditDraft));
+    cancelEditingFocus();
+  }
+
+  function handleArchiveFocus(id: string) {
+    archiveFocus(id);
+
+    if (editingFocusId === id) {
+      cancelEditingFocus();
+    }
+  }
 
   function toggleTrueNorthForm() {
     setIsTrueNorthFormOpen((current) => !current);
@@ -698,10 +1017,37 @@ export function HqPage() {
           />
         </HqSection>
 
-        <HqSection title="Aktueller Fokus" description="Hier erscheinen später deine wichtigsten aktiven Fokusthemen." eyebrow="02 Fokus" prominence="focus">
-          <HqPlaceholder>
-            <p>Der Fokusbereich ist als zentrale Orientierung vorbereitet, ohne neue Fachlogik oder Daten zu erzeugen.</p>
-          </HqPlaceholder>
+        <HqSection
+          title="Aktueller Fokus"
+          description="Verwalte bis zu fünf aktuell priorisierte Lebensthemen."
+          eyebrow="02 Fokus"
+          prominence="focus"
+          action={<button type="button" onClick={toggleFocusForm} className="lifehq-button-primary w-fit">Fokus hinzufügen</button>}
+        >
+          {isFocusFormOpen && (
+            <form onSubmit={handleCreateFocus} className="lifehq-crud-panel">
+              <FocusFields draft={focusDraft} trueNorths={trueNorths} onChange={updateFocusDraft} />
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                {focusError ? <p className="text-sm text-[#D6AD64]">{focusError}</p> : <p className="text-sm text-[#7E776E]">Empfehlung: drei aktive Fokusse sind ideal, fünf ist die harte Grenze.</p>}
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => { resetFocusDraft(); setIsFocusFormOpen(false); }} className="lifehq-button-secondary">Abbrechen</button>
+                  <button type="submit" className="lifehq-button-primary">Speichern</button>
+                </div>
+              </div>
+            </form>
+          )}
+          <FocusList
+            focuses={focuses}
+            trueNorths={trueNorths}
+            editingFocusId={editingFocusId}
+            editDraft={focusEditDraft}
+            editError={focusEditError}
+            onEditStart={startEditingFocus}
+            onEditCancel={cancelEditingFocus}
+            onEditDraftChange={updateFocusEditDraft}
+            onEditSubmit={handleUpdateFocus}
+            onArchive={handleArchiveFocus}
+          />
         </HqSection>
 
         <HqSection title="Aufmerksamkeit" description="Hier erscheinen später kritische Themen, Fristen und Wiedervorlagen." eyebrow="03 Aufmerksamkeit">
