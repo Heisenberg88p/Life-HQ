@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Focus, FocusPriority, FocusStatus } from '../../models/focus';
 import type { LifeArea } from '../../models/lifeArea';
+import type { Milestone } from '../../models/milestone';
 import type { Project } from '../../models/project';
 import type { Task } from '../../models/task';
 import type { TrueNorth } from '../../models/trueNorth';
@@ -13,6 +14,7 @@ import {
   selectCriticalProjects,
   selectFocuses,
   selectLifeAreas,
+  selectMilestones,
   selectPausedProjects,
   selectTasks,
   selectTrueNorths,
@@ -147,6 +149,182 @@ function HqPlaceholder({ children }: { children: ReactNode }) {
   );
 }
 
+
+type AttentionItemType = 'Projekt' | 'Task' | 'Meilenstein' | 'Wiedervorlage';
+
+type AttentionItem = {
+  id: string;
+  title: string;
+  type: AttentionItemType;
+  description: string;
+  date?: string;
+  projectId?: string;
+  rank: number;
+};
+
+const attentionVisibleLimit = 5;
+const getTodayForAttention = () => new Date().toISOString().slice(0, 10);
+const isPastOrToday = (date?: string, today = getTodayForAttention()) => Boolean(date && date <= today);
+
+function getAttentionItems(projects: Project[], tasks: Task[], milestones: Milestone[]): AttentionItem[] {
+  const today = getTodayForAttention();
+  const projectById = new Map(projects.map((project) => [project.id, project]));
+  const items: AttentionItem[] = [];
+
+  projects.forEach((project) => {
+    if (project.status === 'completed') {
+      return;
+    }
+
+    const isProjectOverdue = isPastOrToday(project.targetDate, today);
+
+    if (isProjectOverdue && project.priority === 'critical') {
+      items.push({
+        id: `project-overdue-critical-${project.id}`,
+        title: project.name,
+        type: 'Projekt',
+        description: 'Kritisches Projekt mit erreichtem oder überschrittenem Zieltermin.',
+        date: project.targetDate,
+        projectId: project.id,
+        rank: 1,
+      });
+      return;
+    }
+
+    if (project.trafficLightStatus === 'red') {
+      items.push({
+        id: `project-red-${project.id}`,
+        title: project.name,
+        type: 'Projekt',
+        description: 'Projekt steht auf roter Ampel.',
+        date: project.targetDate,
+        projectId: project.id,
+        rank: 2,
+      });
+      return;
+    }
+
+    if (project.status === 'paused' && isPastOrToday(project.reviewDate, today)) {
+      items.push({
+        id: `project-review-${project.id}`,
+        title: project.name,
+        type: 'Wiedervorlage',
+        description: 'Pausiertes Projekt ist zur Wiedervorlage fällig.',
+        date: project.reviewDate,
+        projectId: project.id,
+        rank: 3,
+      });
+      return;
+    }
+
+    if (isProjectOverdue) {
+      items.push({
+        id: `project-overdue-${project.id}`,
+        title: project.name,
+        type: 'Projekt',
+        description: 'Projekt-Zieltermin ist erreicht oder überschritten.',
+        date: project.targetDate,
+        projectId: project.id,
+        rank: project.priority === 'critical' ? 1 : 6,
+      });
+      return;
+    }
+
+    if (project.priority === 'critical') {
+      items.push({
+        id: `project-critical-${project.id}`,
+        title: project.name,
+        type: 'Projekt',
+        description: 'Projekt hat kritische Priorität.',
+        date: project.targetDate,
+        projectId: project.id,
+        rank: 6,
+      });
+    }
+  });
+
+  milestones.forEach((milestone) => {
+    if (milestone.status === 'done' || !isPastOrToday(milestone.targetDate, today)) {
+      return;
+    }
+
+    const project = projectById.get(milestone.projectId);
+
+    items.push({
+      id: `milestone-overdue-${milestone.id}`,
+      title: milestone.title,
+      type: 'Meilenstein',
+      description: project ? `Meilenstein in ${project.name} ist überfällig.` : 'Meilenstein ist überfällig.',
+      date: milestone.targetDate,
+      projectId: milestone.projectId,
+      rank: 4,
+    });
+  });
+
+  tasks.forEach((task) => {
+    if (task.status === 'done' || !isPastOrToday(task.dueDate, today)) {
+      return;
+    }
+
+    const project = task.projectId ? projectById.get(task.projectId) : undefined;
+
+    items.push({
+      id: `task-overdue-${task.id}`,
+      title: task.title,
+      type: 'Task',
+      description: project ? `Aufgabe in ${project.name} ist überfällig.` : 'Aufgabe ist überfällig.',
+      date: task.dueDate,
+      rank: 5,
+    });
+  });
+
+  return items.sort((firstItem, secondItem) => firstItem.rank - secondItem.rank || (firstItem.date ?? '').localeCompare(secondItem.date ?? '') || firstItem.title.localeCompare(secondItem.title));
+}
+
+function AttentionList({ items, onProjectSelect }: { items: AttentionItem[]; onProjectSelect: (projectId: string) => void }) {
+  if (items.length === 0) {
+    return <EmptyState>Keine akuten Punkte benötigen gerade Aufmerksamkeit.</EmptyState>;
+  }
+
+  const visibleItems = items.slice(0, attentionVisibleLimit);
+  const hiddenItemCount = Math.max(items.length - visibleItems.length, 0);
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 md:grid-cols-2">
+        {visibleItems.map((item) => {
+          const content = (
+            <>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-[#B8B1A7]">
+                <span className="lifehq-badge">{item.type}</span>
+                {item.date && <span className="lifehq-badge">Datum: {item.date}</span>}
+              </div>
+              <h4 className="mt-3 text-base font-semibold text-[#F5F1EA]">{item.title}</h4>
+              <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">{item.description}</p>
+            </>
+          );
+
+          if (item.projectId) {
+            return (
+              <button key={item.id} type="button" onClick={() => onProjectSelect(item.projectId as string)} className="lifehq-card-soft border-[#D6AD64]/15 bg-black/15 p-4 text-left transition hover:border-[#D6AD64]/30 hover:bg-[#D6AD64]/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60">
+                {content}
+              </button>
+            );
+          }
+
+          return (
+            <article key={item.id} className="lifehq-card-soft border-[#D6AD64]/15 bg-black/15 p-4">
+              {content}
+            </article>
+          );
+        })}
+      </div>
+      {hiddenItemCount > 0 && (
+        <p className="text-sm leading-6 text-[#7E776E]">+ {hiddenItemCount} weitere Punkte benötigen Aufmerksamkeit</p>
+      )}
+    </div>
+  );
+}
 
 interface FocusListProps {
   focuses: Focus[];
@@ -753,6 +931,7 @@ export function HqPage() {
   const completedProjects = useLifeHQStore(selectCompletedProjects);
   const criticalProjects = useLifeHQStore(selectCriticalProjects);
   const tasks = useLifeHQStore(selectTasks);
+  const milestones = useLifeHQStore(selectMilestones);
   const createFocus = useLifeHQStore((state) => state.createFocus);
   const updateFocus = useLifeHQStore((state) => state.updateFocus);
   const archiveFocus = useLifeHQStore((state) => state.archiveFocus);
@@ -788,6 +967,7 @@ export function HqPage() {
     return !lifeAreaId || !existingLifeAreaIds.has(lifeAreaId);
   });
   const selectableFocuses = focuses.filter((focus) => focus.status !== 'Archived');
+  const attentionItems = getAttentionItems(allStatusProjects, tasks, milestones);
 
   const openProjectDetail = (projectId: string) => {
     navigate(`/projects/${projectId}`);
@@ -1227,14 +1407,8 @@ export function HqPage() {
           />
         </HqSection>
 
-        <HqSection title="Aufmerksamkeit" description="Hier erscheinen später kritische Themen, Fristen und Wiedervorlagen." eyebrow="03 Aufmerksamkeit">
-          <HqPlaceholder>
-            {criticalProjects.length > 0 ? (
-              <p>{criticalProjects.length} bestehende Projekte benötigen aktuell Aufmerksamkeit. Die bestehende Projektlogik bleibt unverändert.</p>
-            ) : (
-              <p>Keine kritischen Platzhalterhinweise aus bestehenden Projekten.</p>
-            )}
-          </HqPlaceholder>
+        <HqSection title="Aufmerksamkeit" description="Was darfst du aktuell nicht übersehen?" eyebrow="03 Aufmerksamkeit">
+          <AttentionList items={attentionItems} onProjectSelect={openProjectDetail} />
         </HqSection>
 
         <HqSection title="Momentum" description="Hier erscheint später sichtbarer Fortschritt." eyebrow="04 Momentum">
