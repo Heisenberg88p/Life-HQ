@@ -50,7 +50,7 @@ const taskViews: Array<{ id: TaskView; label: string; description: string }> = [
   { id: 'nextWeek', label: 'Nächste Woche', description: 'Geplante Aufgaben der kommenden Woche.' },
   { id: 'later', label: 'Später', description: 'Offene Aufgaben nach Ende der nächsten Woche.' },
   { id: 'overdue', label: 'Überfällig', description: 'Aufgaben, die ruhig geprüft und neu eingeordnet werden sollten.' },
-  { id: 'open', label: 'Alle Aufgaben', description: 'Alle Aufgaben, die noch nicht erledigt sind.' },
+  { id: 'open', label: 'Offene Aufgaben', description: 'Alle Aufgaben, die noch nicht erledigt sind.' },
   { id: 'done', label: 'Erledigte Aufgaben', description: 'Abgeschlossene Schritte zur Nachverfolgung.' },
 ];
 
@@ -209,16 +209,16 @@ function getTaskContext(task: Task, projects: Project[], lifeAreas: LifeArea[]):
 
   if (project) {
     return {
-      label: `Projekt: ${project.name}`,
-      detail: projectLifeArea ? `Bereich: ${projectLifeArea.name}` : undefined,
+      label: projectLifeArea ? `${projectLifeArea.name} → ${project.name}` : `Projekt: ${project.name}`,
+      detail: projectLifeArea ? 'Lebensbereich → Projekt → Aufgabe' : 'Projekt → Aufgabe',
       tone: 'project',
     };
   }
 
   if (directLifeArea) {
     return {
-      label: `Bereich: ${directLifeArea.name}`,
-      detail: 'Direkt dem Lebensbereich zugeordnet',
+      label: `${directLifeArea.name} → Direkte Aufgabe`,
+      detail: 'Lebensbereich → Aufgabe ohne Projekt',
       tone: 'lifeArea',
     };
   }
@@ -268,6 +268,7 @@ function TaskCard({
   const [editDraft, setEditDraft] = useState<TaskEditDraft>(() => getTaskEditDraft(task));
   const [editError, setEditError] = useState<string | undefined>();
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isPlanningOpen, setIsPlanningOpen] = useState(false);
 
   useEffect(() => {
     setDateDraft(getTaskDateDraft(task));
@@ -278,6 +279,7 @@ function TaskCard({
     setEditError(undefined);
     setIsEditOpen(false);
     setIsDeleteConfirmOpen(false);
+    setIsPlanningOpen(false);
   }, [task.id]);
 
   const hasDateDraftChanges =
@@ -355,19 +357,19 @@ function TaskCard({
 
   return (
     <article className={`lifehq-task-row ${isDone ? 'opacity-65' : ''} ${overdue ? 'border-[#D6AD64]/35' : ''}`}>
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div className="flex min-w-0 flex-1 items-start gap-4">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
           <span className={`lifehq-task-status-dot ${task.status === 'in_progress' ? 'border-[#D6AD64]/35 bg-[#D6AD64]/15' : ''} ${isDone ? 'opacity-60' : ''}`} aria-hidden="true">
             {isDone && <span className="h-1.5 w-1.5 rounded-full bg-[#7E776E]" />}
             {task.status === 'in_progress' && <span className="h-1.5 w-1.5 rounded-full bg-[#D6AD64]" />}
           </span>
 
-          <div className="min-w-0 space-y-3">
+          <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className={isDone ? 'text-base font-semibold leading-6 text-[#7E776E]' : 'text-base font-semibold leading-6 text-[#F5F1EA]'}>{task.title}</h3>
               {overdue && <span className="lifehq-task-chip border-[#D6AD64]/30 bg-[#D6AD64]/10 text-[#F5F1EA]">Überfällig</span>}
             </div>
-            {task.description && <p className="max-w-3xl text-sm leading-6 text-[#7E776E]">{task.description}</p>}
+            {task.description && <p className="line-clamp-2 max-w-3xl text-xs leading-5 text-[#7E776E]">{task.description}</p>}
             <div className={`lifehq-task-context ${contextStyles[context.tone]}`}>
               <p className="font-medium">{context.label}</p>
               {context.detail && <p className="mt-1 text-[0.72rem] leading-4 text-[#7E776E]">{context.detail}</p>}
@@ -375,7 +377,7 @@ function TaskCard({
           </div>
         </div>
 
-        <div className="grid w-full gap-2 text-xs text-[#B8B1A7] sm:grid-cols-2 xl:w-auto xl:min-w-[25rem] xl:grid-cols-4 xl:text-right">
+        <div className="flex w-full flex-wrap gap-1.5 text-xs text-[#B8B1A7] xl:w-auto xl:max-w-[27rem] xl:justify-end">
           <span className={`lifehq-task-chip ${statusStyles[task.status]}`}>{statusLabels[task.status]}</span>
           <span className={task.priority === 'critical' ? 'lifehq-task-chip border-[#D6AD64]/30 bg-[#D6AD64]/10 text-[#F5F1EA]' : 'lifehq-task-chip'}>
             Priorität: {priorityLabels[task.priority]}
@@ -387,9 +389,9 @@ function TaskCard({
         </div>
       </div>
 
-      {isDone && <p className="mt-3 text-xs text-[#7E776E]">Erledigt: {formatDateDisplay(task.completedAt, 'Kein Abschlussdatum')}</p>}
+      {isDone && task.completedAt && <p className="mt-2 text-xs text-[#7E776E]">Erledigt am {formatDateDisplay(task.completedAt)}</p>}
 
-      <div className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.07] pt-4 text-xs" aria-label={`Status und Aktionen für ${task.title}`}>
+      <div className="mt-3 flex flex-wrap gap-1.5 border-t border-white/[0.07] pt-3 text-xs" aria-label={`Status und Aktionen für ${task.title}`}>
         {task.status !== 'open' && (
           <button type="button" onClick={() => onStatusChange(task.id, 'open')} className="lifehq-task-action-button">
             Wieder öffnen
@@ -397,7 +399,7 @@ function TaskCard({
         )}
         {task.status !== 'in_progress' && (
           <button type="button" onClick={() => onStatusChange(task.id, 'in_progress')} className="lifehq-task-action-button lifehq-task-action-button-gold">
-            In Arbeit setzen
+            In Arbeit
           </button>
         )}
         {task.status !== 'done' && (
@@ -414,7 +416,7 @@ function TaskCard({
           }}
           className="lifehq-task-action-button"
         >
-          Bearbeiten
+          Details
         </button>
         <button type="button" onClick={() => setIsDeleteConfirmOpen((current) => !current)} className="lifehq-task-action-button">
           Löschen
@@ -488,7 +490,14 @@ function TaskCard({
         </form>
       )}
 
-      <div className="lifehq-task-planning-panel">
+      <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
+        <button type="button" onClick={() => setIsPlanningOpen((current) => !current)} className="lifehq-task-action-button">
+          {isPlanningOpen ? 'Planung ausblenden' : 'Planung'}
+        </button>
+      </div>
+
+      {isPlanningOpen && (
+        <div className="lifehq-task-planning-panel">
         <p className="lifehq-label">Planung</p>
         <div className="mt-3 grid w-full min-w-0 max-w-full grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end">
           <label className="block w-full min-w-0 max-w-full space-y-2 text-xs text-[#B8B1A7]">
@@ -539,6 +548,7 @@ function TaskCard({
           </div>
         </div>
       </div>
+      )}
     </article>
   );
 }
@@ -570,7 +580,7 @@ interface WeekTaskSectionProps extends TaskListProps {
 
 function TaskList({ tasks, projects, lifeAreas, actions }: TaskListProps) {
   return (
-    <div className="mt-5 grid gap-3">
+    <div className="mt-4 grid gap-2.5">
       {tasks.map((task) => (
         <TaskCard
           key={task.id}
@@ -592,7 +602,7 @@ function WeekTaskSection({ tasks, projects, lifeAreas, actions, weekDays }: Week
     .map((day, index) => ({
       day,
       label: weekdayLabels[index],
-      tasks: sortTasksForPlanning(tasks.filter((task) => isSameDay(task.plannedDate, day))),
+      tasks: sortTasksForPlanning(tasks.filter((task) => task.status !== 'done' && isSameDay(task.plannedDate, day))),
     }))
     .filter((group) => group.tasks.length > 0);
   const hasRelevantWeekTasks = plannedDayGroups.length > 0 || unplannedTasks.length > 0 || overdueTasks.length > 0;

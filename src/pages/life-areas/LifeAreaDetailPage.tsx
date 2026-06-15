@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { priorityLabels, projectStatusLabels, trafficLightLabels } from '../../constants/displayLabels';
+import { priorityLabels, projectStatusLabels, taskStatusLabels, trafficLightLabels } from '../../constants/displayLabels';
 import type { Milestone } from '../../models/milestone';
 import type { Priority, ProjectStatus, TrafficLightStatus } from '../../models/common';
 import type { LifeArea } from '../../models/lifeArea';
@@ -268,6 +268,7 @@ export function LifeAreaDetailPage() {
   );
   const attentionProjects = lifeAreaProjects.filter(isAttentionProject);
   const directLifeAreaTasks = tasks.filter((task) => task.lifeAreaId === currentLifeArea.id);
+  const directOpenLifeAreaTasks = directLifeAreaTasks.filter((task) => task.status !== 'done');
   const canDeleteLifeArea = lifeAreaProjects.length === 0 && directLifeAreaTasks.length === 0;
   const displayName = getLifeAreaDisplayName(currentLifeArea.name);
 
@@ -415,6 +416,47 @@ export function LifeAreaDetailPage() {
             )}
           </div>
         </form>
+      )}
+
+
+      {directOpenLifeAreaTasks.length > 0 && (
+        <section className="lifehq-project-section lifehq-project-section-secondary">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-2">
+              <div className="lifehq-section-title">
+                <span aria-hidden="true" />
+                <h2 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">Direkte Aufgaben in {displayName}</h2>
+              </div>
+              <p className="max-w-2xl text-sm leading-6 text-[#7E776E]">
+                Aufgaben ohne Projekt bleiben hier im Lebensbereich sichtbar und gehen nicht im HQ verloren.
+              </p>
+            </div>
+            <Link to="/tasks" className="lifehq-button-secondary w-fit">Zum Aufgabenbereich</Link>
+          </div>
+
+          <div className="mt-4 grid gap-2">
+            {directOpenLifeAreaTasks.slice(0, 5).map((task) => (
+              <article key={task.id} className="rounded-[1rem] border border-white/[0.08] bg-black/20 px-4 py-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="break-words text-sm font-semibold text-[#F5F1EA]">{task.title}</p>
+                    {task.description && <p className="mt-1 line-clamp-1 text-xs leading-5 text-[#7E776E]">{task.description}</p>}
+                  </div>
+                  <div className="flex shrink-0 flex-wrap gap-1.5 text-xs text-[#B8B1A7] sm:justify-end">
+                    <span className="lifehq-badge">{taskStatusLabels[task.status]}</span>
+                    <span className="lifehq-badge">Fällig: {formatDateDisplay(task.dueDate, 'Keine Fälligkeit')}</span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {directOpenLifeAreaTasks.length > 5 && (
+            <p className="mt-3 text-xs leading-5 text-[#7E776E]">
+              {directOpenLifeAreaTasks.length - 5} weitere direkte Aufgaben findest du im Aufgabenbereich.
+            </p>
+          )}
+        </section>
       )}
 
       <section className="space-y-5">

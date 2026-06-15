@@ -236,6 +236,7 @@ function LifeAreaList({ lifeAreas, projects, tasks, criticalProjects, onLifeArea
       {lifeAreas.map((lifeArea) => {
         const areaProjects = projects.filter((project) => project.lifeAreaId === lifeArea.id);
         const areaProjectIds = new Set(areaProjects.map((project) => project.id));
+        const areaDirectOpenTasks = tasks.filter((task) => task.status !== 'done' && task.lifeAreaId === lifeArea.id && !task.projectId);
         const areaOpenTasks = tasks.filter((task) => task.status !== 'done' && (task.lifeAreaId === lifeArea.id || (task.projectId ? areaProjectIds.has(task.projectId) : false)));
         const areaAttentionProjects = criticalProjects.filter((project) => project.lifeAreaId === lifeArea.id);
         const needsAttention = areaAttentionProjects.length > 0;
@@ -266,6 +267,7 @@ function LifeAreaList({ lifeAreas, projects, tasks, criticalProjects, onLifeArea
               <div className="flex flex-wrap gap-x-5 gap-y-2 text-[0.82rem] leading-5 text-[#B8B1A7]">
                 <span>{getProjectLabel(areaProjects.length)}</span>
                 <span>{getOpenTaskLabel(areaOpenTasks.length)}</span>
+                {areaDirectOpenTasks.length > 0 && <span>{areaDirectOpenTasks.length} direkt im Bereich</span>}
               </div>
               {needsAttention && (
                 <p className="mt-3 flex items-center gap-2 text-xs text-[#D6AD64]/85">

@@ -1,0 +1,20 @@
+{
+  "id": "/Life-HQ/",
+  "name": "LifeHQ",
+  "short_name": "LifeHQ",
+  "description": "Persönliches Life Operating System",
+  "start_url": "/Life-HQ/",
+  "scope": "/Life-HQ/",
+  "display": "standalone",
+  "background_color": "#030303",
+  "theme_color": "#030303",
+  "categories": ["productivity"],
+  "icons": [
+    {
+      "src": "/Life-HQ/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
