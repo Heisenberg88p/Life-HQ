@@ -45,6 +45,7 @@ type ProjectDraft = {
   name: string;
   description: string;
   lifeAreaId: string;
+  focusId: string;
   status: ProjectStatus;
   priority: Priority;
   trafficLightStatus: TrafficLightStatus;
@@ -82,6 +83,7 @@ const defaultProjectDraft: ProjectDraft = {
   name: '',
   description: '',
   lifeAreaId: '',
+  focusId: '',
   status: 'planned',
   priority: 'medium',
   trafficLightStatus: 'green',
@@ -679,6 +681,7 @@ export function HqPage() {
 
     return !lifeAreaId || !existingLifeAreaIds.has(lifeAreaId);
   });
+  const selectableFocuses = focuses.filter((focus) => focus.status !== 'Archived');
 
   const openProjectDetail = (projectId: string) => {
     navigate(`/projects/${projectId}`);
@@ -1016,6 +1019,7 @@ export function HqPage() {
       name,
       description: getOptionalFormValue(projectDraft.description),
       lifeAreaId: getOptionalFormValue(projectDraft.lifeAreaId),
+      focusId: getOptionalFormValue(projectDraft.focusId) ?? null,
       status: projectDraft.status,
       priority: projectDraft.priority,
       trafficLightStatus: projectDraft.trafficLightStatus,
@@ -1172,6 +1176,7 @@ export function HqPage() {
                   <div className="grid gap-4 lg:grid-cols-3">
                     <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-2"><span className="lifehq-label">Projektname</span><input value={projectDraft.name} onChange={(event) => updateProjectDraft({ name: event.target.value })} className="lifehq-crud-control" placeholder="Name des Projekts" /></label>
                     <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Lebensbereich</span><select value={projectDraft.lifeAreaId} onChange={(event) => updateProjectDraft({ lifeAreaId: event.target.value })} className="lifehq-crud-control"><option value="">Ohne Lebensbereich</option>{lifeAreas.map((lifeArea) => <option key={lifeArea.id} value={lifeArea.id}>{getLifeAreaDisplayName(lifeArea.name)}</option>)}</select></label>
+                    <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Fokus-Zuordnung</span><select value={projectDraft.focusId} onChange={(event) => updateProjectDraft({ focusId: event.target.value })} className="lifehq-crud-control"><option value="">Kein Fokus</option>{selectableFocuses.map((focus) => <option key={focus.id} value={focus.id}>{focus.title}</option>)}</select></label>
                     <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-3"><span className="lifehq-label">Beschreibung</span><textarea value={projectDraft.description} onChange={(event) => updateProjectDraft({ description: event.target.value })} className="lifehq-crud-control" rows={3} placeholder="Optionale Beschreibung oder Vision" /></label>
                     <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Status</span><select value={projectDraft.status} onChange={(event) => updateProjectDraft({ status: event.target.value as ProjectStatus })} className="lifehq-crud-control">{Object.entries(projectStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
                     <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Priorität</span><select value={projectDraft.priority} onChange={(event) => updateProjectDraft({ priority: event.target.value as Priority })} className="lifehq-crud-control">{Object.entries(priorityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>

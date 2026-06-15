@@ -126,6 +126,7 @@ const sanitizeProject = (value: unknown, timestampFallback: string): Project | u
     name,
     description: getOptionalString(value.description),
     lifeAreaId: getOptionalString(value.lifeAreaId),
+    focusId: getOptionalString(value.focusId) ?? null,
     status: getEnumValue<ProjectStatus>(value.status, PROJECT_STATUS_OPTIONS, 'planned'),
     priority: getEnumValue<Priority>(value.priority, PRIORITY_OPTIONS, 'medium'),
     trafficLightStatus: getEnumValue<TrafficLightStatus>(value.trafficLightStatus, TRAFFIC_LIGHT_STATUS_OPTIONS, 'green'),
@@ -309,12 +310,20 @@ export const sanitizePersistedLifeHQState = (
 
   const timestampFallback = new Date().toISOString();
 
+  const focuses = sanitizeArray(persistedState.focuses, fallbackState.focuses, (item) => sanitizeFocus(item, timestampFallback));
+  const validFocusIds = new Set(focuses.map((focus) => focus.id));
+  const projects = sanitizeArray(persistedState.projects, fallbackState.projects, (item) => sanitizeProject(item, timestampFallback))
+    .map((project) => ({
+      ...project,
+      focusId: project.focusId && validFocusIds.has(project.focusId) ? project.focusId : null,
+    }));
+
   return {
     storageVersion: LIFEHQ_STORAGE_VERSION,
-    focuses: sanitizeArray(persistedState.focuses, fallbackState.focuses, (item) => sanitizeFocus(item, timestampFallback)),
+    focuses,
     trueNorths: sanitizeArray(persistedState.trueNorths, fallbackState.trueNorths, (item) => sanitizeTrueNorth(item, timestampFallback)),
     lifeAreas: sanitizeArray(persistedState.lifeAreas, fallbackState.lifeAreas, (item) => sanitizeLifeArea(item, timestampFallback)),
-    projects: sanitizeArray(persistedState.projects, fallbackState.projects, (item) => sanitizeProject(item, timestampFallback)),
+    projects,
     tasks: sanitizeArray(persistedState.tasks, fallbackState.tasks, (item) => sanitizeTask(item, timestampFallback)),
     milestones: sanitizeArray(persistedState.milestones, fallbackState.milestones, (item) => sanitizeMilestone(item, timestampFallback)),
     historyEntries: sanitizeArray(persistedState.historyEntries, fallbackState.historyEntries, (item) => sanitizeHistoryEntry(item, timestampFallback)),
