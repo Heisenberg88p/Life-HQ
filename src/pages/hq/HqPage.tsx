@@ -157,6 +157,8 @@ interface FocusListProps {
   onEditDraftChange: (patch: Partial<FocusDraft>) => void;
   onEditSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onArchive: (id: string) => void;
+  onRestore: (id: string, status: Exclude<FocusStatus, 'Archived'>) => void;
+  restoreError?: string;
 }
 
 function getTrueNorthTitle(trueNorths: TrueNorth[], trueNorthReference?: string): string | undefined {
@@ -205,7 +207,7 @@ function FocusFields({ draft, trueNorths, onChange }: { draft: FocusDraft; trueN
   );
 }
 
-function FocusList({ focuses, trueNorths, editingFocusId, editDraft, editError, onEditStart, onEditCancel, onEditDraftChange, onEditSubmit, onArchive }: FocusListProps) {
+function FocusList({ focuses, trueNorths, editingFocusId, editDraft, editError, onEditStart, onEditCancel, onEditDraftChange, onEditSubmit, onArchive, onRestore, restoreError }: FocusListProps) {
   const activeFocuses = focuses.filter((focus) => focus.status === 'Active');
   const visibleFocuses = focuses.filter((focus) => focus.status !== 'Archived');
   const archivedFocuses = focuses.filter((focus) => focus.status === 'Archived');
@@ -271,8 +273,49 @@ function FocusList({ focuses, trueNorths, editingFocusId, editDraft, editError, 
       {archivedFocuses.length > 0 && (
         <details className="lifehq-card-soft border-white/10 bg-black/10 px-4 py-3 text-sm text-[#B8B1A7]">
           <summary className="cursor-pointer font-medium text-[#F5F1EA]">Archivierte Fokusse ({archivedFocuses.length})</summary>
-          <div className="mt-3 space-y-2">
-            {archivedFocuses.map((focus) => <p key={focus.id}>{focus.title}</p>)}
+          <div className="mt-4 space-y-4">
+            {restoreError && <p className="text-sm text-[#D6AD64]">{restoreError}</p>}
+            {archivedFocuses.map((focus) => {
+              const isEditing = editingFocusId === focus.id;
+              const trueNorthTitle = getTrueNorthTitle(trueNorths, focus.trueNorthReference);
+
+              return (
+                <article key={focus.id} className="lifehq-card-soft border-white/10 bg-black/15 p-4">
+                  {isEditing ? (
+                    <form onSubmit={onEditSubmit} className="space-y-4">
+                      <FocusFields draft={editDraft} trueNorths={trueNorths} onChange={onEditDraftChange} />
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        {editError ? <p className="text-sm text-[#D6AD64]">{editError}</p> : <p className="text-sm text-[#7E776E]">Archivierte Fokusse können auf Active, Paused oder Completed zurückgeführt werden.</p>}
+                        <div className="flex flex-wrap gap-2">
+                          <button type="button" onClick={onEditCancel} className="lifehq-button-secondary">Abbrechen</button>
+                          <button type="submit" className="lifehq-button-primary">Speichern</button>
+                        </div>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-[#D6AD64]/60">Archiviert</p>
+                          <h4 className="mt-1 text-base font-semibold text-[#F5F1EA]">{focus.title}</h4>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <span className="lifehq-badge">Priorität: {focusPriorityLabels[focus.priority]}</span>
+                        </div>
+                      </div>
+                      {focus.description && <p className="text-sm leading-6 text-[#B8B1A7]">{focus.description}</p>}
+                      <p className="text-xs leading-5 text-[#7E776E]">True North: {trueNorthTitle ?? 'Nicht zugeordnet'}</p>
+                      <div className="flex flex-wrap gap-2 border-t border-white/[0.08] pt-3">
+                        <button type="button" onClick={() => onRestore(focus.id, 'Active')} className="lifehq-button-primary">Wiederherstellen</button>
+                        <button type="button" onClick={() => onRestore(focus.id, 'Paused')} className="lifehq-button-secondary">Als pausiert setzen</button>
+                        <button type="button" onClick={() => onRestore(focus.id, 'Completed')} className="lifehq-button-secondary">Als abgeschlossen setzen</button>
+                        <button type="button" onClick={() => onEditStart(focus)} className="lifehq-button-secondary">Bearbeiten</button>
+                      </div>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
           </div>
         </details>
       )}
@@ -616,6 +659,7 @@ export function HqPage() {
   const [editingFocusId, setEditingFocusId] = useState<string | undefined>();
   const [focusEditDraft, setFocusEditDraft] = useState<FocusDraft>(createDefaultFocusDraft);
   const [focusEditError, setFocusEditError] = useState<string | undefined>();
+  const [focusRestoreError, setFocusRestoreError] = useState<string | undefined>();
   const [isTrueNorthFormOpen, setIsTrueNorthFormOpen] = useState(false);
   const [trueNorthDraft, setTrueNorthDraft] = useState<TrueNorthDraft>(defaultTrueNorthDraft);
   const [trueNorthError, setTrueNorthError] = useState<string | undefined>();
@@ -677,6 +721,7 @@ export function HqPage() {
   function updateFocusDraft(patch: Partial<FocusDraft>) {
     setFocusDraft((current) => ({ ...current, ...patch }));
     setFocusError(undefined);
+    setFocusRestoreError(undefined);
   }
 
   function resetFocusDraft() {
@@ -730,18 +775,21 @@ export function HqPage() {
       trueNorthReference: focus.trueNorthReference ?? '',
     });
     setFocusEditError(undefined);
+    setFocusRestoreError(undefined);
     setIsFocusFormOpen(false);
   }
 
   function updateFocusEditDraft(patch: Partial<FocusDraft>) {
     setFocusEditDraft((current) => ({ ...current, ...patch }));
     setFocusEditError(undefined);
+    setFocusRestoreError(undefined);
   }
 
   function cancelEditingFocus() {
     setEditingFocusId(undefined);
     setFocusEditDraft(createDefaultFocusDraft());
     setFocusEditError(undefined);
+    setFocusRestoreError(undefined);
   }
 
   function handleUpdateFocus(event: FormEvent<HTMLFormElement>) {
@@ -776,6 +824,21 @@ export function HqPage() {
 
   function handleArchiveFocus(id: string) {
     archiveFocus(id);
+    setFocusRestoreError(undefined);
+
+    if (editingFocusId === id) {
+      cancelEditingFocus();
+    }
+  }
+
+  function handleRestoreFocus(id: string, status: Exclude<FocusStatus, 'Archived'>) {
+    if (status === 'Active' && getActiveFocusCount(id) >= 5) {
+      setFocusRestoreError('Maximal fünf aktive Fokusse möglich. Archiviere oder pausiere zuerst einen bestehenden Fokus.');
+      return;
+    }
+
+    updateFocus(id, { status });
+    setFocusRestoreError(undefined);
 
     if (editingFocusId === id) {
       cancelEditingFocus();
@@ -1047,6 +1110,8 @@ export function HqPage() {
             onEditDraftChange={updateFocusEditDraft}
             onEditSubmit={handleUpdateFocus}
             onArchive={handleArchiveFocus}
+            onRestore={handleRestoreFocus}
+            restoreError={focusRestoreError}
           />
         </HqSection>
 
