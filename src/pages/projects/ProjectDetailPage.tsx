@@ -13,10 +13,12 @@ import {
   trafficLightOptions,
 } from '../../constants/displayLabels';
 import type { MilestoneStatus, Priority, ProjectStatus, TaskStatus, TrafficLightStatus } from '../../models/common';
+import type { Focus } from '../../models/focus';
 import type { Milestone } from '../../models/milestone';
 import type { ProjectHistoryEntry, ProjectHistoryEntryType } from '../../models/projectHistory';
 import type { Task } from '../../models/task';
 import {
+  selectFocuses,
   selectHistoryByProjectId,
   selectLifeAreas,
   selectMilestonesByProjectId,
@@ -47,6 +49,7 @@ type ProjectEditDraft = {
   name: string;
   description: string;
   lifeAreaId: string;
+  focusId: string;
   status: ProjectStatus;
   priority: Priority;
   trafficLightStatus: TrafficLightStatus;
@@ -207,6 +210,20 @@ function getLifeAreaDisplayValue(lifeAreaId?: string, lifeAreaName?: string): st
   return lifeAreaName ? getLifeAreaDisplayName(lifeAreaName) : 'Lebensbereich nicht gefunden';
 }
 
+function getFocusDisplayValue(focusId: string | null | undefined, focuses: Focus[]): string {
+  if (!focusId) {
+    return 'Kein Fokus zugeordnet';
+  }
+
+  const focus = focuses.find((item) => item.id === focusId);
+
+  if (!focus) {
+    return 'Fokus nicht mehr aktiv';
+  }
+
+  return focus.status === 'Archived' ? `${focus.title} · Archivierter Fokus` : focus.title;
+}
+
 function getNextRelevantMilestoneLabel(milestones: Milestone[]): string {
   const openMilestones = milestones
     .filter((milestone) => milestone.status !== 'done')
@@ -252,6 +269,7 @@ function getInitialProjectEditDraft(project?: {
   name: string;
   description?: string;
   lifeAreaId?: string;
+  focusId?: string | null;
   status: ProjectStatus;
   priority: Priority;
   trafficLightStatus: TrafficLightStatus;
@@ -261,6 +279,7 @@ function getInitialProjectEditDraft(project?: {
     name: project?.name ?? '',
     description: project?.description ?? '',
     lifeAreaId: project?.lifeAreaId ?? '',
+    focusId: project?.focusId ?? '',
     status: project?.status ?? 'planned',
     priority: project?.priority ?? 'medium',
     trafficLightStatus: project?.trafficLightStatus ?? 'green',
@@ -303,6 +322,7 @@ export function ProjectDetailPage() {
   const { projectId } = useParams();
   const project = useLifeHQStore(selectProjectById(projectId ?? ''));
   const lifeAreas = useLifeHQStore(selectLifeAreas);
+  const focuses = useLifeHQStore(selectFocuses);
   const milestones = useLifeHQStore(selectMilestonesByProjectId(project?.id ?? ''));
   const tasks = useLifeHQStore(selectTasksByProjectId(project?.id ?? ''));
   const historyEntries = useLifeHQStore(selectHistoryByProjectId(project?.id ?? ''));
@@ -345,6 +365,10 @@ export function ProjectDetailPage() {
   const lifeArea = projectLifeAreaId ? lifeAreas.find((area) => area.id === projectLifeAreaId) : undefined;
   const lifeAreaDisplayName = lifeArea ? getLifeAreaDisplayName(lifeArea.name) : undefined;
   const lifeAreaDisplayValue = getLifeAreaDisplayValue(projectLifeAreaId, lifeArea?.name);
+  const projectFocusId = project?.focusId ?? null;
+  const focusDisplayValue = getFocusDisplayValue(projectFocusId, focuses);
+  const selectableFocuses = focuses.filter((focus) => focus.status !== 'Archived');
+  const selectedArchivedFocus = projectFocusId ? focuses.find((focus) => focus.id === projectFocusId && focus.status === 'Archived') : undefined;
   const nextRelevantMilestoneLabel = getNextRelevantMilestoneLabel(milestones);
   const openTaskLabel = getOpenTaskLabel(tasks);
   const sortedHistoryEntries = getSortedHistoryEntries(historyEntries);
@@ -417,6 +441,7 @@ export function ProjectDetailPage() {
       name: projectName,
       description: getOptionalValue(editDraft.description),
       lifeAreaId: getOptionalValue(editDraft.lifeAreaId),
+      focusId: getOptionalValue(editDraft.focusId) ?? null,
       status: editDraft.status,
       priority: editDraft.priority,
       trafficLightStatus: editDraft.trafficLightStatus,
@@ -777,6 +802,21 @@ export function ProjectDetailPage() {
               </select>
             </label>
 
+            <label className="space-y-2 text-sm text-[#B8B1A7]">
+              <span className="lifehq-label">Fokus-Zuordnung</span>
+              <select
+                value={editDraft.focusId}
+                onChange={(event) => updateEditDraft({ focusId: event.target.value })}
+                className="lifehq-project-form-control"
+              >
+                <option value="">Kein Fokus</option>
+                {selectedArchivedFocus && <option value={selectedArchivedFocus.id}>{selectedArchivedFocus.title} · Archivierter Fokus</option>}
+                {selectableFocuses.map((focus) => (
+                  <option key={focus.id} value={focus.id}>{focus.title}</option>
+                ))}
+              </select>
+            </label>
+
             <label className="space-y-2 text-sm text-[#B8B1A7] md:col-span-2 xl:col-span-3">
               <span className="lifehq-label">Beschreibung</span>
               <textarea
@@ -855,6 +895,7 @@ export function ProjectDetailPage() {
 
       <div className="lifehq-project-status-grid">
         <ProjectStatusCard label="Lebensbereich" value={lifeAreaDisplayValue} icon="◎" />
+        <ProjectStatusCard label="Fokus" value={focusDisplayValue} icon="⌖" />
         <ProjectStatusCard label="Status" value={projectStatusLabels[project.status]} icon="◷" />
         <ProjectStatusCard label="Priorität" value={priorityLabels[project.priority]} icon="✦" />
         <ProjectStatusCard label="Ampelstatus" value={trafficLightLabels[project.trafficLightStatus]} icon="●">
