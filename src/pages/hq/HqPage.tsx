@@ -326,6 +326,76 @@ function AttentionList({ items, onProjectSelect }: { items: AttentionItem[]; onP
   );
 }
 
+type MomentumCard = {
+  id: string;
+  value: number;
+  title: string;
+  context: string;
+};
+
+const getDaysAgoDate = (days: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+
+  return date.toISOString().slice(0, 10);
+};
+
+const isOnOrAfterDate = (date: string | undefined, boundaryDate: string) => Boolean(date && date.slice(0, 10) >= boundaryDate);
+
+function getMomentumCards(tasks: Task[], projects: Project[], milestones: Milestone[], focuses: Focus[]): MomentumCard[] {
+  const thirtyDaysAgo = getDaysAgoDate(30);
+  const sevenDaysAgo = getDaysAgoDate(7);
+  const completedFocusCount = focuses.filter((focus) => focus.status === 'Completed').length;
+  const activeFocusCount = focuses.filter((focus) => focus.status === 'Active').length;
+
+  return [
+    {
+      id: 'tasks-completed',
+      value: tasks.filter((task) => task.status === 'done' && isOnOrAfterDate(task.completedAt, thirtyDaysAgo)).length,
+      title: 'Aufgaben erledigt',
+      context: 'Letzte 30 Tage',
+    },
+    {
+      id: 'projects-completed',
+      value: projects.filter((project) => project.status === 'completed').length,
+      title: 'Projekte abgeschlossen',
+      context: 'In Bewegung',
+    },
+    {
+      id: 'milestones-completed',
+      value: milestones.filter((milestone) => milestone.status === 'done' && isOnOrAfterDate(milestone.completedAt, sevenDaysAgo)).length,
+      title: 'Meilensteine erreicht',
+      context: 'Letzte 7 Tage',
+    },
+    {
+      id: 'focus-momentum',
+      value: completedFocusCount > 0 ? completedFocusCount : activeFocusCount,
+      title: completedFocusCount > 0 ? 'Fokus abgeschlossen' : 'Aktive Fokusse',
+      context: completedFocusCount > 0 ? 'Starker Fortschritt' : 'Gut im Fluss',
+    },
+  ];
+}
+
+function MomentumCards({ cards }: { cards: MomentumCard[] }) {
+  const hasMomentum = cards.some((card) => card.value > 0);
+
+  if (!hasMomentum) {
+    return <EmptyState>Noch keine Fortschritte erfasst.</EmptyState>;
+  }
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {cards.map((card) => (
+        <article key={card.id} className="lifehq-premium-card p-5">
+          <p className="font-serif text-5xl font-semibold tracking-tight text-[#F5F1EA]">{card.value}</p>
+          <h4 className="mt-4 text-base font-semibold text-[#F5F1EA]">{card.title}</h4>
+          <p className="mt-2 text-sm leading-6 text-[#7E776E]">{card.context}</p>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 interface FocusListProps {
   focuses: Focus[];
   trueNorths: TrueNorth[];
@@ -968,6 +1038,7 @@ export function HqPage() {
   });
   const selectableFocuses = focuses.filter((focus) => focus.status !== 'Archived');
   const attentionItems = getAttentionItems(allStatusProjects, tasks, milestones);
+  const momentumCards = getMomentumCards(tasks, allStatusProjects, milestones, focuses);
 
   const openProjectDetail = (projectId: string) => {
     navigate(`/projects/${projectId}`);
@@ -1411,10 +1482,8 @@ export function HqPage() {
           <AttentionList items={attentionItems} onProjectSelect={openProjectDetail} />
         </HqSection>
 
-        <HqSection title="Momentum" description="Hier erscheint später sichtbarer Fortschritt." eyebrow="04 Momentum">
-          <HqPlaceholder>
-            <p>Momentum ist als ruhiger Fortschrittsbereich vorbereitet. Es werden keine neuen Messwerte gespeichert.</p>
-          </HqPlaceholder>
+        <HqSection title="Momentum" description="Komme ich aktuell voran?" eyebrow="04 Momentum">
+          <MomentumCards cards={momentumCards} />
         </HqSection>
 
         <HqSection title="Vertiefung" description="Zugang zu Projekten, Aufgaben, Kalender und Historie." eyebrow="05 Vertiefung" prominence="primary">
