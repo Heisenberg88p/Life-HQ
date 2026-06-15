@@ -1,7 +1,7 @@
 import type { PersistableLifeHQState } from './persistence';
 import { LIFEHQ_STORAGE_VERSION, sanitizePersistedLifeHQState } from './persistence';
 
-export const LIFEHQ_BACKUP_EXPORT_VERSION = 2;
+export const LIFEHQ_BACKUP_EXPORT_VERSION = 3;
 
 export interface LifeHQBackupMetadata {
   appName: 'LifeHQ';
@@ -21,6 +21,7 @@ export type LifeHQBackupParseResult =
   | { ok: false; error: string };
 
 const EMPTY_LIFEHQ_DATA: PersistableLifeHQState = {
+  focuses: [],
   trueNorths: [],
   lifeAreas: [],
   projects: [],
@@ -29,7 +30,7 @@ const EMPTY_LIFEHQ_DATA: PersistableLifeHQState = {
   historyEntries: [],
 };
 
-const LIFEHQ_BACKUP_ARRAY_KEYS = ['trueNorths', 'lifeAreas', 'projects', 'tasks', 'milestones', 'historyEntries'] as const;
+const LIFEHQ_BACKUP_ARRAY_KEYS = ['focuses', 'trueNorths', 'lifeAreas', 'projects', 'tasks', 'milestones', 'historyEntries'] as const;
 const LIFEHQ_REQUIRED_BACKUP_ARRAY_KEYS = ['lifeAreas', 'projects', 'tasks', 'milestones', 'historyEntries'] as const;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
@@ -65,6 +66,7 @@ export const createLifeHQBackup = (state: PersistableLifeHQState, exportedAt = n
     storageVersion: LIFEHQ_STORAGE_VERSION,
   },
   data: {
+    focuses: state.focuses,
     trueNorths: state.trueNorths,
     lifeAreas: state.lifeAreas,
     projects: state.projects,
@@ -107,6 +109,7 @@ export const parseLifeHQBackup = (value: unknown): LifeHQBackupParseResult => {
 
   const backupData = {
     ...data,
+    focuses: Array.isArray(data.focuses) ? data.focuses : [],
     trueNorths: Array.isArray(data.trueNorths) ? data.trueNorths : [],
   } as Record<(typeof LIFEHQ_BACKUP_ARRAY_KEYS)[number], unknown>;
   const sanitizedData = sanitizePersistedLifeHQState(backupData, EMPTY_LIFEHQ_DATA);
@@ -133,6 +136,7 @@ export const parseLifeHQBackup = (value: unknown): LifeHQBackupParseResult => {
         storageVersion: LIFEHQ_STORAGE_VERSION,
       },
       data: {
+        focuses: sanitizedData.focuses,
         trueNorths: sanitizedData.trueNorths,
         lifeAreas: sanitizedData.lifeAreas,
         projects: sanitizedData.projects,

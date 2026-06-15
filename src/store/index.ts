@@ -1,6 +1,7 @@
 export { useLifeHQStore } from './useLifeHQStore';
 export * from './selectors/lifeAreaSelectors';
 export * from './selectors/trueNorthSelectors';
+export * from './selectors/focusSelectors';
 export * from './selectors/projectSelectors';
 export * from './selectors/taskSelectors';
 export * from './selectors/milestoneSelectors';
