@@ -22,11 +22,11 @@ export function isTaskOverdue(task: Task): boolean {
 
 export function getTasksForToday(tasks: Task[]): Task[] {
   const today = getTodayDateString();
-  return tasks.filter((task) => isSameDay(task.plannedDate, today));
+  return tasks.filter((task) => !isTaskDone(task) && isSameDay(task.plannedDate, today));
 }
 
 export function getTasksForThisWeek(tasks: Task[]): Task[] {
-  return tasks.filter((task) => isThisWeek(task.plannedDate));
+  return tasks.filter((task) => !isTaskDone(task) && isThisWeek(task.plannedDate));
 }
 
 export function getTasksForCurrentWeek(tasks: Task[]): Task[] {
@@ -34,7 +34,7 @@ export function getTasksForCurrentWeek(tasks: Task[]): Task[] {
 }
 
 export function getTasksForNextWeek(tasks: Task[]): Task[] {
-  return tasks.filter((task) => isNextWeek(task.plannedDate));
+  return tasks.filter((task) => !isTaskDone(task) && isNextWeek(task.plannedDate));
 }
 
 export function getTasksForLater(tasks: Task[]): Task[] {
@@ -58,7 +58,7 @@ export function getDoneTasks(tasks: Task[]): Task[] {
 }
 
 export function getTasksWithoutPlannedDate(tasks: Task[]): Task[] {
-  return tasks.filter((task) => !task.plannedDate);
+  return tasks.filter((task) => !isTaskDone(task) && !task.plannedDate);
 }
 
 export function getTasksByProjectId(tasks: Task[], projectId: string): Task[] {

@@ -1080,15 +1080,16 @@ export function ProjectDetailPage() {
                     </div>
                   </div>
                   <div className="grid w-full gap-2 text-xs text-[#B8B1A7] sm:grid-cols-2 lg:w-auto lg:min-w-[22rem] lg:grid-cols-4 lg:text-right">
-                    <span>Status: {taskStatusLabels[task.status]}</span>
+                    <span>{taskStatusLabels[task.status]}</span>
                     <span>Priorität: {priorityLabels[task.priority]}</span>
                     <span>Fällig: {formatDateDisplay(task.dueDate, 'Keine Fälligkeit')}</span>
                     <span>Geplant: {formatDateDisplay(task.plannedDate, 'Nicht geplant')}</span>
+                    {task.status === 'done' && task.completedAt && <span>Erledigt am {formatDateDisplay(task.completedAt)}</span>}
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.07] pt-3 text-xs">
                     {task.status !== 'open' && <button type="button" onClick={() => handleProjectTaskStatusChange(task, 'open')} className="lifehq-task-action-button">Wieder öffnen</button>}
-                    {task.status !== 'in_progress' && <button type="button" onClick={() => handleProjectTaskStatusChange(task, 'in_progress')} className="lifehq-task-action-button lifehq-task-action-button-gold">In Arbeit setzen</button>}
+                    {task.status !== 'in_progress' && <button type="button" onClick={() => handleProjectTaskStatusChange(task, 'in_progress')} className="lifehq-task-action-button lifehq-task-action-button-gold">In Arbeit</button>}
                     {task.status !== 'done' && <button type="button" onClick={() => handleProjectTaskStatusChange(task, 'done')} className="lifehq-task-action-button">Erledigen</button>}
                     <button type="button" onClick={() => openTaskEdit(task)} className="lifehq-task-action-button">Bearbeiten</button>
                     {task.plannedDate && <button type="button" onClick={() => clearTaskPlannedDate(task.id)} className="lifehq-task-action-button">Planung entfernen</button>}
