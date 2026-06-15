@@ -161,6 +161,7 @@ interface FocusListProps {
   onEditSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onArchive: (id: string) => void;
   onRestore: (id: string, status: Exclude<FocusStatus, 'Archived'>) => void;
+  onProjectSelect: (projectId: string) => void;
   restoreError?: string;
 }
 
@@ -182,14 +183,14 @@ function getSortedFocuses(focuses: Focus[]): Focus[] {
   });
 }
 
-function getFocusProjectContext(focus: Focus, projects: Project[]): { projectCount: number; projectNames: string[]; additionalProjectCount: number } {
+function getFocusProjectContext(focus: Focus, projects: Project[]): { projectCount: number; projectLinks: Pick<Project, 'id' | 'name'>[]; additionalProjectCount: number } {
   const focusProjects = projects.filter((project) => project.focusId === focus.id);
-  const projectNames = focusProjects.slice(0, 2).map((project) => project.name);
+  const projectLinks = focusProjects.slice(0, 2).map((project) => ({ id: project.id, name: project.name }));
 
   return {
     projectCount: focusProjects.length,
-    projectNames,
-    additionalProjectCount: Math.max(focusProjects.length - projectNames.length, 0),
+    projectLinks,
+    additionalProjectCount: Math.max(focusProjects.length - projectLinks.length, 0),
   };
 }
 
@@ -235,7 +236,7 @@ function FocusFields({ draft, trueNorths, onChange }: { draft: FocusDraft; trueN
   );
 }
 
-function FocusList({ focuses, trueNorths, projects, editingFocusId, editDraft, editError, onEditStart, onEditCancel, onEditDraftChange, onEditSubmit, onArchive, onRestore, restoreError }: FocusListProps) {
+function FocusList({ focuses, trueNorths, projects, editingFocusId, editDraft, editError, onEditStart, onEditCancel, onEditDraftChange, onEditSubmit, onArchive, onRestore, onProjectSelect, restoreError }: FocusListProps) {
   const activeFocuses = getSortedFocuses(focuses.filter((focus) => focus.status === 'Active'));
   const pausedFocuses = getSortedFocuses(focuses.filter((focus) => focus.status === 'Paused'));
   const completedFocuses = getSortedFocuses(focuses.filter((focus) => focus.status === 'Completed'));
@@ -299,10 +300,20 @@ function FocusList({ focuses, trueNorths, projects, editingFocusId, editDraft, e
                           <p className="font-medium text-[#F5F1EA]">
                             {projectContext.projectCount === 0 ? 'Noch keine Projekte zugeordnet.' : `${projectContext.projectCount} zugeordnete Projekte`}
                           </p>
-                          {projectContext.projectNames.length > 0 && (
-                            <p className="mt-1 text-xs text-[#7E776E]">
-                              {projectContext.projectNames.join(' · ')}{projectContext.additionalProjectCount > 0 ? ` · + ${projectContext.additionalProjectCount} weitere` : ''}
-                            </p>
+                          {projectContext.projectLinks.length > 0 && (
+                            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#7E776E]">
+                              {projectContext.projectLinks.map((projectLink) => (
+                                <button
+                                  key={projectLink.id}
+                                  type="button"
+                                  onClick={() => onProjectSelect(projectLink.id)}
+                                  className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[#B8B1A7] transition hover:border-[#D6AD64]/30 hover:text-[#F5F1EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60"
+                                >
+                                  {projectLink.name}
+                                </button>
+                              ))}
+                              {projectContext.additionalProjectCount > 0 && <span>+ {projectContext.additionalProjectCount} weitere</span>}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1211,6 +1222,7 @@ export function HqPage() {
             onEditSubmit={handleUpdateFocus}
             onArchive={handleArchiveFocus}
             onRestore={handleRestoreFocus}
+            onProjectSelect={openProjectDetail}
             restoreError={focusRestoreError}
           />
         </HqSection>
