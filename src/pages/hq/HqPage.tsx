@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { LifeArea } from '../../models/lifeArea';
 import type { Project } from '../../models/project';
 import type { Task } from '../../models/task';
+import type { TrueNorth } from '../../models/trueNorth';
 import type { Priority, ProjectStatus, TrafficLightStatus } from '../../models/common';
 import { priorityLabels, projectStatusLabels, trafficLightLabels } from '../../constants/displayLabels';
 import {
@@ -12,10 +13,16 @@ import {
   selectLifeAreas,
   selectPausedProjects,
   selectTasks,
+  selectTrueNorths,
   selectPlannedProjects,
   useLifeHQStore,
 } from '../../store';
 
+
+type TrueNorthDraft = {
+  title: string;
+  description: string;
+};
 
 type LifeAreaDraft = {
   name: string;
@@ -32,6 +39,7 @@ type ProjectDraft = {
   targetDate: string;
 };
 
+const defaultTrueNorthDraft: TrueNorthDraft = { title: '', description: '' };
 const defaultLifeAreaDraft: LifeAreaDraft = { name: '', description: '' };
 const defaultProjectDraft: ProjectDraft = {
   name: '',
@@ -58,26 +66,108 @@ interface HqSectionProps {
   description?: string;
   eyebrow?: string;
   children: ReactNode;
-  prominence?: 'primary' | 'secondary';
+  prominence?: 'primary' | 'secondary' | 'focus';
   action?: ReactNode;
 }
 
 function HqSection({ title, description, eyebrow, children, prominence = 'secondary', action }: HqSectionProps) {
+  const sectionClassName =
+    prominence === 'primary'
+      ? 'space-y-6'
+      : prominence === 'focus'
+        ? 'lifehq-premium-card space-y-5 border-[#D6AD64]/25 bg-[#D6AD64]/[0.045] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)] sm:p-7'
+        : 'lifehq-secondary-project-panel space-y-4 p-4 sm:p-5';
+  const titleClassName =
+    prominence === 'primary' || prominence === 'focus'
+      ? 'font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]'
+      : 'text-lg font-semibold tracking-tight text-[#F5F1EA]';
+
   return (
-    <section className={prominence === 'primary' ? 'space-y-6' : 'lifehq-secondary-project-panel space-y-4 p-4 sm:p-5'}>
+    <section className={sectionClassName}>
       <div className="space-y-2">
-        {eyebrow && <p className="text-xs text-[#D6AD64]/70">{eyebrow}</p>}
+        {eyebrow && <p className="text-xs uppercase tracking-[0.24em] text-[#D6AD64]/70">{eyebrow}</p>}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="lifehq-section-title">
             <span aria-hidden="true" />
-            <h3 className={prominence === 'primary' ? 'font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]' : 'text-lg font-semibold tracking-tight text-[#F5F1EA]'}>{title}</h3>
+            <h3 className={titleClassName}>{title}</h3>
           </div>
           {action}
         </div>
-        {description && <p className="max-w-2xl text-sm leading-6 text-[#7E776E]">{description}</p>}
+        {description && <p className="max-w-2xl text-sm leading-6 text-[#B8B1A7]">{description}</p>}
       </div>
       {children}
     </section>
+  );
+}
+
+function HqPlaceholder({ children }: { children: ReactNode }) {
+  return (
+    <div className="lifehq-card-soft border-white/10 bg-black/15 px-4 py-4 text-sm leading-6 text-[#B8B1A7] sm:px-5">
+      {children}
+    </div>
+  );
+}
+
+
+interface TrueNorthListProps {
+  trueNorths: TrueNorth[];
+  editingTrueNorthId?: string;
+  editDraft: TrueNorthDraft;
+  editError?: string;
+  onEditStart: (trueNorth: TrueNorth) => void;
+  onEditCancel: () => void;
+  onEditDraftChange: (patch: Partial<TrueNorthDraft>) => void;
+  onEditSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onDelete: (id: string) => void;
+}
+
+function TrueNorthList({ trueNorths, editingTrueNorthId, editDraft, editError, onEditStart, onEditCancel, onEditDraftChange, onEditSubmit, onDelete }: TrueNorthListProps) {
+  if (trueNorths.length === 0) {
+    return <EmptyState>Definiere die langfristige Richtung deines Lebens.</EmptyState>;
+  }
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      {trueNorths.map((trueNorth) => {
+        const isEditing = editingTrueNorthId === trueNorth.id;
+
+        return (
+          <article key={trueNorth.id} className="lifehq-premium-card p-4 sm:p-5">
+            {isEditing ? (
+              <form onSubmit={onEditSubmit} className="space-y-4">
+                <label className="space-y-2 text-sm text-[#B8B1A7]">
+                  <span className="lifehq-label">Titel</span>
+                  <input value={editDraft.title} onChange={(event) => onEditDraftChange({ title: event.target.value })} className="lifehq-crud-control" placeholder="Langfristige Richtung" />
+                </label>
+                <label className="space-y-2 text-sm text-[#B8B1A7]">
+                  <span className="lifehq-label">Beschreibung</span>
+                  <textarea value={editDraft.description} onChange={(event) => onEditDraftChange({ description: event.target.value })} className="lifehq-crud-control" rows={3} placeholder="Optionale Beschreibung" />
+                </label>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  {editError ? <p className="text-sm text-[#D6AD64]">{editError}</p> : <p className="text-sm text-[#7E776E]">Selten ändern, bewusst formulieren.</p>}
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={onEditCancel} className="lifehq-button-secondary">Abbrechen</button>
+                    <button type="submit" className="lifehq-button-primary">Speichern</button>
+                  </div>
+                </div>
+              </form>
+            ) : (
+              <div className="flex h-full flex-col justify-between gap-5">
+                <div className="space-y-3">
+                  <p className="text-xs uppercase tracking-[0.2em] text-[#D6AD64]/70">True North</p>
+                  <h4 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">{trueNorth.title}</h4>
+                  {trueNorth.description && <p className="text-sm leading-6 text-[#B8B1A7]">{trueNorth.description}</p>}
+                </div>
+                <div className="flex flex-wrap gap-2 border-t border-white/[0.08] pt-4">
+                  <button type="button" onClick={() => onEditStart(trueNorth)} className="lifehq-button-secondary">Bearbeiten</button>
+                  <button type="button" onClick={() => onDelete(trueNorth.id)} className="lifehq-button-secondary">Löschen</button>
+                </div>
+              </div>
+            )}
+          </article>
+        );
+      })}
+    </div>
   );
 }
 
@@ -332,6 +422,7 @@ function OrphanProjectList({ projects, tasks, onProjectSelect, action, children 
 
 export function HqPage() {
   const navigate = useNavigate();
+  const trueNorths = useLifeHQStore(selectTrueNorths);
   const lifeAreas = useLifeHQStore(selectLifeAreas);
   const activeProjects = useLifeHQStore(selectActiveProjects);
   const plannedProjects = useLifeHQStore(selectPlannedProjects);
@@ -339,8 +430,17 @@ export function HqPage() {
   const completedProjects = useLifeHQStore(selectCompletedProjects);
   const criticalProjects = useLifeHQStore(selectCriticalProjects);
   const tasks = useLifeHQStore(selectTasks);
+  const addTrueNorth = useLifeHQStore((state) => state.addTrueNorth);
+  const updateTrueNorth = useLifeHQStore((state) => state.updateTrueNorth);
+  const deleteTrueNorth = useLifeHQStore((state) => state.deleteTrueNorth);
   const addLifeArea = useLifeHQStore((state) => state.addLifeArea);
   const addProject = useLifeHQStore((state) => state.addProject);
+  const [isTrueNorthFormOpen, setIsTrueNorthFormOpen] = useState(false);
+  const [trueNorthDraft, setTrueNorthDraft] = useState<TrueNorthDraft>(defaultTrueNorthDraft);
+  const [trueNorthError, setTrueNorthError] = useState<string | undefined>();
+  const [editingTrueNorthId, setEditingTrueNorthId] = useState<string | undefined>();
+  const [trueNorthEditDraft, setTrueNorthEditDraft] = useState<TrueNorthDraft>(defaultTrueNorthDraft);
+  const [trueNorthEditError, setTrueNorthEditError] = useState<string | undefined>();
   const [isLifeAreaFormOpen, setIsLifeAreaFormOpen] = useState(false);
   const [lifeAreaDraft, setLifeAreaDraft] = useState<LifeAreaDraft>(defaultLifeAreaDraft);
   const [lifeAreaError, setLifeAreaError] = useState<string | undefined>();
@@ -363,6 +463,91 @@ export function HqPage() {
     navigate(`/life-areas/${lifeAreaId}`);
   };
 
+  function toggleTrueNorthForm() {
+    setIsTrueNorthFormOpen((current) => !current);
+    setEditingTrueNorthId(undefined);
+    setTrueNorthEditError(undefined);
+  }
+
+  function updateTrueNorthDraft(patch: Partial<TrueNorthDraft>) {
+    setTrueNorthDraft((current) => ({ ...current, ...patch }));
+    setTrueNorthError(undefined);
+  }
+
+  function resetTrueNorthDraft() {
+    setTrueNorthDraft(defaultTrueNorthDraft);
+    setTrueNorthError(undefined);
+  }
+
+  function handleCreateTrueNorth(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const title = trueNorthDraft.title.trim();
+
+    if (!title) {
+      setTrueNorthError('Bitte gib einen Titel ein.');
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+
+    addTrueNorth({
+      id: createEntityId('tn'),
+      title,
+      description: getOptionalFormValue(trueNorthDraft.description),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+    resetTrueNorthDraft();
+    setIsTrueNorthFormOpen(false);
+  }
+
+  function startEditingTrueNorth(trueNorth: TrueNorth) {
+    setEditingTrueNorthId(trueNorth.id);
+    setTrueNorthEditDraft({ title: trueNorth.title, description: trueNorth.description ?? '' });
+    setTrueNorthEditError(undefined);
+    setIsTrueNorthFormOpen(false);
+  }
+
+  function updateTrueNorthEditDraft(patch: Partial<TrueNorthDraft>) {
+    setTrueNorthEditDraft((current) => ({ ...current, ...patch }));
+    setTrueNorthEditError(undefined);
+  }
+
+  function cancelEditingTrueNorth() {
+    setEditingTrueNorthId(undefined);
+    setTrueNorthEditDraft(defaultTrueNorthDraft);
+    setTrueNorthEditError(undefined);
+  }
+
+  function handleUpdateTrueNorth(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!editingTrueNorthId) {
+      return;
+    }
+
+    const title = trueNorthEditDraft.title.trim();
+
+    if (!title) {
+      setTrueNorthEditError('Bitte gib einen Titel ein.');
+      return;
+    }
+
+    updateTrueNorth(editingTrueNorthId, {
+      title,
+      description: getOptionalFormValue(trueNorthEditDraft.description),
+    });
+    cancelEditingTrueNorth();
+  }
+
+  function handleDeleteTrueNorth(id: string) {
+    deleteTrueNorth(id);
+
+    if (editingTrueNorthId === id) {
+      cancelEditingTrueNorth();
+    }
+  }
 
 
   function toggleLifeAreaForm() {
@@ -461,102 +646,137 @@ export function HqPage() {
   }
 
   return (
-    <div className="space-y-12">
-      <section className={`grid gap-6 lg:items-center ${criticalProjects.length > 0 ? 'lg:grid-cols-[minmax(0,1fr)_17rem]' : ''}`}>
+    <div className="space-y-10">
+      <section className="space-y-4">
+        <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/70">LifeHQ V2 Grundlage</p>
         <div className="max-w-3xl space-y-4">
           <h1 className="font-serif text-5xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4rem]">HQ</h1>
           <p className="max-w-2xl text-base leading-7 text-[#B8B1A7]">
-            Deine strategische Übersicht über Lebensbereiche und Projekte.
+            Eine ruhige Orientierungsebene für Richtung, Fokus, Aufmerksamkeit, Momentum und Vertiefung.
           </p>
         </div>
-
-        {criticalProjects.length > 0 && (
-          <div className="lifehq-attention-card w-full p-6 lg:min-h-32 lg:max-w-[17rem]">
-            <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#D6AD64]/40 text-lg text-[#D6AD64]" aria-hidden="true">!</div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-[#F5F1EA]">Bitte prüfen</p>
-                <p className="mt-2 text-3xl font-semibold text-[#D6AD64]">{criticalProjects.length}</p>
-                <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">
-                  Projekte benötigen deine Aufmerksamkeit.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </section>
 
-      <HqSection
-        title="Lebensbereiche"
-        prominence="primary"
-        action={<button type="button" onClick={toggleLifeAreaForm} className="lifehq-button-secondary w-fit">Lebensbereich hinzufügen</button>}
-      >
-        {isLifeAreaFormOpen && (
-          <form onSubmit={handleCreateLifeArea} className="lifehq-crud-panel mb-5">
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="space-y-2 text-sm text-[#B8B1A7]">
-                <span className="lifehq-label">Name</span>
-                <input value={lifeAreaDraft.name} onChange={(event) => updateLifeAreaDraft({ name: event.target.value })} className="lifehq-crud-control" placeholder="Name des Lebensbereichs" />
-              </label>
-              <label className="space-y-2 text-sm text-[#B8B1A7]">
-                <span className="lifehq-label">Beschreibung</span>
-                <input value={lifeAreaDraft.description} onChange={(event) => updateLifeAreaDraft({ description: event.target.value })} className="lifehq-crud-control" placeholder="Optionale Beschreibung" />
-              </label>
-            </div>
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              {lifeAreaError ? <p className="text-sm text-[#D6AD64]">{lifeAreaError}</p> : <p className="text-sm text-[#7E776E]">Neue Lebensbereiche starten ohne Projekte.</p>}
-              <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => { resetLifeAreaDraft(); setIsLifeAreaFormOpen(false); }} className="lifehq-button-secondary">Abbrechen</button>
-                <button type="submit" className="lifehq-button-primary">Speichern</button>
+      <div className="space-y-6">
+        <HqSection
+          title="True North"
+          description="Langfristige Richtung deines Lebens."
+          eyebrow="01 Orientierung"
+          action={<button type="button" onClick={toggleTrueNorthForm} className="lifehq-button-secondary w-fit">True North hinzufügen</button>}
+        >
+          {isTrueNorthFormOpen && (
+            <form onSubmit={handleCreateTrueNorth} className="lifehq-crud-panel">
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-2 text-sm text-[#B8B1A7]">
+                  <span className="lifehq-label">Titel</span>
+                  <input value={trueNorthDraft.title} onChange={(event) => updateTrueNorthDraft({ title: event.target.value })} className="lifehq-crud-control" placeholder="z. B. Unternehmerische Freiheit" />
+                </label>
+                <label className="space-y-2 text-sm text-[#B8B1A7]">
+                  <span className="lifehq-label">Beschreibung</span>
+                  <input value={trueNorthDraft.description} onChange={(event) => updateTrueNorthDraft({ description: event.target.value })} className="lifehq-crud-control" placeholder="Optionale strategische Einordnung" />
+                </label>
               </div>
-            </div>
-          </form>
-        )}
-        <LifeAreaList
-          lifeAreas={lifeAreas}
-          projects={allStatusProjects}
-          tasks={tasks}
-          criticalProjects={criticalProjects}
-          onLifeAreaSelect={openLifeAreaDetail}
-        />
-      </HqSection>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                {trueNorthError ? <p className="text-sm text-[#D6AD64]">{trueNorthError}</p> : <p className="text-sm text-[#7E776E]">True North beschreibt eine langfristige Richtung, kein Projekt und keine Aufgabe.</p>}
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => { resetTrueNorthDraft(); setIsTrueNorthFormOpen(false); }} className="lifehq-button-secondary">Abbrechen</button>
+                  <button type="submit" className="lifehq-button-primary">Speichern</button>
+                </div>
+              </div>
+            </form>
+          )}
+          <TrueNorthList
+            trueNorths={trueNorths}
+            editingTrueNorthId={editingTrueNorthId}
+            editDraft={trueNorthEditDraft}
+            editError={trueNorthEditError}
+            onEditStart={startEditingTrueNorth}
+            onEditCancel={cancelEditingTrueNorth}
+            onEditDraftChange={updateTrueNorthEditDraft}
+            onEditSubmit={handleUpdateTrueNorth}
+            onDelete={handleDeleteTrueNorth}
+          />
+        </HqSection>
 
-      <OrphanProjectList
-        projects={orphanProjects}
-        tasks={tasks}
-        onProjectSelect={openProjectDetail}
-        action={<button type="button" onClick={toggleProjectForm} className="lifehq-button-secondary w-fit">Projekt hinzufügen</button>}
-      >
-        {isProjectFormOpen && (
-          <form onSubmit={handleCreateProject} className="lifehq-crud-panel">
-            <div className="grid gap-4 lg:grid-cols-3">
-              <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-2">
-                <span className="lifehq-label">Projektname</span>
-                <input value={projectDraft.name} onChange={(event) => updateProjectDraft({ name: event.target.value })} className="lifehq-crud-control" placeholder="Name des Projekts" />
-              </label>
-              <label className="space-y-2 text-sm text-[#B8B1A7]">
-                <span className="lifehq-label">Lebensbereich</span>
-                <select value={projectDraft.lifeAreaId} onChange={(event) => updateProjectDraft({ lifeAreaId: event.target.value })} className="lifehq-crud-control">
-                  <option value="">Ohne Lebensbereich</option>
-                  {lifeAreas.map((lifeArea) => <option key={lifeArea.id} value={lifeArea.id}>{getLifeAreaDisplayName(lifeArea.name)}</option>)}
-                </select>
-              </label>
-              <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-3">
-                <span className="lifehq-label">Beschreibung</span>
-                <textarea value={projectDraft.description} onChange={(event) => updateProjectDraft({ description: event.target.value })} className="lifehq-crud-control" rows={3} placeholder="Optionale Beschreibung oder Vision" />
-              </label>
-              <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Status</span><select value={projectDraft.status} onChange={(event) => updateProjectDraft({ status: event.target.value as ProjectStatus })} className="lifehq-crud-control">{Object.entries(projectStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-              <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Priorität</span><select value={projectDraft.priority} onChange={(event) => updateProjectDraft({ priority: event.target.value as Priority })} className="lifehq-crud-control">{Object.entries(priorityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-              <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Ampelstatus</span><select value={projectDraft.trafficLightStatus} onChange={(event) => updateProjectDraft({ trafficLightStatus: event.target.value as TrafficLightStatus })} className="lifehq-crud-control">{Object.entries(trafficLightLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-              <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Zieltermin</span><input type="date" value={projectDraft.targetDate} onChange={(event) => updateProjectDraft({ targetDate: event.target.value })} className="lifehq-crud-control" /></label>
-            </div>
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              {projectError ? <p className="text-sm text-[#D6AD64]">{projectError}</p> : <p className="text-sm text-[#7E776E]">Projekte können bewusst ohne Lebensbereich starten.</p>}
-              <div className="flex flex-wrap gap-2"><button type="button" onClick={() => { resetProjectDraft(); setIsProjectFormOpen(false); }} className="lifehq-button-secondary">Abbrechen</button><button type="submit" className="lifehq-button-primary">Speichern</button></div>
-            </div>
-          </form>
-        )}
-      </OrphanProjectList>
+        <HqSection title="Aktueller Fokus" description="Hier erscheinen später deine wichtigsten aktiven Fokusthemen." eyebrow="02 Fokus" prominence="focus">
+          <HqPlaceholder>
+            <p>Der Fokusbereich ist als zentrale Orientierung vorbereitet, ohne neue Fachlogik oder Daten zu erzeugen.</p>
+          </HqPlaceholder>
+        </HqSection>
+
+        <HqSection title="Aufmerksamkeit" description="Hier erscheinen später kritische Themen, Fristen und Wiedervorlagen." eyebrow="03 Aufmerksamkeit">
+          <HqPlaceholder>
+            {criticalProjects.length > 0 ? (
+              <p>{criticalProjects.length} bestehende Projekte benötigen aktuell Aufmerksamkeit. Die bestehende Projektlogik bleibt unverändert.</p>
+            ) : (
+              <p>Keine kritischen Platzhalterhinweise aus bestehenden Projekten.</p>
+            )}
+          </HqPlaceholder>
+        </HqSection>
+
+        <HqSection title="Momentum" description="Hier erscheint später sichtbarer Fortschritt." eyebrow="04 Momentum">
+          <HqPlaceholder>
+            <p>Momentum ist als ruhiger Fortschrittsbereich vorbereitet. Es werden keine neuen Messwerte gespeichert.</p>
+          </HqPlaceholder>
+        </HqSection>
+
+        <HqSection title="Vertiefung" description="Zugang zu Projekten, Aufgaben, Kalender und Historie." eyebrow="05 Vertiefung" prominence="primary">
+          <div className="space-y-8">
+            <HqSection
+              title="Lebensbereiche"
+              action={<button type="button" onClick={toggleLifeAreaForm} className="lifehq-button-secondary w-fit">Lebensbereich hinzufügen</button>}
+            >
+              {isLifeAreaFormOpen && (
+                <form onSubmit={handleCreateLifeArea} className="lifehq-crud-panel mb-5">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="space-y-2 text-sm text-[#B8B1A7]">
+                      <span className="lifehq-label">Name</span>
+                      <input value={lifeAreaDraft.name} onChange={(event) => updateLifeAreaDraft({ name: event.target.value })} className="lifehq-crud-control" placeholder="Name des Lebensbereichs" />
+                    </label>
+                    <label className="space-y-2 text-sm text-[#B8B1A7]">
+                      <span className="lifehq-label">Beschreibung</span>
+                      <input value={lifeAreaDraft.description} onChange={(event) => updateLifeAreaDraft({ description: event.target.value })} className="lifehq-crud-control" placeholder="Optionale Beschreibung" />
+                    </label>
+                  </div>
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    {lifeAreaError ? <p className="text-sm text-[#D6AD64]">{lifeAreaError}</p> : <p className="text-sm text-[#7E776E]">Neue Lebensbereiche starten ohne Projekte.</p>}
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" onClick={() => { resetLifeAreaDraft(); setIsLifeAreaFormOpen(false); }} className="lifehq-button-secondary">Abbrechen</button>
+                      <button type="submit" className="lifehq-button-primary">Speichern</button>
+                    </div>
+                  </div>
+                </form>
+              )}
+              <LifeAreaList lifeAreas={lifeAreas} projects={allStatusProjects} tasks={tasks} criticalProjects={criticalProjects} onLifeAreaSelect={openLifeAreaDetail} />
+            </HqSection>
+
+            <OrphanProjectList
+              projects={orphanProjects}
+              tasks={tasks}
+              onProjectSelect={openProjectDetail}
+              action={<button type="button" onClick={toggleProjectForm} className="lifehq-button-secondary w-fit">Projekt hinzufügen</button>}
+            >
+              {isProjectFormOpen && (
+                <form onSubmit={handleCreateProject} className="lifehq-crud-panel">
+                  <div className="grid gap-4 lg:grid-cols-3">
+                    <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-2"><span className="lifehq-label">Projektname</span><input value={projectDraft.name} onChange={(event) => updateProjectDraft({ name: event.target.value })} className="lifehq-crud-control" placeholder="Name des Projekts" /></label>
+                    <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Lebensbereich</span><select value={projectDraft.lifeAreaId} onChange={(event) => updateProjectDraft({ lifeAreaId: event.target.value })} className="lifehq-crud-control"><option value="">Ohne Lebensbereich</option>{lifeAreas.map((lifeArea) => <option key={lifeArea.id} value={lifeArea.id}>{getLifeAreaDisplayName(lifeArea.name)}</option>)}</select></label>
+                    <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-3"><span className="lifehq-label">Beschreibung</span><textarea value={projectDraft.description} onChange={(event) => updateProjectDraft({ description: event.target.value })} className="lifehq-crud-control" rows={3} placeholder="Optionale Beschreibung oder Vision" /></label>
+                    <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Status</span><select value={projectDraft.status} onChange={(event) => updateProjectDraft({ status: event.target.value as ProjectStatus })} className="lifehq-crud-control">{Object.entries(projectStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                    <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Priorität</span><select value={projectDraft.priority} onChange={(event) => updateProjectDraft({ priority: event.target.value as Priority })} className="lifehq-crud-control">{Object.entries(priorityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                    <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Ampelstatus</span><select value={projectDraft.trafficLightStatus} onChange={(event) => updateProjectDraft({ trafficLightStatus: event.target.value as TrafficLightStatus })} className="lifehq-crud-control">{Object.entries(trafficLightLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                    <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Zieltermin</span><input type="date" value={projectDraft.targetDate} onChange={(event) => updateProjectDraft({ targetDate: event.target.value })} className="lifehq-crud-control" /></label>
+                  </div>
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    {projectError ? <p className="text-sm text-[#D6AD64]">{projectError}</p> : <p className="text-sm text-[#7E776E]">Projekte können bewusst ohne Lebensbereich starten.</p>}
+                    <div className="flex flex-wrap gap-2"><button type="button" onClick={() => { resetProjectDraft(); setIsProjectFormOpen(false); }} className="lifehq-button-secondary">Abbrechen</button><button type="submit" className="lifehq-button-primary">Speichern</button></div>
+                  </div>
+                </form>
+              )}
+            </OrphanProjectList>
+          </div>
+        </HqSection>
+      </div>
     </div>
   );
 }

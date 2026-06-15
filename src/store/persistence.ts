@@ -6,6 +6,7 @@ import type { Milestone } from '../models/milestone';
 import type { Project } from '../models/project';
 import type { ProjectHistoryEntry, ProjectHistoryEntryType } from '../models/projectHistory';
 import type { Task } from '../models/task';
+import type { TrueNorth } from '../models/trueNorth';
 import {
   MILESTONE_STATUS_OPTIONS,
   PRIORITY_OPTIONS,
@@ -15,9 +16,10 @@ import {
 } from '../constants/statusOptions';
 
 export const LIFEHQ_STORAGE_KEY = 'lifehq-v1-storage';
-export const LIFEHQ_STORAGE_VERSION = 1;
+export const LIFEHQ_STORAGE_VERSION = 2;
 
 export interface PersistableLifeHQState {
+  trueNorths: TrueNorth[];
   lifeAreas: LifeArea[];
   projects: Project[];
   tasks: Task[];
@@ -232,8 +234,30 @@ const sanitizeArray = <T>(value: unknown, fallback: T[], sanitizeItem: (item: un
   }, []);
 };
 
+const sanitizeTrueNorth = (value: unknown, timestampFallback: string): TrueNorth | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const id = getRequiredString(value.id);
+  const title = getRequiredString(value.title);
+
+  if (!id || !title) {
+    return undefined;
+  }
+
+  return {
+    id,
+    title,
+    description: getOptionalString(value.description),
+    createdAt: getRequiredTimestamp(value.createdAt, timestampFallback),
+    updatedAt: getRequiredTimestamp(value.updatedAt, timestampFallback),
+  };
+};
+
 export const getPersistedLifeHQState = (state: PersistableLifeHQState): LifeHQPersistedState => ({
   storageVersion: LIFEHQ_STORAGE_VERSION,
+  trueNorths: state.trueNorths,
   lifeAreas: state.lifeAreas,
   projects: state.projects,
   tasks: state.tasks,
@@ -253,6 +277,7 @@ export const sanitizePersistedLifeHQState = (
 
   return {
     storageVersion: LIFEHQ_STORAGE_VERSION,
+    trueNorths: sanitizeArray(persistedState.trueNorths, fallbackState.trueNorths, (item) => sanitizeTrueNorth(item, timestampFallback)),
     lifeAreas: sanitizeArray(persistedState.lifeAreas, fallbackState.lifeAreas, (item) => sanitizeLifeArea(item, timestampFallback)),
     projects: sanitizeArray(persistedState.projects, fallbackState.projects, (item) => sanitizeProject(item, timestampFallback)),
     tasks: sanitizeArray(persistedState.tasks, fallbackState.tasks, (item) => sanitizeTask(item, timestampFallback)),
@@ -266,6 +291,7 @@ export const mergePersistedLifeHQState = <T extends PersistableLifeHQState>(pers
 
   return {
     ...currentState,
+    trueNorths: sanitizedState.trueNorths,
     lifeAreas: sanitizedState.lifeAreas,
     projects: sanitizedState.projects,
     tasks: sanitizedState.tasks,
