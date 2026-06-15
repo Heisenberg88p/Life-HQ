@@ -4,11 +4,13 @@ import { persist } from 'zustand/middleware';
 import { mockHistoryEntries, mockLifeAreas, mockMilestones, mockProjects, mockTasks } from '../data/mockData';
 import { getTodayDateString, getTomorrowDateString, normalizeDate } from '../logic/dateLogic';
 import type { Priority, ProjectStatus, TrafficLightStatus, TaskStatus, MilestoneStatus } from '../models/common';
+import type { Focus } from '../models/focus';
 import type { LifeArea } from '../models/lifeArea';
 import type { Milestone } from '../models/milestone';
 import type { Project } from '../models/project';
 import type { ProjectHistoryEntry } from '../models/projectHistory';
 import type { Task } from '../models/task';
+import type { TrueNorth } from '../models/trueNorth';
 import { createProjectHistoryEntry } from './helpers/historyHelpers';
 import type { PersistableLifeHQState } from './persistence';
 import {
@@ -19,11 +21,13 @@ import {
   mergePersistedLifeHQState,
   sanitizePersistedLifeHQState,
 } from './persistence';
+import type { FocusSlice } from './slices/focusSlice';
 import type { HistorySlice } from './slices/historySlice';
 import type { LifeAreaSlice } from './slices/lifeAreaSlice';
 import type { MilestoneSlice } from './slices/milestoneSlice';
 import type { PauseProjectInput, ProjectSlice, ReactivateProjectInput } from './slices/projectSlice';
 import type { TaskSlice } from './slices/taskSlice';
+import type { TrueNorthSlice } from './slices/trueNorthSlice';
 import type { UISlice } from './slices/uiSlice';
 
 interface AppDataSlice {
@@ -32,10 +36,12 @@ interface AppDataSlice {
   replaceAppData: (data: PersistableLifeHQState) => void;
 }
 
-type LifeHQState = LifeAreaSlice & ProjectSlice & TaskSlice & MilestoneSlice & HistorySlice & UISlice & AppDataSlice;
+type LifeHQState = FocusSlice & TrueNorthSlice & LifeAreaSlice & ProjectSlice & TaskSlice & MilestoneSlice & HistorySlice & UISlice & AppDataSlice;
 
 const now = () => new Date().toISOString();
 const getInitialLifeHQData = () => ({
+  focuses: [] as Focus[],
+  trueNorths: [] as TrueNorth[],
   lifeAreas: mockLifeAreas,
   projects: mockProjects,
   tasks: mockTasks,
@@ -119,6 +125,17 @@ function getProjectUpdateHistoryEntries(project: Project, patch: Partial<Project
 
 const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
   ...getInitialLifeHQData(),
+
+  createFocus: (focus: Focus) => set((state) => ({ focuses: [...state.focuses, focus] })),
+  updateFocus: (id: string, patch: Partial<Focus>) =>
+    set((state) => ({ focuses: state.focuses.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
+  archiveFocus: (id: string) =>
+    set((state) => ({ focuses: state.focuses.map((item) => (item.id === id ? withUpdatedAt({ ...item, status: 'Archived' }) : item)) })),
+
+  addTrueNorth: (trueNorth: TrueNorth) => set((state) => ({ trueNorths: [...state.trueNorths, trueNorth] })),
+  updateTrueNorth: (id: string, patch: Partial<TrueNorth>) =>
+    set((state) => ({ trueNorths: state.trueNorths.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
+  deleteTrueNorth: (id: string) => set((state) => ({ trueNorths: state.trueNorths.filter((item) => item.id !== id) })),
 
   addLifeArea: (lifeArea: LifeArea) => set((state) => ({ lifeAreas: [...state.lifeAreas, lifeArea] })),
   updateLifeArea: (id: string, patch: Partial<LifeArea>) =>
@@ -555,6 +572,8 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
 
   resetAppData: () => set(getInitialLifeHQData()),
   clearAllUserData: () => set((state) => ({
+    focuses: [],
+    trueNorths: [],
     lifeAreas: [],
     projects: [],
     tasks: [],
@@ -564,6 +583,8 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
   })),
   replaceAppData: (data: PersistableLifeHQState) => set((state) => {
     const sanitizedData = sanitizePersistedLifeHQState(data, {
+      focuses: [],
+      trueNorths: [],
       lifeAreas: [],
       projects: [],
       tasks: [],
@@ -572,6 +593,8 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
     });
 
     return {
+      focuses: sanitizedData.focuses,
+      trueNorths: sanitizedData.trueNorths,
       lifeAreas: sanitizedData.lifeAreas,
       projects: sanitizedData.projects,
       tasks: sanitizedData.tasks,
