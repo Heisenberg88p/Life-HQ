@@ -4,6 +4,7 @@ export interface Project extends BaseEntity {
   name: string;
   description?: string;
   lifeAreaId?: string;
+  focusId?: string | null;
   status: ProjectStatus;
   priority: Priority;
   trafficLightStatus: TrafficLightStatus;
