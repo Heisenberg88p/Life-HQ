@@ -151,6 +151,7 @@ function HqPlaceholder({ children }: { children: ReactNode }) {
 interface FocusListProps {
   focuses: Focus[];
   trueNorths: TrueNorth[];
+  projects: Project[];
   editingFocusId?: string;
   editDraft: FocusDraft;
   editError?: string;
@@ -165,6 +166,31 @@ interface FocusListProps {
 
 function getTrueNorthTitle(trueNorths: TrueNorth[], trueNorthReference?: string): string | undefined {
   return trueNorths.find((trueNorth) => trueNorth.id === trueNorthReference)?.title;
+}
+
+const focusPriorityRank: Record<FocusPriority, number> = { High: 0, Medium: 1, Low: 2 };
+
+function getSortedFocuses(focuses: Focus[]): Focus[] {
+  return [...focuses].sort((firstFocus, secondFocus) => {
+    const priorityDifference = focusPriorityRank[firstFocus.priority] - focusPriorityRank[secondFocus.priority];
+
+    if (priorityDifference !== 0) {
+      return priorityDifference;
+    }
+
+    return firstFocus.startDate.localeCompare(secondFocus.startDate) || secondFocus.updatedAt.localeCompare(firstFocus.updatedAt);
+  });
+}
+
+function getFocusProjectContext(focus: Focus, projects: Project[]): { projectCount: number; projectNames: string[]; additionalProjectCount: number } {
+  const focusProjects = projects.filter((project) => project.focusId === focus.id);
+  const projectNames = focusProjects.slice(0, 2).map((project) => project.name);
+
+  return {
+    projectCount: focusProjects.length,
+    projectNames,
+    additionalProjectCount: Math.max(focusProjects.length - projectNames.length, 0),
+  };
 }
 
 function FocusFields({ draft, trueNorths, onChange }: { draft: FocusDraft; trueNorths: TrueNorth[]; onChange: (patch: Partial<FocusDraft>) => void }) {
@@ -209,66 +235,135 @@ function FocusFields({ draft, trueNorths, onChange }: { draft: FocusDraft; trueN
   );
 }
 
-function FocusList({ focuses, trueNorths, editingFocusId, editDraft, editError, onEditStart, onEditCancel, onEditDraftChange, onEditSubmit, onArchive, onRestore, restoreError }: FocusListProps) {
-  const activeFocuses = focuses.filter((focus) => focus.status === 'Active');
-  const visibleFocuses = focuses.filter((focus) => focus.status !== 'Archived');
-  const archivedFocuses = focuses.filter((focus) => focus.status === 'Archived');
+function FocusList({ focuses, trueNorths, projects, editingFocusId, editDraft, editError, onEditStart, onEditCancel, onEditDraftChange, onEditSubmit, onArchive, onRestore, restoreError }: FocusListProps) {
+  const activeFocuses = getSortedFocuses(focuses.filter((focus) => focus.status === 'Active'));
+  const pausedFocuses = getSortedFocuses(focuses.filter((focus) => focus.status === 'Paused'));
+  const completedFocuses = getSortedFocuses(focuses.filter((focus) => focus.status === 'Completed'));
+  const archivedFocuses = getSortedFocuses(focuses.filter((focus) => focus.status === 'Archived'));
+  const hasNonArchivedFocuses = activeFocuses.length > 0 || pausedFocuses.length > 0 || completedFocuses.length > 0;
 
   if (focuses.length === 0) {
     return <EmptyState>Lege deinen ersten aktuellen Fokus fest.</EmptyState>;
   }
 
   return (
-    <div className="space-y-5">
-      {activeFocuses.length === 0 && (
-        <div className="lifehq-card-soft border-[#D6AD64]/20 bg-[#D6AD64]/[0.04] px-4 py-4 text-sm leading-6 text-[#B8B1A7]">
-          Kein aktiver Fokus vorhanden. Lege einen aktiven Fokus fest, wenn du ein Thema bewusst priorisieren möchtest.
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-[#D6AD64]/70">Orientierung</p>
+            <h4 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">Aktive Fokusse</h4>
+          </div>
+          <p className="max-w-md text-sm leading-6 text-[#7E776E]">Worauf sollte aktuell der größte Teil deiner Aufmerksamkeit liegen?</p>
         </div>
-      )}
 
-      {visibleFocuses.length > 0 && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {visibleFocuses.map((focus) => {
-            const isEditing = editingFocusId === focus.id;
-            const trueNorthTitle = getTrueNorthTitle(trueNorths, focus.trueNorthReference);
+        {activeFocuses.length === 0 ? (
+          <EmptyState>Lege deinen ersten aktuellen Fokus fest.</EmptyState>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {activeFocuses.map((focus) => {
+              const isEditing = editingFocusId === focus.id;
+              const trueNorthTitle = getTrueNorthTitle(trueNorths, focus.trueNorthReference);
+              const projectContext = getFocusProjectContext(focus, projects);
 
-            return (
-              <article key={focus.id} className="lifehq-premium-card p-4 sm:p-5">
-                {isEditing ? (
-                  <form onSubmit={onEditSubmit} className="space-y-4">
-                    <FocusFields draft={editDraft} trueNorths={trueNorths} onChange={onEditDraftChange} />
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      {editError ? <p className="text-sm text-[#D6AD64]">{editError}</p> : <p className="text-sm text-[#7E776E]">Maximal fünf aktive Fokusse möglich.</p>}
-                      <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={onEditCancel} className="lifehq-button-secondary">Abbrechen</button>
-                        <button type="submit" className="lifehq-button-primary">Speichern</button>
+              return (
+                <article key={focus.id} className="lifehq-premium-card border-[#D6AD64]/30 bg-[#D6AD64]/[0.055] p-5 sm:p-6">
+                  {isEditing ? (
+                    <form onSubmit={onEditSubmit} className="space-y-4">
+                      <FocusFields draft={editDraft} trueNorths={trueNorths} onChange={onEditDraftChange} />
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        {editError ? <p className="text-sm text-[#D6AD64]">{editError}</p> : <p className="text-sm text-[#7E776E]">Maximal fünf aktive Fokusse möglich.</p>}
+                        <div className="flex flex-wrap gap-2">
+                          <button type="button" onClick={onEditCancel} className="lifehq-button-secondary">Abbrechen</button>
+                          <button type="submit" className="lifehq-button-primary">Speichern</button>
+                        </div>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="flex h-full flex-col justify-between gap-6">
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap gap-2 text-xs text-[#B8B1A7]">
+                          <span className="lifehq-badge">{focusStatusLabels[focus.status]}</span>
+                          <span className="lifehq-badge">Priorität: {focusPriorityLabels[focus.priority]}</span>
+                        </div>
+                        <div className="space-y-3">
+                          <h4 className="font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA]">{focus.title}</h4>
+                          {focus.description && <p className="text-sm leading-6 text-[#B8B1A7]">{focus.description}</p>}
+                        </div>
+                        <div className="grid gap-2 text-xs leading-5 text-[#7E776E] sm:grid-cols-2">
+                          <p>Start: {focus.startDate}</p>
+                          <p>Ziel: {focus.targetDate ?? 'Offen'}</p>
+                          <p className="sm:col-span-2">Richtung: {trueNorthTitle ?? 'Keine Richtung zugeordnet'}</p>
+                        </div>
+                        <div className="lifehq-card-soft border-white/10 bg-black/15 px-3 py-3 text-sm leading-6 text-[#B8B1A7]">
+                          <p className="font-medium text-[#F5F1EA]">
+                            {projectContext.projectCount === 0 ? 'Noch keine Projekte zugeordnet.' : `${projectContext.projectCount} zugeordnete Projekte`}
+                          </p>
+                          {projectContext.projectNames.length > 0 && (
+                            <p className="mt-1 text-xs text-[#7E776E]">
+                              {projectContext.projectNames.join(' · ')}{projectContext.additionalProjectCount > 0 ? ` · + ${projectContext.additionalProjectCount} weitere` : ''}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 border-t border-white/[0.08] pt-4">
+                        <button type="button" onClick={() => onEditStart(focus)} className="lifehq-button-secondary">Bearbeiten</button>
+                        <button type="button" onClick={() => onArchive(focus.id)} className="lifehq-button-secondary">Archivieren</button>
                       </div>
                     </div>
-                  </form>
-                ) : (
-                  <div className="flex h-full flex-col justify-between gap-5">
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {hasNonArchivedFocuses && (pausedFocuses.length > 0 || completedFocuses.length > 0) && (
+        <div className="space-y-4 border-t border-white/[0.08] pt-5">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-[#D6AD64]/60">Management</p>
+            <h4 className="mt-2 text-lg font-semibold tracking-tight text-[#F5F1EA]">Pausierte und abgeschlossene Fokusse</h4>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {[...pausedFocuses, ...completedFocuses].map((focus) => {
+              const isEditing = editingFocusId === focus.id;
+              const trueNorthTitle = getTrueNorthTitle(trueNorths, focus.trueNorthReference);
+              const projectContext = getFocusProjectContext(focus, projects);
+
+              return (
+                <article key={focus.id} className="lifehq-card-soft border-white/10 bg-black/15 p-4 text-sm text-[#B8B1A7]">
+                  {isEditing ? (
+                    <form onSubmit={onEditSubmit} className="space-y-4">
+                      <FocusFields draft={editDraft} trueNorths={trueNorths} onChange={onEditDraftChange} />
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        {editError ? <p className="text-sm text-[#D6AD64]">{editError}</p> : <p className="text-sm text-[#7E776E]">Status und Priorität bleiben änderbar.</p>}
+                        <div className="flex flex-wrap gap-2">
+                          <button type="button" onClick={onEditCancel} className="lifehq-button-secondary">Abbrechen</button>
+                          <button type="submit" className="lifehq-button-primary">Speichern</button>
+                        </div>
+                      </div>
+                    </form>
+                  ) : (
                     <div className="space-y-3">
-                      <div className="flex flex-wrap gap-2 text-xs text-[#B8B1A7]">
+                      <div className="flex flex-wrap gap-2 text-xs">
                         <span className="lifehq-badge">{focusStatusLabels[focus.status]}</span>
                         <span className="lifehq-badge">Priorität: {focusPriorityLabels[focus.priority]}</span>
                       </div>
-                      <h4 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">{focus.title}</h4>
-                      {focus.description && <p className="text-sm leading-6 text-[#B8B1A7]">{focus.description}</p>}
-                      <div className="grid gap-2 text-xs leading-5 text-[#7E776E] sm:grid-cols-2">
-                        <p>Start: {focus.startDate}</p>
-                        <p>Ziel: {focus.targetDate ?? 'Offen'}</p>
-                        <p className="sm:col-span-2">True North: {trueNorthTitle ?? 'Nicht zugeordnet'}</p>
+                      <h5 className="text-base font-semibold text-[#F5F1EA]">{focus.title}</h5>
+                      {focus.description && <p className="line-clamp-2 leading-6">{focus.description}</p>}
+                      <p className="text-xs text-[#7E776E]">Richtung: {trueNorthTitle ?? 'Keine Richtung zugeordnet'}</p>
+                      <p className="text-xs text-[#7E776E]">{projectContext.projectCount === 0 ? 'Noch keine Projekte zugeordnet.' : `${projectContext.projectCount} zugeordnete Projekte`}</p>
+                      <div className="flex flex-wrap gap-2 border-t border-white/[0.08] pt-3">
+                        <button type="button" onClick={() => onEditStart(focus)} className="lifehq-button-secondary">Bearbeiten</button>
+                        <button type="button" onClick={() => onArchive(focus.id)} className="lifehq-button-secondary">Archivieren</button>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2 border-t border-white/[0.08] pt-4">
-                      <button type="button" onClick={() => onEditStart(focus)} className="lifehq-button-secondary">Bearbeiten</button>
-                      <button type="button" onClick={() => onArchive(focus.id)} className="lifehq-button-secondary">Archivieren</button>
-                    </div>
-                  </div>
-                )}
-              </article>
-            );
-          })}
+                  )}
+                </article>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -1106,6 +1201,7 @@ export function HqPage() {
           <FocusList
             focuses={focuses}
             trueNorths={trueNorths}
+            projects={allStatusProjects}
             editingFocusId={editingFocusId}
             editDraft={focusEditDraft}
             editError={focusEditError}
