@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { LifeArea } from '../../models/lifeArea';
 import type { Project } from '../../models/project';
 import type { Task } from '../../models/task';
+import type { TrueNorth } from '../../models/trueNorth';
 import type { Priority, ProjectStatus, TrafficLightStatus } from '../../models/common';
 import { priorityLabels, projectStatusLabels, trafficLightLabels } from '../../constants/displayLabels';
 import {
@@ -12,10 +13,16 @@ import {
   selectLifeAreas,
   selectPausedProjects,
   selectTasks,
+  selectTrueNorths,
   selectPlannedProjects,
   useLifeHQStore,
 } from '../../store';
 
+
+type TrueNorthDraft = {
+  title: string;
+  description: string;
+};
 
 type LifeAreaDraft = {
   name: string;
@@ -32,6 +39,7 @@ type ProjectDraft = {
   targetDate: string;
 };
 
+const defaultTrueNorthDraft: TrueNorthDraft = { title: '', description: '' };
 const defaultLifeAreaDraft: LifeAreaDraft = { name: '', description: '' };
 const defaultProjectDraft: ProjectDraft = {
   name: '',
@@ -96,6 +104,69 @@ function HqPlaceholder({ children }: { children: ReactNode }) {
   return (
     <div className="lifehq-card-soft border-white/10 bg-black/15 px-4 py-4 text-sm leading-6 text-[#B8B1A7] sm:px-5">
       {children}
+    </div>
+  );
+}
+
+
+interface TrueNorthListProps {
+  trueNorths: TrueNorth[];
+  editingTrueNorthId?: string;
+  editDraft: TrueNorthDraft;
+  editError?: string;
+  onEditStart: (trueNorth: TrueNorth) => void;
+  onEditCancel: () => void;
+  onEditDraftChange: (patch: Partial<TrueNorthDraft>) => void;
+  onEditSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onDelete: (id: string) => void;
+}
+
+function TrueNorthList({ trueNorths, editingTrueNorthId, editDraft, editError, onEditStart, onEditCancel, onEditDraftChange, onEditSubmit, onDelete }: TrueNorthListProps) {
+  if (trueNorths.length === 0) {
+    return <EmptyState>Definiere die langfristige Richtung deines Lebens.</EmptyState>;
+  }
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      {trueNorths.map((trueNorth) => {
+        const isEditing = editingTrueNorthId === trueNorth.id;
+
+        return (
+          <article key={trueNorth.id} className="lifehq-premium-card p-4 sm:p-5">
+            {isEditing ? (
+              <form onSubmit={onEditSubmit} className="space-y-4">
+                <label className="space-y-2 text-sm text-[#B8B1A7]">
+                  <span className="lifehq-label">Titel</span>
+                  <input value={editDraft.title} onChange={(event) => onEditDraftChange({ title: event.target.value })} className="lifehq-crud-control" placeholder="Langfristige Richtung" />
+                </label>
+                <label className="space-y-2 text-sm text-[#B8B1A7]">
+                  <span className="lifehq-label">Beschreibung</span>
+                  <textarea value={editDraft.description} onChange={(event) => onEditDraftChange({ description: event.target.value })} className="lifehq-crud-control" rows={3} placeholder="Optionale Beschreibung" />
+                </label>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  {editError ? <p className="text-sm text-[#D6AD64]">{editError}</p> : <p className="text-sm text-[#7E776E]">Selten ändern, bewusst formulieren.</p>}
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={onEditCancel} className="lifehq-button-secondary">Abbrechen</button>
+                    <button type="submit" className="lifehq-button-primary">Speichern</button>
+                  </div>
+                </div>
+              </form>
+            ) : (
+              <div className="flex h-full flex-col justify-between gap-5">
+                <div className="space-y-3">
+                  <p className="text-xs uppercase tracking-[0.2em] text-[#D6AD64]/70">True North</p>
+                  <h4 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">{trueNorth.title}</h4>
+                  {trueNorth.description && <p className="text-sm leading-6 text-[#B8B1A7]">{trueNorth.description}</p>}
+                </div>
+                <div className="flex flex-wrap gap-2 border-t border-white/[0.08] pt-4">
+                  <button type="button" onClick={() => onEditStart(trueNorth)} className="lifehq-button-secondary">Bearbeiten</button>
+                  <button type="button" onClick={() => onDelete(trueNorth.id)} className="lifehq-button-secondary">Löschen</button>
+                </div>
+              </div>
+            )}
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -351,6 +422,7 @@ function OrphanProjectList({ projects, tasks, onProjectSelect, action, children 
 
 export function HqPage() {
   const navigate = useNavigate();
+  const trueNorths = useLifeHQStore(selectTrueNorths);
   const lifeAreas = useLifeHQStore(selectLifeAreas);
   const activeProjects = useLifeHQStore(selectActiveProjects);
   const plannedProjects = useLifeHQStore(selectPlannedProjects);
@@ -358,8 +430,17 @@ export function HqPage() {
   const completedProjects = useLifeHQStore(selectCompletedProjects);
   const criticalProjects = useLifeHQStore(selectCriticalProjects);
   const tasks = useLifeHQStore(selectTasks);
+  const addTrueNorth = useLifeHQStore((state) => state.addTrueNorth);
+  const updateTrueNorth = useLifeHQStore((state) => state.updateTrueNorth);
+  const deleteTrueNorth = useLifeHQStore((state) => state.deleteTrueNorth);
   const addLifeArea = useLifeHQStore((state) => state.addLifeArea);
   const addProject = useLifeHQStore((state) => state.addProject);
+  const [isTrueNorthFormOpen, setIsTrueNorthFormOpen] = useState(false);
+  const [trueNorthDraft, setTrueNorthDraft] = useState<TrueNorthDraft>(defaultTrueNorthDraft);
+  const [trueNorthError, setTrueNorthError] = useState<string | undefined>();
+  const [editingTrueNorthId, setEditingTrueNorthId] = useState<string | undefined>();
+  const [trueNorthEditDraft, setTrueNorthEditDraft] = useState<TrueNorthDraft>(defaultTrueNorthDraft);
+  const [trueNorthEditError, setTrueNorthEditError] = useState<string | undefined>();
   const [isLifeAreaFormOpen, setIsLifeAreaFormOpen] = useState(false);
   const [lifeAreaDraft, setLifeAreaDraft] = useState<LifeAreaDraft>(defaultLifeAreaDraft);
   const [lifeAreaError, setLifeAreaError] = useState<string | undefined>();
@@ -382,6 +463,91 @@ export function HqPage() {
     navigate(`/life-areas/${lifeAreaId}`);
   };
 
+  function toggleTrueNorthForm() {
+    setIsTrueNorthFormOpen((current) => !current);
+    setEditingTrueNorthId(undefined);
+    setTrueNorthEditError(undefined);
+  }
+
+  function updateTrueNorthDraft(patch: Partial<TrueNorthDraft>) {
+    setTrueNorthDraft((current) => ({ ...current, ...patch }));
+    setTrueNorthError(undefined);
+  }
+
+  function resetTrueNorthDraft() {
+    setTrueNorthDraft(defaultTrueNorthDraft);
+    setTrueNorthError(undefined);
+  }
+
+  function handleCreateTrueNorth(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const title = trueNorthDraft.title.trim();
+
+    if (!title) {
+      setTrueNorthError('Bitte gib einen Titel ein.');
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+
+    addTrueNorth({
+      id: createEntityId('tn'),
+      title,
+      description: getOptionalFormValue(trueNorthDraft.description),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+    resetTrueNorthDraft();
+    setIsTrueNorthFormOpen(false);
+  }
+
+  function startEditingTrueNorth(trueNorth: TrueNorth) {
+    setEditingTrueNorthId(trueNorth.id);
+    setTrueNorthEditDraft({ title: trueNorth.title, description: trueNorth.description ?? '' });
+    setTrueNorthEditError(undefined);
+    setIsTrueNorthFormOpen(false);
+  }
+
+  function updateTrueNorthEditDraft(patch: Partial<TrueNorthDraft>) {
+    setTrueNorthEditDraft((current) => ({ ...current, ...patch }));
+    setTrueNorthEditError(undefined);
+  }
+
+  function cancelEditingTrueNorth() {
+    setEditingTrueNorthId(undefined);
+    setTrueNorthEditDraft(defaultTrueNorthDraft);
+    setTrueNorthEditError(undefined);
+  }
+
+  function handleUpdateTrueNorth(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!editingTrueNorthId) {
+      return;
+    }
+
+    const title = trueNorthEditDraft.title.trim();
+
+    if (!title) {
+      setTrueNorthEditError('Bitte gib einen Titel ein.');
+      return;
+    }
+
+    updateTrueNorth(editingTrueNorthId, {
+      title,
+      description: getOptionalFormValue(trueNorthEditDraft.description),
+    });
+    cancelEditingTrueNorth();
+  }
+
+  function handleDeleteTrueNorth(id: string) {
+    deleteTrueNorth(id);
+
+    if (editingTrueNorthId === id) {
+      cancelEditingTrueNorth();
+    }
+  }
 
 
   function toggleLifeAreaForm() {
@@ -492,10 +658,44 @@ export function HqPage() {
       </section>
 
       <div className="space-y-6">
-        <HqSection title="True North" description="Langfristige Richtung deines Lebens." eyebrow="01 Orientierung">
-          <HqPlaceholder>
-            <p>Hier entsteht später die langfristige Leitlinie deines HQ.</p>
-          </HqPlaceholder>
+        <HqSection
+          title="True North"
+          description="Langfristige Richtung deines Lebens."
+          eyebrow="01 Orientierung"
+          action={<button type="button" onClick={toggleTrueNorthForm} className="lifehq-button-secondary w-fit">True North hinzufügen</button>}
+        >
+          {isTrueNorthFormOpen && (
+            <form onSubmit={handleCreateTrueNorth} className="lifehq-crud-panel">
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-2 text-sm text-[#B8B1A7]">
+                  <span className="lifehq-label">Titel</span>
+                  <input value={trueNorthDraft.title} onChange={(event) => updateTrueNorthDraft({ title: event.target.value })} className="lifehq-crud-control" placeholder="z. B. Unternehmerische Freiheit" />
+                </label>
+                <label className="space-y-2 text-sm text-[#B8B1A7]">
+                  <span className="lifehq-label">Beschreibung</span>
+                  <input value={trueNorthDraft.description} onChange={(event) => updateTrueNorthDraft({ description: event.target.value })} className="lifehq-crud-control" placeholder="Optionale strategische Einordnung" />
+                </label>
+              </div>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                {trueNorthError ? <p className="text-sm text-[#D6AD64]">{trueNorthError}</p> : <p className="text-sm text-[#7E776E]">True North beschreibt eine langfristige Richtung, kein Projekt und keine Aufgabe.</p>}
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => { resetTrueNorthDraft(); setIsTrueNorthFormOpen(false); }} className="lifehq-button-secondary">Abbrechen</button>
+                  <button type="submit" className="lifehq-button-primary">Speichern</button>
+                </div>
+              </div>
+            </form>
+          )}
+          <TrueNorthList
+            trueNorths={trueNorths}
+            editingTrueNorthId={editingTrueNorthId}
+            editDraft={trueNorthEditDraft}
+            editError={trueNorthEditError}
+            onEditStart={startEditingTrueNorth}
+            onEditCancel={cancelEditingTrueNorth}
+            onEditDraftChange={updateTrueNorthEditDraft}
+            onEditSubmit={handleUpdateTrueNorth}
+            onDelete={handleDeleteTrueNorth}
+          />
         </HqSection>
 
         <HqSection title="Aktueller Fokus" description="Hier erscheinen später deine wichtigsten aktiven Fokusthemen." eyebrow="02 Fokus" prominence="focus">
