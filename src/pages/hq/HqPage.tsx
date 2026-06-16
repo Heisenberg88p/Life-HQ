@@ -233,6 +233,27 @@ function MotivationCard() {
     </aside>
   );
 }
+
+function ExecutiveCompass() {
+  return (
+    <div className="relative mx-auto flex h-40 w-40 shrink-0 items-center justify-center rounded-full border border-[#D6AD64]/20 bg-[radial-gradient(circle,rgba(214,173,100,0.16)_0%,rgba(214,173,100,0.04)_46%,rgba(0,0,0,0)_70%)] text-[#D6AD64] shadow-[0_0_55px_rgba(214,173,100,0.12)] sm:h-48 sm:w-48" aria-hidden="true">
+      <div className="absolute inset-4 rounded-full border border-[#D6AD64]/15" />
+      <div className="absolute inset-9 rounded-full border border-dashed border-[#D6AD64]/20" />
+      <span className="absolute top-3 text-[0.65rem] font-semibold tracking-[0.18em] text-[#D6AD64]/70">N</span>
+      <span className="absolute bottom-3 text-[0.65rem] font-semibold tracking-[0.18em] text-[#D6AD64]/70">S</span>
+      <span className="absolute left-4 text-[0.65rem] font-semibold tracking-[0.18em] text-[#D6AD64]/70">W</span>
+      <span className="absolute right-4 text-[0.65rem] font-semibold tracking-[0.18em] text-[#D6AD64]/70">E</span>
+      <span className="text-7xl leading-none drop-shadow-[0_0_20px_rgba(214,173,100,0.25)] sm:text-8xl">✦</span>
+    </div>
+  );
+}
+
+function getFocusIcon(priority: FocusPriority): string {
+  if (priority === 'High') return '✦';
+  if (priority === 'Medium') return '◆';
+
+  return '◇';
+}
 type AttentionItemType = 'Projekt' | 'Task' | 'Meilenstein' | 'Wiedervorlage';
 
 type AttentionItem = {
@@ -483,6 +504,7 @@ interface FocusListProps {
   focuses: Focus[];
   trueNorths: TrueNorth[];
   projects: Project[];
+  tasks: Task[];
   editingFocusId?: string;
   editDraft: FocusDraft;
   editError?: string;
@@ -523,6 +545,12 @@ function getFocusProjectContext(focus: Focus, projects: Project[]): { projectCou
     projectLinks,
     additionalProjectCount: Math.max(focusProjects.length - projectLinks.length, 0),
   };
+}
+
+function getFocusOpenTaskCount(focus: Focus, projects: Project[], tasks: Task[]): number {
+  const focusProjectIds = new Set(projects.filter((project) => project.focusId === focus.id).map((project) => project.id));
+
+  return tasks.filter((task) => task.status !== 'done' && task.projectId && focusProjectIds.has(task.projectId)).length;
 }
 
 function FocusFields({ draft, trueNorths, onChange }: { draft: FocusDraft; trueNorths: TrueNorth[]; onChange: (patch: Partial<FocusDraft>) => void }) {
@@ -567,7 +595,7 @@ function FocusFields({ draft, trueNorths, onChange }: { draft: FocusDraft; trueN
   );
 }
 
-function FocusList({ focuses, trueNorths, projects, editingFocusId, editDraft, editError, onEditStart, onEditCancel, onEditDraftChange, onEditSubmit, onArchive, onRestore, onProjectSelect, restoreError }: FocusListProps) {
+function FocusList({ focuses, trueNorths, projects, tasks, editingFocusId, editDraft, editError, onEditStart, onEditCancel, onEditDraftChange, onEditSubmit, onArchive, onRestore, onProjectSelect, restoreError }: FocusListProps) {
   const activeFocuses = getSortedFocuses(focuses.filter((focus) => focus.status === 'Active'));
   const pausedFocuses = getSortedFocuses(focuses.filter((focus) => focus.status === 'Paused'));
   const completedFocuses = getSortedFocuses(focuses.filter((focus) => focus.status === 'Completed'));
@@ -592,16 +620,17 @@ function FocusList({ focuses, trueNorths, projects, editingFocusId, editDraft, e
         {activeFocuses.length === 0 ? (
           <EmptyState>Lege deinen ersten aktuellen Fokus fest.</EmptyState>
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 2xl:grid-cols-2">
             {activeFocuses.map((focus) => {
               const isEditing = editingFocusId === focus.id;
               const trueNorthTitle = getTrueNorthTitle(trueNorths, focus.trueNorthReference);
               const projectContext = getFocusProjectContext(focus, projects);
+              const openTaskCount = getFocusOpenTaskCount(focus, projects, tasks);
 
               return (
-                <article key={focus.id} className="lifehq-premium-card border-[#D6AD64]/30 bg-[#D6AD64]/[0.055] p-4 sm:p-6">
+                <article key={focus.id} className="lifehq-premium-card overflow-hidden border-[#D6AD64]/30 bg-[linear-gradient(135deg,rgba(214,173,100,0.095),rgba(255,255,255,0.025)_42%,rgba(0,0,0,0.16))] p-0 shadow-[0_28px_90px_rgba(0,0,0,0.28)]">
                   {isEditing ? (
-                    <form onSubmit={onEditSubmit} className="space-y-4">
+                    <form onSubmit={onEditSubmit} className="space-y-4 p-4 sm:p-6">
                       <FocusFields draft={editDraft} trueNorths={trueNorths} onChange={onEditDraftChange} />
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         {editError ? <p className="text-sm text-[#D6AD64]">{editError}</p> : <p className="text-sm text-[#7E776E]">Maximal fünf aktive Fokusse möglich.</p>}
@@ -612,33 +641,53 @@ function FocusList({ focuses, trueNorths, projects, editingFocusId, editDraft, e
                       </div>
                     </form>
                   ) : (
-                    <div className="flex h-full flex-col justify-between gap-6">
-                      <div className="space-y-4">
-                        <div className="flex flex-wrap gap-2 text-xs text-[#B8B1A7]">
-                          <span className="lifehq-badge">{focusStatusLabels[focus.status]}</span>
-                          <span className="lifehq-badge">Priorität: {focusPriorityLabels[focus.priority]}</span>
+                    <div className="flex h-full flex-col justify-between gap-6 p-4 sm:p-6">
+                      <div className="space-y-5">
+                        <div className="flex items-start gap-4">
+                          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#D6AD64]/20 bg-[#D6AD64]/10 text-2xl text-[#D6AD64] shadow-[0_0_30px_rgba(214,173,100,0.10)]" aria-hidden="true">
+                            {getFocusIcon(focus.priority)}
+                          </div>
+                          <div className="min-w-0 flex-1 space-y-3">
+                            <div className="flex flex-wrap gap-2 text-xs text-[#B8B1A7]">
+                              <span className="lifehq-badge">{focusStatusLabels[focus.status]}</span>
+                              <span className="lifehq-badge">Priorität: {focusPriorityLabels[focus.priority]}</span>
+                            </div>
+                            <div className="space-y-2">
+                              <h4 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA] sm:text-3xl">{focus.title}</h4>
+                              {focus.description && <p className="text-sm leading-6 text-[#B8B1A7]">{focus.description}</p>}
+                            </div>
+                          </div>
                         </div>
-                        <div className="space-y-3">
-                          <h4 className="font-serif text-2xl sm:text-3xl font-semibold tracking-tight text-[#F5F1EA]">{focus.title}</h4>
-                          {focus.description && <p className="text-sm leading-6 text-[#B8B1A7]">{focus.description}</p>}
+                        <div className="grid gap-3 text-sm leading-6 sm:grid-cols-3">
+                          <div className="rounded-2xl border border-white/[0.08] bg-black/15 p-3">
+                            <p className="lifehq-label">Projekte</p>
+                            <p className="mt-1 text-lg font-semibold text-[#F5F1EA]">{projectContext.projectCount}</p>
+                          </div>
+                          <div className="rounded-2xl border border-white/[0.08] bg-black/15 p-3">
+                            <p className="lifehq-label">Aufgaben</p>
+                            <p className="mt-1 text-lg font-semibold text-[#F5F1EA]">{openTaskCount}</p>
+                          </div>
+                          <div className="rounded-2xl border border-white/[0.08] bg-black/15 p-3">
+                            <p className="lifehq-label">Zieldatum</p>
+                            <p className="mt-1 text-sm font-semibold text-[#F5F1EA]">{focus.targetDate ?? 'Offen'}</p>
+                          </div>
                         </div>
                         <div className="grid gap-2 text-xs leading-5 text-[#7E776E] sm:grid-cols-2">
                           <p>Start: {focus.startDate}</p>
-                          <p>Ziel: {focus.targetDate ?? 'Offen'}</p>
-                          <p className="sm:col-span-2">Richtung: {trueNorthTitle ?? 'Keine Richtung zugeordnet'}</p>
+                          <p className="sm:text-right">Richtung: {trueNorthTitle ?? 'Keine Richtung zugeordnet'}</p>
                         </div>
-                        <div className="lifehq-card-soft border-white/10 bg-black/15 px-3 py-3 text-sm leading-6 text-[#B8B1A7]">
+                        <div className="rounded-3xl border border-white/10 bg-black/15 px-4 py-4 text-sm leading-6 text-[#B8B1A7]">
                           <p className="font-medium text-[#F5F1EA]">
-                            {projectContext.projectCount === 0 ? 'Noch keine Projekte zugeordnet.' : `${projectContext.projectCount} zugeordnete Projekte`}
+                            {projectContext.projectCount === 0 ? 'Noch keine Projekte zugeordnet.' : 'Projektkontext'}
                           </p>
                           {projectContext.projectLinks.length > 0 && (
-                            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#7E776E]">
+                            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#7E776E]">
                               {projectContext.projectLinks.map((projectLink) => (
                                 <button
                                   key={projectLink.id}
                                   type="button"
                                   onClick={() => onProjectSelect(projectLink.id)}
-                                  className="min-h-10 rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 text-[#B8B1A7] transition hover:border-[#D6AD64]/30 hover:text-[#F5F1EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60"
+                                  className="min-h-10 rounded-full border border-[#D6AD64]/15 bg-[#D6AD64]/[0.045] px-3 py-2 text-[#D8C8AF] transition hover:border-[#D6AD64]/35 hover:text-[#F5F1EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60"
                                 >
                                   {projectLink.name}
                                 </button>
@@ -674,7 +723,7 @@ function FocusList({ focuses, trueNorths, projects, editingFocusId, editDraft, e
               const projectContext = getFocusProjectContext(focus, projects);
 
               return (
-                <article key={focus.id} className="lifehq-card-soft border-white/10 bg-black/15 p-4 text-sm text-[#B8B1A7]">
+                <article key={focus.id} className="lifehq-card-soft border-white/10 bg-black/10 p-4 text-sm text-[#B8B1A7]">
                   {isEditing ? (
                     <form onSubmit={onEditSubmit} className="space-y-4">
                       <FocusFields draft={editDraft} trueNorths={trueNorths} onChange={onEditDraftChange} />
@@ -780,14 +829,14 @@ function TrueNorthList({ trueNorths, editingTrueNorthId, editDraft, editError, o
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="space-y-5">
       {trueNorths.map((trueNorth) => {
         const isEditing = editingTrueNorthId === trueNorth.id;
 
         return (
-          <article key={trueNorth.id} className="lifehq-premium-card p-4 sm:p-5">
+          <article key={trueNorth.id} className="lifehq-premium-card overflow-hidden border-[#D6AD64]/25 bg-[linear-gradient(135deg,rgba(214,173,100,0.11),rgba(255,255,255,0.025)_46%,rgba(0,0,0,0.20))] p-0 shadow-[0_28px_90px_rgba(0,0,0,0.30)]">
             {isEditing ? (
-              <form onSubmit={onEditSubmit} className="space-y-4">
+              <form onSubmit={onEditSubmit} className="space-y-4 p-4 sm:p-6">
                 <label className="space-y-2 text-sm text-[#B8B1A7]">
                   <span className="lifehq-label">Titel</span>
                   <input value={editDraft.title} onChange={(event) => onEditDraftChange({ title: event.target.value })} className="lifehq-crud-control" placeholder="Langfristige Richtung" />
@@ -805,16 +854,20 @@ function TrueNorthList({ trueNorths, editingTrueNorthId, editDraft, editError, o
                 </div>
               </form>
             ) : (
-              <div className="flex h-full flex-col justify-between gap-5">
-                <div className="space-y-3">
-                  <p className="text-xs uppercase tracking-[0.2em] text-[#D6AD64]/70">True North</p>
-                  <h4 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">{trueNorth.title}</h4>
-                  {trueNorth.description && <p className="text-sm leading-6 text-[#B8B1A7]">{trueNorth.description}</p>}
+              <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                <div className="min-w-0 space-y-5">
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/75">True North</p>
+                    <h4 className="font-serif text-3xl font-semibold leading-tight tracking-tight text-[#F5F1EA] sm:text-4xl lg:text-5xl">{trueNorth.title}</h4>
+                    {trueNorth.description && <p className="max-w-2xl text-base leading-7 text-[#D8C8AF]">{trueNorth.description}</p>}
+                  </div>
+                  <p className="max-w-xl text-sm leading-6 text-[#7E776E]">Langfristige Richtung deines Lebens.</p>
+                  <div className="flex flex-wrap gap-2 border-t border-white/[0.08] pt-4">
+                    <button type="button" onClick={() => onEditStart(trueNorth)} className="lifehq-button-secondary">Bearbeiten</button>
+                    <button type="button" onClick={() => onDelete(trueNorth.id)} className="lifehq-button-secondary">Löschen</button>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2 border-t border-white/[0.08] pt-4">
-                  <button type="button" onClick={() => onEditStart(trueNorth)} className="lifehq-button-secondary">Bearbeiten</button>
-                  <button type="button" onClick={() => onDelete(trueNorth.id)} className="lifehq-button-secondary">Löschen</button>
-                </div>
+                <ExecutiveCompass />
               </div>
             )}
           </article>
@@ -1627,6 +1680,7 @@ export function HqPage() {
             focuses={focuses}
             trueNorths={trueNorths}
             projects={allStatusProjects}
+            tasks={tasks}
             editingFocusId={editingFocusId}
             editDraft={focusEditDraft}
             editError={focusEditError}
