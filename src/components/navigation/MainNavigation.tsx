@@ -39,11 +39,11 @@ export function MainNavigation({ variant = 'desktop' }: MainNavigationProps) {
           key={item.to}
           to={item.to}
           className={({ isActive }) =>
-            `min-w-0 rounded-2xl border text-sm font-medium transition-colors focus-visible:outline-offset-4 ${
-              isMobile ? 'min-h-14 px-3 py-3 text-center' : 'min-h-[3.5rem] px-4 py-3 text-left'
+            `min-w-0 rounded-2xl border text-sm font-medium transition-all focus-visible:outline-offset-4 ${
+              isMobile ? 'min-h-14 px-3 py-3 text-center' : 'min-h-[4.25rem] px-4 py-3.5 text-left'
             } ${
               isActive
-                ? 'border-[#D6AD64]/30 bg-[#D6AD64]/10 text-[#F5F1EA] shadow-[inset_3px_0_0_rgba(214,173,100,0.95)]'
+                ? 'border-[#D6AD64]/45 bg-[linear-gradient(135deg,rgba(214,173,100,0.18),rgba(214,173,100,0.055))] text-[#F5F1EA] shadow-[0_0_34px_rgba(214,173,100,0.08),inset_3px_0_0_rgba(214,173,100,0.95)]'
                 : 'border-transparent bg-transparent text-[#B8B1A7] hover:border-[#D6AD64]/20 hover:bg-white/[0.035] hover:text-[#F5F1EA]'
             }`
           }
