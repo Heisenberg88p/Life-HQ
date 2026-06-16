@@ -943,6 +943,73 @@ function LifeAreaList({ lifeAreas, projects, tasks, criticalProjects, onLifeArea
   );
 }
 
+interface ActiveProjectPreviewProps {
+  projects: Project[];
+  tasks: Task[];
+  onProjectSelect: (projectId: string) => void;
+}
+
+function ActiveProjectPreview({ projects, tasks, onProjectSelect }: ActiveProjectPreviewProps) {
+  const previewProjects = projects.slice(0, 4);
+  const hiddenProjectCount = Math.max(projects.length - previewProjects.length, 0);
+
+  if (projects.length === 0) {
+    return <EmptyState>Keine aktiven Projekte für die Vertiefung vorhanden.</EmptyState>;
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {previewProjects.map((project) => {
+          const openTaskCount = tasks.filter((task) => task.projectId === project.id && task.status !== 'done').length;
+
+          return (
+            <button key={project.id} type="button" onClick={() => onProjectSelect(project.id)} className="lifehq-card-soft border-white/10 bg-black/15 p-4 text-left transition hover:border-[#D6AD64]/25 hover:bg-[#D6AD64]/[0.035] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60">
+              <p className="lifehq-label">Aktives Projekt</p>
+              <h4 className="mt-3 line-clamp-2 text-base font-semibold text-[#F5F1EA]">{project.name}</h4>
+              <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#B8B1A7]">
+                <span className="lifehq-badge">{projectStatusLabels[project.status]}</span>
+                <span className="lifehq-badge">{getOpenTaskLabel(openTaskCount)}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      {hiddenProjectCount > 0 && <p className="text-sm leading-6 text-[#7E776E]">+ {hiddenProjectCount} weitere aktive Projekte bleiben über Lebensbereiche erreichbar.</p>}
+    </div>
+  );
+}
+
+interface DeepDiveQuickLinksProps {
+  projects: Project[];
+  onProjectSelect: (projectId: string) => void;
+  onTasksOpen: () => void;
+}
+
+function DeepDiveQuickLinks({ projects, onProjectSelect, onTasksOpen }: DeepDiveQuickLinksProps) {
+  const firstProject = projects[0];
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <button type="button" onClick={() => firstProject ? onProjectSelect(firstProject.id) : undefined} disabled={!firstProject} className="lifehq-card-soft border-white/10 bg-black/15 p-4 text-left transition enabled:hover:border-[#D6AD64]/25 enabled:hover:bg-[#D6AD64]/[0.035] disabled:opacity-60">
+        <p className="lifehq-label">Projekte</p>
+        <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Projektansicht öffnen</h4>
+        <p className="mt-2 text-sm leading-6 text-[#7E776E]">{firstProject ? 'Springe in ein bestehendes Projekt.' : 'Noch kein Projekt vorhanden.'}</p>
+      </button>
+      <button type="button" onClick={onTasksOpen} className="lifehq-card-soft border-white/10 bg-black/15 p-4 text-left transition hover:border-[#D6AD64]/25 hover:bg-[#D6AD64]/[0.035] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60">
+        <p className="lifehq-label">Tasks</p>
+        <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Aufgaben öffnen</h4>
+        <p className="mt-2 text-sm leading-6 text-[#7E776E]">Wechsle in die bestehende Aufgabenansicht.</p>
+      </button>
+      <div className="lifehq-card-soft border-white/10 bg-black/10 p-4 text-left opacity-70">
+        <p className="lifehq-label">Kalender</p>
+        <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Noch keine Kalenderroute</h4>
+        <p className="mt-2 text-sm leading-6 text-[#7E776E]">Es wird keine neue Navigation ergänzt.</p>
+      </div>
+    </div>
+  );
+}
+
 interface OrphanProjectListProps {
   projects: Project[];
   tasks: ReturnType<typeof selectTasks>;
@@ -1046,6 +1113,10 @@ export function HqPage() {
 
   const openLifeAreaDetail = (lifeAreaId: string) => {
     navigate(`/life-areas/${lifeAreaId}`);
+  };
+
+  const openTasks = () => {
+    navigate('/tasks');
   };
 
   function getActiveFocusCount(excludedFocusId?: string) {
@@ -1488,6 +1559,14 @@ export function HqPage() {
 
         <HqSection title="Vertiefung" description="Zugang zu Projekten, Aufgaben, Kalender und Historie." eyebrow="05 Vertiefung" prominence="primary">
           <div className="space-y-8">
+            <HqSection title="Schnellzugriffe" description="Direkter Einstieg in bestehende operative Bereiche.">
+              <DeepDiveQuickLinks projects={allStatusProjects} onProjectSelect={openProjectDetail} onTasksOpen={openTasks} />
+            </HqSection>
+
+            <HqSection title="Aktive Projekte" description="Reduzierte Vorschau für den nächsten operativen Einstieg.">
+              <ActiveProjectPreview projects={activeProjects} tasks={tasks} onProjectSelect={openProjectDetail} />
+            </HqSection>
+
             <HqSection
               title="Lebensbereiche"
               action={<button type="button" onClick={toggleLifeAreaForm} className="lifehq-button-secondary w-fit">Lebensbereich hinzufügen</button>}
