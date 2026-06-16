@@ -116,11 +116,11 @@ function HqSection({ title, description, eyebrow, children, prominence = 'second
     prominence === 'primary'
       ? 'space-y-6'
       : prominence === 'focus'
-        ? 'lifehq-premium-card space-y-5 border-[#D6AD64]/25 bg-[#D6AD64]/[0.045] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.24)] sm:p-7'
+        ? 'lifehq-premium-card space-y-5 border-[#D6AD64]/25 bg-[#D6AD64]/[0.045] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.24)] sm:p-7'
         : 'lifehq-secondary-project-panel space-y-4 p-4 sm:p-5';
   const titleClassName =
     prominence === 'primary' || prominence === 'focus'
-      ? 'font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]'
+      ? 'font-serif text-xl font-semibold tracking-tight text-[#F5F1EA] sm:text-2xl'
       : 'text-lg font-semibold tracking-tight text-[#F5F1EA]';
 
   return (
@@ -306,14 +306,14 @@ function AttentionList({ items, onProjectSelect }: { items: AttentionItem[]; onP
 
           if (item.projectId) {
             return (
-              <button key={item.id} type="button" onClick={() => onProjectSelect(item.projectId as string)} className="lifehq-card-soft border-[#D6AD64]/15 bg-black/15 p-4 text-left transition hover:border-[#D6AD64]/30 hover:bg-[#D6AD64]/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60">
+              <button key={item.id} type="button" onClick={() => onProjectSelect(item.projectId as string)} className="lifehq-card-soft min-h-28 border-[#D6AD64]/15 bg-black/15 p-4 text-left transition hover:border-[#D6AD64]/30 hover:bg-[#D6AD64]/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60">
                 {content}
               </button>
             );
           }
 
           return (
-            <article key={item.id} className="lifehq-card-soft border-[#D6AD64]/15 bg-black/15 p-4">
+            <article key={item.id} className="lifehq-card-soft min-h-28 border-[#D6AD64]/15 bg-black/15 p-4">
               {content}
             </article>
           );
@@ -386,8 +386,8 @@ function MomentumCards({ cards }: { cards: MomentumCard[] }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => (
-        <article key={card.id} className="lifehq-premium-card p-5">
-          <p className="font-serif text-5xl font-semibold tracking-tight text-[#F5F1EA]">{card.value}</p>
+        <article key={card.id} className="lifehq-premium-card p-4 sm:p-5">
+          <p className="font-serif text-4xl sm:text-5xl font-semibold tracking-tight text-[#F5F1EA]">{card.value}</p>
           <h4 className="mt-4 text-base font-semibold text-[#F5F1EA]">{card.title}</h4>
           <p className="mt-2 text-sm leading-6 text-[#7E776E]">{card.context}</p>
         </article>
@@ -516,7 +516,7 @@ function FocusList({ focuses, trueNorths, projects, editingFocusId, editDraft, e
               const projectContext = getFocusProjectContext(focus, projects);
 
               return (
-                <article key={focus.id} className="lifehq-premium-card border-[#D6AD64]/30 bg-[#D6AD64]/[0.055] p-5 sm:p-6">
+                <article key={focus.id} className="lifehq-premium-card border-[#D6AD64]/30 bg-[#D6AD64]/[0.055] p-4 sm:p-6">
                   {isEditing ? (
                     <form onSubmit={onEditSubmit} className="space-y-4">
                       <FocusFields draft={editDraft} trueNorths={trueNorths} onChange={onEditDraftChange} />
@@ -536,7 +536,7 @@ function FocusList({ focuses, trueNorths, projects, editingFocusId, editDraft, e
                           <span className="lifehq-badge">Priorität: {focusPriorityLabels[focus.priority]}</span>
                         </div>
                         <div className="space-y-3">
-                          <h4 className="font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA]">{focus.title}</h4>
+                          <h4 className="font-serif text-2xl sm:text-3xl font-semibold tracking-tight text-[#F5F1EA]">{focus.title}</h4>
                           {focus.description && <p className="text-sm leading-6 text-[#B8B1A7]">{focus.description}</p>}
                         </div>
                         <div className="grid gap-2 text-xs leading-5 text-[#7E776E] sm:grid-cols-2">
@@ -555,7 +555,7 @@ function FocusList({ focuses, trueNorths, projects, editingFocusId, editDraft, e
                                   key={projectLink.id}
                                   type="button"
                                   onClick={() => onProjectSelect(projectLink.id)}
-                                  className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[#B8B1A7] transition hover:border-[#D6AD64]/30 hover:text-[#F5F1EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60"
+                                  className="min-h-10 rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 text-[#B8B1A7] transition hover:border-[#D6AD64]/30 hover:text-[#F5F1EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60"
                                 >
                                   {projectLink.name}
                                 </button>
@@ -565,9 +565,9 @@ function FocusList({ focuses, trueNorths, projects, editingFocusId, editDraft, e
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2 border-t border-white/[0.08] pt-4">
-                        <button type="button" onClick={() => onEditStart(focus)} className="lifehq-button-secondary">Bearbeiten</button>
-                        <button type="button" onClick={() => onArchive(focus.id)} className="lifehq-button-secondary">Archivieren</button>
+                      <div className="flex flex-col gap-2 border-t border-white/[0.08] pt-4 sm:flex-row sm:flex-wrap">
+                        <button type="button" onClick={() => onEditStart(focus)} className="lifehq-button-secondary w-full sm:w-auto">Bearbeiten</button>
+                        <button type="button" onClick={() => onArchive(focus.id)} className="lifehq-button-secondary w-full sm:w-auto">Archivieren</button>
                       </div>
                     </div>
                   )}
@@ -964,7 +964,7 @@ function ActiveProjectPreview({ projects, tasks, onProjectSelect }: ActiveProjec
           const openTaskCount = tasks.filter((task) => task.projectId === project.id && task.status !== 'done').length;
 
           return (
-            <button key={project.id} type="button" onClick={() => onProjectSelect(project.id)} className="lifehq-card-soft border-white/10 bg-black/15 p-4 text-left transition hover:border-[#D6AD64]/25 hover:bg-[#D6AD64]/[0.035] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60">
+            <button key={project.id} type="button" onClick={() => onProjectSelect(project.id)} className="lifehq-card-soft min-h-28 border-white/10 bg-black/15 p-4 text-left transition hover:border-[#D6AD64]/25 hover:bg-[#D6AD64]/[0.035] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60">
               <p className="lifehq-label">Aktives Projekt</p>
               <h4 className="mt-3 line-clamp-2 text-base font-semibold text-[#F5F1EA]">{project.name}</h4>
               <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#B8B1A7]">
@@ -991,17 +991,17 @@ function DeepDiveQuickLinks({ projects, onProjectSelect, onTasksOpen }: DeepDive
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <button type="button" onClick={() => firstProject ? onProjectSelect(firstProject.id) : undefined} disabled={!firstProject} className="lifehq-card-soft border-white/10 bg-black/15 p-4 text-left transition enabled:hover:border-[#D6AD64]/25 enabled:hover:bg-[#D6AD64]/[0.035] disabled:opacity-60">
+      <button type="button" onClick={() => firstProject ? onProjectSelect(firstProject.id) : undefined} disabled={!firstProject} className="lifehq-card-soft min-h-28 border-white/10 bg-black/15 p-4 text-left transition enabled:hover:border-[#D6AD64]/25 enabled:hover:bg-[#D6AD64]/[0.035] disabled:opacity-60">
         <p className="lifehq-label">Projekte</p>
         <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Projektansicht öffnen</h4>
         <p className="mt-2 text-sm leading-6 text-[#7E776E]">{firstProject ? 'Springe in ein bestehendes Projekt.' : 'Noch kein Projekt vorhanden.'}</p>
       </button>
-      <button type="button" onClick={onTasksOpen} className="lifehq-card-soft border-white/10 bg-black/15 p-4 text-left transition hover:border-[#D6AD64]/25 hover:bg-[#D6AD64]/[0.035] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60">
+      <button type="button" onClick={onTasksOpen} className="lifehq-card-soft min-h-28 border-white/10 bg-black/15 p-4 text-left transition hover:border-[#D6AD64]/25 hover:bg-[#D6AD64]/[0.035] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60">
         <p className="lifehq-label">Tasks</p>
         <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Aufgaben öffnen</h4>
         <p className="mt-2 text-sm leading-6 text-[#7E776E]">Wechsle in die bestehende Aufgabenansicht.</p>
       </button>
-      <div className="lifehq-card-soft border-white/10 bg-black/10 p-4 text-left opacity-70">
+      <div className="lifehq-card-soft min-h-28 border-white/10 bg-black/10 p-4 text-left opacity-70">
         <p className="lifehq-label">Kalender</p>
         <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Noch keine Kalenderroute</h4>
         <p className="mt-2 text-sm leading-6 text-[#7E776E]">Es wird keine neue Navigation ergänzt.</p>
@@ -1460,11 +1460,11 @@ export function HqPage() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8 sm:space-y-10">
       <section className="space-y-4">
         <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/70">LifeHQ V2 Grundlage</p>
         <div className="max-w-3xl space-y-4">
-          <h1 className="font-serif text-5xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4rem]">HQ</h1>
+          <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4rem]">HQ</h1>
           <p className="max-w-2xl text-base leading-7 text-[#B8B1A7]">
             Eine ruhige Orientierungsebene für Richtung, Fokus, Aufmerksamkeit, Momentum und Vertiefung.
           </p>
