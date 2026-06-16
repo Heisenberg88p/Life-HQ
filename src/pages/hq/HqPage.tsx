@@ -236,14 +236,14 @@ function MotivationCard() {
 
 function ExecutiveCompass() {
   return (
-    <div className="relative mx-auto flex h-40 w-40 shrink-0 items-center justify-center rounded-full border border-[#D6AD64]/20 bg-[radial-gradient(circle,rgba(214,173,100,0.16)_0%,rgba(214,173,100,0.04)_46%,rgba(0,0,0,0)_70%)] text-[#D6AD64] shadow-[0_0_55px_rgba(214,173,100,0.12)] sm:h-48 sm:w-48" aria-hidden="true">
+    <div className="relative mx-auto flex h-52 w-52 shrink-0 items-center justify-center rounded-full border border-[#D6AD64]/20 bg-[radial-gradient(circle,rgba(214,173,100,0.16)_0%,rgba(214,173,100,0.04)_46%,rgba(0,0,0,0)_70%)] text-[#D6AD64] shadow-[0_0_55px_rgba(214,173,100,0.12)] sm:h-64 sm:w-64" aria-hidden="true">
       <div className="absolute inset-4 rounded-full border border-[#D6AD64]/15" />
       <div className="absolute inset-9 rounded-full border border-dashed border-[#D6AD64]/20" />
       <span className="absolute top-3 text-[0.65rem] font-semibold tracking-[0.18em] text-[#D6AD64]/70">N</span>
       <span className="absolute bottom-3 text-[0.65rem] font-semibold tracking-[0.18em] text-[#D6AD64]/70">S</span>
       <span className="absolute left-4 text-[0.65rem] font-semibold tracking-[0.18em] text-[#D6AD64]/70">W</span>
       <span className="absolute right-4 text-[0.65rem] font-semibold tracking-[0.18em] text-[#D6AD64]/70">E</span>
-      <span className="text-7xl leading-none drop-shadow-[0_0_20px_rgba(214,173,100,0.25)] sm:text-8xl">✦</span>
+      <span className="text-8xl leading-none drop-shadow-[0_0_20px_rgba(214,173,100,0.25)] sm:text-9xl">✦</span>
     </div>
   );
 }
@@ -530,6 +530,29 @@ function getMomentumCards(tasks: Task[], projects: Project[], milestones: Milest
   ];
 }
 
+function MomentumTrend({ cards }: { cards: MomentumCard[] }) {
+  const maxValue = Math.max(...cards.map((card) => card.value), 1);
+
+  return (
+    <div className="rounded-3xl border border-white/[0.08] bg-black/15 p-4">
+      <div className="mb-3 flex items-center justify-between text-xs text-[#7E776E]">
+        <span>Verlauf</span>
+        <span>bestehende Werte</span>
+      </div>
+      <div className="flex h-24 items-end gap-3">
+        {cards.map((card) => (
+          <div key={card.id} className="flex flex-1 flex-col items-center gap-2">
+            <div className="w-full rounded-full bg-[#D6AD64]/20" style={{ height: `${Math.max((card.value / maxValue) * 100, 12)}%` }}>
+              <div className="h-full rounded-full bg-[#D6AD64]/70" />
+            </div>
+            <span className="text-[0.65rem] text-[#7E776E]">{card.icon}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function MomentumCards({ cards }: { cards: MomentumCard[] }) {
   const hasMomentum = cards.some((card) => card.value > 0);
 
@@ -555,6 +578,7 @@ function MomentumCards({ cards }: { cards: MomentumCard[] }) {
           </article>
         ))}
       </div>
+      <MomentumTrend cards={cards} />
     </div>
   );
 }
@@ -610,6 +634,17 @@ function getFocusOpenTaskCount(focus: Focus, projects: Project[], tasks: Task[])
   const focusProjectIds = new Set(projects.filter((project) => project.focusId === focus.id).map((project) => project.id));
 
   return tasks.filter((task) => task.status !== 'done' && task.projectId && focusProjectIds.has(task.projectId)).length;
+}
+
+function getFocusCompletionPercent(focus: Focus, projects: Project[], tasks: Task[]): number {
+  const focusProjectIds = new Set(projects.filter((project) => project.focusId === focus.id).map((project) => project.id));
+  const focusTasks = tasks.filter((task) => task.projectId && focusProjectIds.has(task.projectId));
+
+  if (focusTasks.length === 0) {
+    return 0;
+  }
+
+  return Math.round((focusTasks.filter((task) => task.status === 'done').length / focusTasks.length) * 100);
 }
 
 function FocusFields({ draft, trueNorths, onChange }: { draft: FocusDraft; trueNorths: TrueNorth[]; onChange: (patch: Partial<FocusDraft>) => void }) {
@@ -685,6 +720,8 @@ function FocusList({ focuses, trueNorths, projects, tasks, editingFocusId, editD
               const trueNorthTitle = getTrueNorthTitle(trueNorths, focus.trueNorthReference);
               const projectContext = getFocusProjectContext(focus, projects);
               const openTaskCount = getFocusOpenTaskCount(focus, projects, tasks);
+              const completionPercent = getFocusCompletionPercent(focus, projects, tasks);
+              const primaryProjectLink = projectContext.projectLinks[0];
 
               return (
                 <article key={focus.id} className="lifehq-premium-card overflow-hidden border-[#D6AD64]/30 bg-[linear-gradient(135deg,rgba(214,173,100,0.095),rgba(255,255,255,0.025)_42%,rgba(0,0,0,0.16))] p-0 shadow-[0_28px_90px_rgba(0,0,0,0.28)]">
@@ -700,7 +737,7 @@ function FocusList({ focuses, trueNorths, projects, tasks, editingFocusId, editD
                       </div>
                     </form>
                   ) : (
-                    <div className="flex h-full flex-col justify-between gap-6 p-4 sm:p-6">
+                    <div className="flex h-full flex-col justify-between gap-5 p-5 sm:p-6">
                       <div className="space-y-5">
                         <div className="flex items-start gap-4">
                           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#D6AD64]/20 bg-[#D6AD64]/10 text-2xl text-[#D6AD64] shadow-[0_0_30px_rgba(214,173,100,0.10)]" aria-hidden="true">
@@ -712,51 +749,25 @@ function FocusList({ focuses, trueNorths, projects, tasks, editingFocusId, editD
                               <span className="lifehq-badge">Priorität: {focusPriorityLabels[focus.priority]}</span>
                             </div>
                             <div className="space-y-2">
-                              <h4 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA] sm:text-3xl">{focus.title}</h4>
-                              {focus.description && <p className="text-sm leading-6 text-[#B8B1A7]">{focus.description}</p>}
+                              <h4 className="font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA]">{focus.title}</h4>
+                              {focus.description && <p className="line-clamp-2 text-sm leading-6 text-[#B8B1A7]">{focus.description}</p>}
                             </div>
                           </div>
                         </div>
-                        <div className="grid gap-3 text-sm leading-6 sm:grid-cols-3">
-                          <div className="rounded-2xl border border-white/[0.08] bg-black/15 p-3">
-                            <p className="lifehq-label">Projekte</p>
-                            <p className="mt-1 text-lg font-semibold text-[#F5F1EA]">{projectContext.projectCount}</p>
+                        <p className="text-sm font-medium text-[#D8C8AF]">{projectContext.projectCount} {projectContext.projectCount === 1 ? 'Projekt' : 'Projekte'} • {openTaskCount} {openTaskCount === 1 ? 'Aufgabe' : 'Aufgaben'}</p>
+                        <div className="space-y-2">
+                          <div className="h-2 overflow-hidden rounded-full bg-white/[0.08]">
+                            <div className="h-full rounded-full bg-[#D6AD64]" style={{ width: `${completionPercent}%` }} />
                           </div>
-                          <div className="rounded-2xl border border-white/[0.08] bg-black/15 p-3">
-                            <p className="lifehq-label">Aufgaben</p>
-                            <p className="mt-1 text-lg font-semibold text-[#F5F1EA]">{openTaskCount}</p>
-                          </div>
-                          <div className="rounded-2xl border border-white/[0.08] bg-black/15 p-3">
-                            <p className="lifehq-label">Zieldatum</p>
-                            <p className="mt-1 text-sm font-semibold text-[#F5F1EA]">{focus.targetDate ?? 'Offen'}</p>
+                          <div className="flex items-center justify-between text-xs leading-5 text-[#7E776E]">
+                            <span>Fortschritt</span>
+                            <span className="font-medium text-[#F5F1EA]">{completionPercent}%</span>
                           </div>
                         </div>
-                        <div className="grid gap-2 text-xs leading-5 text-[#7E776E] sm:grid-cols-2">
-                          <p>Start: {focus.startDate}</p>
-                          <p className="sm:text-right">Richtung: {trueNorthTitle ?? 'Keine Richtung zugeordnet'}</p>
-                        </div>
-                        <div className="rounded-3xl border border-white/10 bg-black/15 px-4 py-4 text-sm leading-6 text-[#B8B1A7]">
-                          <p className="font-medium text-[#F5F1EA]">
-                            {projectContext.projectCount === 0 ? 'Noch keine Projekte zugeordnet.' : 'Projektkontext'}
-                          </p>
-                          {projectContext.projectLinks.length > 0 && (
-                            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#7E776E]">
-                              {projectContext.projectLinks.map((projectLink) => (
-                                <button
-                                  key={projectLink.id}
-                                  type="button"
-                                  onClick={() => onProjectSelect(projectLink.id)}
-                                  className="min-h-10 rounded-full border border-[#D6AD64]/15 bg-[#D6AD64]/[0.045] px-3 py-2 text-[#D8C8AF] transition hover:border-[#D6AD64]/35 hover:text-[#F5F1EA] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60"
-                                >
-                                  {projectLink.name}
-                                </button>
-                              ))}
-                              {projectContext.additionalProjectCount > 0 && <span>+ {projectContext.additionalProjectCount} weitere</span>}
-                            </div>
-                          )}
-                        </div>
+                        <p className="text-xs leading-5 text-[#7E776E]">Richtung: {trueNorthTitle ?? 'Keine Richtung zugeordnet'}</p>
                       </div>
                       <div className="flex flex-col gap-2 border-t border-white/[0.08] pt-4 sm:flex-row sm:flex-wrap">
+                        {primaryProjectLink && <button type="button" onClick={() => onProjectSelect(primaryProjectLink.id)} className="lifehq-button-secondary w-full sm:w-auto">Öffnen</button>}
                         <button type="button" onClick={() => onEditStart(focus)} className="lifehq-button-secondary w-full sm:w-auto">Bearbeiten</button>
                         <button type="button" onClick={() => onArchive(focus.id)} className="lifehq-button-secondary w-full sm:w-auto">Archivieren</button>
                       </div>
@@ -913,11 +924,11 @@ function TrueNorthList({ trueNorths, editingTrueNorthId, editDraft, editError, o
                 </div>
               </form>
             ) : (
-              <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+              <div className="grid gap-8 p-6 sm:p-9 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
                 <div className="min-w-0 space-y-5">
                   <div className="space-y-2">
                     <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/75">True North</p>
-                    <h4 className="font-serif text-3xl font-semibold leading-tight tracking-tight text-[#F5F1EA] sm:text-4xl lg:text-5xl">{trueNorth.title}</h4>
+                    <h4 className="font-serif text-4xl font-semibold leading-tight tracking-tight text-[#F5F1EA] sm:text-5xl lg:text-6xl">{trueNorth.title}</h4>
                     {trueNorth.description && <p className="max-w-2xl text-base leading-7 text-[#D8C8AF]">{trueNorth.description}</p>}
                   </div>
                   <p className="max-w-xl text-sm leading-6 text-[#7E776E]">Langfristige Richtung deines Lebens.</p>
@@ -1791,68 +1802,8 @@ export function HqPage() {
           </HqSection>
 
           <HqSection title="Vertiefung" description="Direkter Zugriff auf bestehende operative Bereiche." eyebrow="05 Vertiefung" prominence="primary">
-            <div className="space-y-8">
-            <HqSection title="Schnellzugriff" description="Dein persönliches Command Center.">
+            <div className="space-y-4">
               <DeepDiveQuickLinks projects={allStatusProjects} onProjectSelect={openProjectDetail} onTasksOpen={openTasks} />
-            </HqSection>
-
-            <HqSection title="Aktive Projekte" description="Reduzierte Vorschau für den nächsten operativen Einstieg.">
-              <ActiveProjectPreview projects={activeProjects} tasks={tasks} onProjectSelect={openProjectDetail} />
-            </HqSection>
-
-            <HqSection
-              title="Lebensbereiche"
-              action={<button type="button" onClick={toggleLifeAreaForm} className="lifehq-button-secondary w-fit">Lebensbereich hinzufügen</button>}
-            >
-              {isLifeAreaFormOpen && (
-                <form onSubmit={handleCreateLifeArea} className="lifehq-crud-panel mb-5">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <label className="space-y-2 text-sm text-[#B8B1A7]">
-                      <span className="lifehq-label">Name</span>
-                      <input value={lifeAreaDraft.name} onChange={(event) => updateLifeAreaDraft({ name: event.target.value })} className="lifehq-crud-control" placeholder="Name des Lebensbereichs" />
-                    </label>
-                    <label className="space-y-2 text-sm text-[#B8B1A7]">
-                      <span className="lifehq-label">Beschreibung</span>
-                      <input value={lifeAreaDraft.description} onChange={(event) => updateLifeAreaDraft({ description: event.target.value })} className="lifehq-crud-control" placeholder="Optionale Beschreibung" />
-                    </label>
-                  </div>
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    {lifeAreaError ? <p className="text-sm text-[#D6AD64]">{lifeAreaError}</p> : <p className="text-sm text-[#7E776E]">Neue Lebensbereiche starten ohne Projekte.</p>}
-                    <div className="flex flex-wrap gap-2">
-                      <button type="button" onClick={() => { resetLifeAreaDraft(); setIsLifeAreaFormOpen(false); }} className="lifehq-button-secondary">Abbrechen</button>
-                      <button type="submit" className="lifehq-button-primary">Speichern</button>
-                    </div>
-                  </div>
-                </form>
-              )}
-              <LifeAreaList lifeAreas={lifeAreas} projects={allStatusProjects} tasks={tasks} criticalProjects={criticalProjects} onLifeAreaSelect={openLifeAreaDetail} />
-            </HqSection>
-
-            <OrphanProjectList
-              projects={orphanProjects}
-              tasks={tasks}
-              onProjectSelect={openProjectDetail}
-              action={<button type="button" onClick={toggleProjectForm} className="lifehq-button-secondary w-fit">Projekt hinzufügen</button>}
-            >
-              {isProjectFormOpen && (
-                <form onSubmit={handleCreateProject} className="lifehq-crud-panel">
-                  <div className="grid gap-4 lg:grid-cols-3">
-                    <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-2"><span className="lifehq-label">Projektname</span><input value={projectDraft.name} onChange={(event) => updateProjectDraft({ name: event.target.value })} className="lifehq-crud-control" placeholder="Name des Projekts" /></label>
-                    <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Lebensbereich</span><select value={projectDraft.lifeAreaId} onChange={(event) => updateProjectDraft({ lifeAreaId: event.target.value })} className="lifehq-crud-control"><option value="">Ohne Lebensbereich</option>{lifeAreas.map((lifeArea) => <option key={lifeArea.id} value={lifeArea.id}>{getLifeAreaDisplayName(lifeArea.name)}</option>)}</select></label>
-                    <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Fokus-Zuordnung</span><select value={projectDraft.focusId} onChange={(event) => updateProjectDraft({ focusId: event.target.value })} className="lifehq-crud-control"><option value="">Kein Fokus</option>{selectableFocuses.map((focus) => <option key={focus.id} value={focus.id}>{focus.title}</option>)}</select></label>
-                    <label className="space-y-2 text-sm text-[#B8B1A7] lg:col-span-3"><span className="lifehq-label">Beschreibung</span><textarea value={projectDraft.description} onChange={(event) => updateProjectDraft({ description: event.target.value })} className="lifehq-crud-control" rows={3} placeholder="Optionale Beschreibung oder Vision" /></label>
-                    <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Status</span><select value={projectDraft.status} onChange={(event) => updateProjectDraft({ status: event.target.value as ProjectStatus })} className="lifehq-crud-control">{Object.entries(projectStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                    <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Priorität</span><select value={projectDraft.priority} onChange={(event) => updateProjectDraft({ priority: event.target.value as Priority })} className="lifehq-crud-control">{Object.entries(priorityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                    <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Ampelstatus</span><select value={projectDraft.trafficLightStatus} onChange={(event) => updateProjectDraft({ trafficLightStatus: event.target.value as TrafficLightStatus })} className="lifehq-crud-control">{Object.entries(trafficLightLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                    <label className="space-y-2 text-sm text-[#B8B1A7]"><span className="lifehq-label">Zieltermin</span><input type="date" value={projectDraft.targetDate} onChange={(event) => updateProjectDraft({ targetDate: event.target.value })} className="lifehq-crud-control" /></label>
-                  </div>
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    {projectError ? <p className="text-sm text-[#D6AD64]">{projectError}</p> : <p className="text-sm text-[#7E776E]">Projekte können bewusst ohne Lebensbereich starten.</p>}
-                    <div className="flex flex-wrap gap-2"><button type="button" onClick={() => { resetProjectDraft(); setIsProjectFormOpen(false); }} className="lifehq-button-secondary">Abbrechen</button><button type="submit" className="lifehq-button-primary">Speichern</button></div>
-                  </div>
-                </form>
-              )}
-            </OrphanProjectList>
             </div>
           </HqSection>
 
