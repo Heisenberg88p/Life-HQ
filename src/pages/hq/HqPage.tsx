@@ -141,15 +141,98 @@ function HqSection({ title, description, eyebrow, children, prominence = 'second
   );
 }
 
-function HqPlaceholder({ children }: { children: ReactNode }) {
+
+type QuickStat = {
+  id: string;
+  label: string;
+  value: number;
+  context: string;
+  tone: 'green' | 'gold' | 'blue' | 'muted';
+};
+
+const quickStatToneClassNames: Record<QuickStat['tone'], string> = {
+  green: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200',
+  gold: 'border-[#D6AD64]/25 bg-[#D6AD64]/10 text-[#F5D28B]',
+  blue: 'border-sky-400/20 bg-sky-400/10 text-sky-200',
+  muted: 'border-white/10 bg-white/[0.04] text-[#B8B1A7]',
+};
+
+function formatTodayPillDate(date = new Date()): string {
+  return new Intl.DateTimeFormat('de-DE', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
+}
+
+function isOverdueDate(date?: string, today = getTodayDateOnly()): boolean {
+  return Boolean(date && date < today);
+}
+
+function getQuickStats(projects: Project[], tasks: Task[], milestones: Milestone[], pausedProjects: Project[]): QuickStat[] {
+  const overdueProjectCount = projects.filter((project) => project.status !== 'completed' && isOverdueDate(project.targetDate)).length;
+  const overdueTaskCount = tasks.filter((task) => task.status !== 'done' && isOverdueDate(task.dueDate)).length;
+  const overdueMilestoneCount = milestones.filter((milestone) => milestone.status !== 'done' && isOverdueDate(milestone.targetDate)).length;
+
+  return [
+    {
+      id: 'active-projects',
+      label: 'Aktive Projekte',
+      value: projects.filter((project) => project.status === 'active').length,
+      context: 'in Bewegung',
+      tone: 'green',
+    },
+    {
+      id: 'overdue',
+      label: 'Überfällig',
+      value: overdueProjectCount + overdueTaskCount + overdueMilestoneCount,
+      context: 'aus bestehenden Daten',
+      tone: 'gold',
+    },
+    {
+      id: 'open-tasks',
+      label: 'Offene Aufgaben',
+      value: tasks.filter((task) => task.status !== 'done').length,
+      context: 'noch offen',
+      tone: 'blue',
+    },
+    {
+      id: 'paused-projects',
+      label: 'Pausierte Projekte',
+      value: pausedProjects.length,
+      context: 'zurückgestellt',
+      tone: 'muted',
+    },
+  ];
+}
+
+function QuickStats({ stats }: { stats: QuickStat[] }) {
   return (
-    <div className="lifehq-card-soft border-white/10 bg-black/15 px-4 py-4 text-sm leading-6 text-[#B8B1A7] sm:px-5">
-      {children}
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {stats.map((stat) => (
+        <article key={stat.id} className="lifehq-card-soft flex min-h-24 items-center gap-4 border-white/10 bg-black/15 p-4">
+          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-lg font-semibold ${quickStatToneClassNames[stat.tone]}`} aria-hidden="true">
+            {stat.value}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[#F5F1EA]">{stat.label}</p>
+            <p className="mt-1 text-xs leading-5 text-[#7E776E]">{stat.context}</p>
+          </div>
+        </article>
+      ))}
     </div>
   );
 }
 
-
+function MotivationCard() {
+  return (
+    <aside className="lifehq-premium-card border-[#D6AD64]/25 bg-[#D6AD64]/[0.055] p-5 text-[#F5F1EA] sm:p-6">
+      <p className="text-xs uppercase tracking-[0.24em] text-[#D6AD64]/70">Impuls</p>
+      <p className="mt-4 font-serif text-xl font-semibold leading-8 tracking-tight sm:text-2xl">Fokussiere dich auf das Wesentliche. Jeden Tag.</p>
+    </aside>
+  );
+}
 type AttentionItemType = 'Projekt' | 'Task' | 'Meilenstein' | 'Wiedervorlage';
 
 type AttentionItem = {
@@ -384,7 +467,7 @@ function MomentumCards({ cards }: { cards: MomentumCard[] }) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2">
       {cards.map((card) => (
         <article key={card.id} className="lifehq-premium-card p-4 sm:p-5">
           <p className="font-serif text-4xl sm:text-5xl font-semibold tracking-tight text-[#F5F1EA]">{card.value}</p>
@@ -1106,6 +1189,8 @@ export function HqPage() {
   const selectableFocuses = focuses.filter((focus) => focus.status !== 'Archived');
   const attentionItems = getAttentionItems(allStatusProjects, tasks, milestones);
   const momentumCards = getMomentumCards(tasks, allStatusProjects, milestones, focuses);
+  const quickStats = getQuickStats(allStatusProjects, tasks, milestones, pausedProjects);
+  const todayPillDate = formatTodayPillDate();
 
   const openProjectDetail = (projectId: string) => {
     navigate(`/projects/${projectId}`);
@@ -1460,19 +1545,26 @@ export function HqPage() {
   }
 
   return (
-    <div className="space-y-8 sm:space-y-10">
-      <section className="space-y-4">
-        <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/70">LifeHQ V2 Grundlage</p>
-        <div className="max-w-3xl space-y-4">
-          <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4rem]">HQ</h1>
-          <p className="max-w-2xl text-base leading-7 text-[#B8B1A7]">
-            Eine ruhige Orientierungsebene für Richtung, Fokus, Aufmerksamkeit, Momentum und Vertiefung.
-          </p>
+    <div className="space-y-6 sm:space-y-8">
+      <section className="space-y-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-3xl space-y-3">
+            <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4rem]">HQ</h1>
+            <p className="max-w-2xl text-base leading-7 text-[#B8B1A7]">
+              Dein Überblick für Richtung, Fokus, Aufmerksamkeit und Momentum.
+            </p>
+          </div>
+          <div className="lifehq-card-soft flex w-fit items-center gap-3 border-[#D6AD64]/20 bg-black/20 px-4 py-3 text-sm text-[#B8B1A7]" aria-label={`Heute ist ${todayPillDate}`}>
+            <span className="text-[#D6AD64]" aria-hidden="true">◷</span>
+            <span>{todayPillDate}</span>
+          </div>
         </div>
+        <QuickStats stats={quickStats} />
       </section>
 
-      <div className="space-y-6">
-        <HqSection
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.44fr)] xl:items-start">
+        <div className="space-y-6">
+          <HqSection
           title="True North"
           description="Langfristige Richtung deines Lebens."
           eyebrow="01 Orientierung"
@@ -1553,12 +1645,15 @@ export function HqPage() {
           <AttentionList items={attentionItems} onProjectSelect={openProjectDetail} />
         </HqSection>
 
-        <HqSection title="Momentum" description="Komme ich aktuell voran?" eyebrow="04 Momentum">
-          <MomentumCards cards={momentumCards} />
-        </HqSection>
+        </div>
 
-        <HqSection title="Vertiefung" description="Zugang zu Projekten, Aufgaben, Kalender und Historie." eyebrow="05 Vertiefung" prominence="primary">
-          <div className="space-y-8">
+        <div className="space-y-6 xl:sticky xl:top-6">
+          <HqSection title="Momentum" description="Komme ich aktuell voran?" eyebrow="04 Momentum">
+            <MomentumCards cards={momentumCards} />
+          </HqSection>
+
+          <HqSection title="Vertiefung" description="Zugang zu Projekten, Aufgaben, Kalender und Historie." eyebrow="05 Vertiefung" prominence="primary">
+            <div className="space-y-8">
             <HqSection title="Schnellzugriffe" description="Direkter Einstieg in bestehende operative Bereiche.">
               <DeepDiveQuickLinks projects={allStatusProjects} onProjectSelect={openProjectDetail} onTasksOpen={openTasks} />
             </HqSection>
@@ -1620,8 +1715,11 @@ export function HqPage() {
                 </form>
               )}
             </OrphanProjectList>
-          </div>
-        </HqSection>
+            </div>
+          </HqSection>
+
+          <MotivationCard />
+        </div>
       </div>
     </div>
   );
