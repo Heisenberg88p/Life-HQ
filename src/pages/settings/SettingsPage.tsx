@@ -41,7 +41,7 @@ function SettingsSection({ title, eyebrow, children }: SettingsSectionProps) {
 }
 
 function getImportItemCount(data: PersistableLifeHQState): number {
-  return data.lifeAreas.length + data.projects.length + data.tasks.length + data.milestones.length + data.historyEntries.length;
+  return data.trueNorths.length + data.focuses.length + data.lifeAreas.length + data.projects.length + data.tasks.length + data.milestones.length + data.historyEntries.length;
 }
 
 function getMessageClassName(type: DataSafetyMessage['type']) {
@@ -183,7 +183,7 @@ export function SettingsPage() {
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-[1.1rem] border border-white/[0.08] bg-black/20 p-4">
               <p className="font-semibold text-[#F5F1EA]">Daten exportieren</p>
-              <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">Lädt eine JSON-Datei mit Lebensbereichen, Projekten, Aufgaben, Meilensteinen und Verlauf herunter.</p>
+              <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">Lädt eine JSON-Datei mit True North, Fokussen, Lebensbereichen, Projekten, Aufgaben, Meilensteinen und Verlauf herunter.</p>
               <button type="button" onClick={handleExportData} className="lifehq-button-primary mt-3">
                 Daten exportieren
               </button>
