@@ -1,11 +1,13 @@
 import type { StorageValue, PersistStorage } from 'zustand/middleware';
 import { isValidDateString, safeNormalizeDate } from '../logic/dateLogic';
 import type { Priority, ProjectStatus, TrafficLightStatus, TaskStatus, MilestoneStatus } from '../models/common';
+import type { Focus, FocusPriority, FocusStatus } from '../models/focus';
 import type { LifeArea } from '../models/lifeArea';
 import type { Milestone } from '../models/milestone';
 import type { Project } from '../models/project';
 import type { ProjectHistoryEntry, ProjectHistoryEntryType } from '../models/projectHistory';
 import type { Task } from '../models/task';
+import type { TrueNorth } from '../models/trueNorth';
 import {
   MILESTONE_STATUS_OPTIONS,
   PRIORITY_OPTIONS,
@@ -15,9 +17,11 @@ import {
 } from '../constants/statusOptions';
 
 export const LIFEHQ_STORAGE_KEY = 'lifehq-v1-storage';
-export const LIFEHQ_STORAGE_VERSION = 1;
+export const LIFEHQ_STORAGE_VERSION = 3;
 
 export interface PersistableLifeHQState {
+  focuses: Focus[];
+  trueNorths: TrueNorth[];
   lifeAreas: LifeArea[];
   projects: Project[];
   tasks: Task[];
@@ -28,6 +32,11 @@ export interface PersistableLifeHQState {
 export interface LifeHQPersistedState extends PersistableLifeHQState {
   storageVersion: number;
 }
+
+const FOCUS_STATUS_OPTIONS: FocusStatus[] = ['Active', 'Paused', 'Completed', 'Archived'];
+const FOCUS_PRIORITY_OPTIONS: FocusPriority[] = ['High', 'Medium', 'Low'];
+
+const getTodayDateOnly = () => new Date().toISOString().slice(0, 10);
 
 const HISTORY_ENTRY_TYPE_OPTIONS: ProjectHistoryEntryType[] = [
   'created',
@@ -117,6 +126,7 @@ const sanitizeProject = (value: unknown, timestampFallback: string): Project | u
     name,
     description: getOptionalString(value.description),
     lifeAreaId: getOptionalString(value.lifeAreaId),
+    focusId: getOptionalString(value.focusId) ?? null,
     status: getEnumValue<ProjectStatus>(value.status, PROJECT_STATUS_OPTIONS, 'planned'),
     priority: getEnumValue<Priority>(value.priority, PRIORITY_OPTIONS, 'medium'),
     trafficLightStatus: getEnumValue<TrafficLightStatus>(value.trafficLightStatus, TRAFFIC_LIGHT_STATUS_OPTIONS, 'green'),
@@ -232,8 +242,57 @@ const sanitizeArray = <T>(value: unknown, fallback: T[], sanitizeItem: (item: un
   }, []);
 };
 
+const sanitizeFocus = (value: unknown, timestampFallback: string): Focus | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const id = getRequiredString(value.id);
+  const title = getRequiredString(value.title);
+
+  if (!id || !title) {
+    return undefined;
+  }
+
+  return {
+    id,
+    title,
+    description: getOptionalString(value.description),
+    status: getEnumValue<FocusStatus>(value.status, FOCUS_STATUS_OPTIONS, 'Active'),
+    priority: getEnumValue<FocusPriority>(value.priority, FOCUS_PRIORITY_OPTIONS, 'Medium'),
+    startDate: getOptionalDateOnly(value.startDate) ?? getTodayDateOnly(),
+    targetDate: getOptionalDateOnly(value.targetDate),
+    trueNorthReference: getOptionalString(value.trueNorthReference),
+    createdAt: getRequiredTimestamp(value.createdAt, timestampFallback),
+    updatedAt: getRequiredTimestamp(value.updatedAt, timestampFallback),
+  };
+};
+
+const sanitizeTrueNorth = (value: unknown, timestampFallback: string): TrueNorth | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const id = getRequiredString(value.id);
+  const title = getRequiredString(value.title);
+
+  if (!id || !title) {
+    return undefined;
+  }
+
+  return {
+    id,
+    title,
+    description: getOptionalString(value.description),
+    createdAt: getRequiredTimestamp(value.createdAt, timestampFallback),
+    updatedAt: getRequiredTimestamp(value.updatedAt, timestampFallback),
+  };
+};
+
 export const getPersistedLifeHQState = (state: PersistableLifeHQState): LifeHQPersistedState => ({
   storageVersion: LIFEHQ_STORAGE_VERSION,
+  focuses: state.focuses,
+  trueNorths: state.trueNorths,
   lifeAreas: state.lifeAreas,
   projects: state.projects,
   tasks: state.tasks,
@@ -251,10 +310,20 @@ export const sanitizePersistedLifeHQState = (
 
   const timestampFallback = new Date().toISOString();
 
+  const focuses = sanitizeArray(persistedState.focuses, fallbackState.focuses, (item) => sanitizeFocus(item, timestampFallback));
+  const validFocusIds = new Set(focuses.map((focus) => focus.id));
+  const projects = sanitizeArray(persistedState.projects, fallbackState.projects, (item) => sanitizeProject(item, timestampFallback))
+    .map((project) => ({
+      ...project,
+      focusId: project.focusId && validFocusIds.has(project.focusId) ? project.focusId : null,
+    }));
+
   return {
     storageVersion: LIFEHQ_STORAGE_VERSION,
+    focuses,
+    trueNorths: sanitizeArray(persistedState.trueNorths, fallbackState.trueNorths, (item) => sanitizeTrueNorth(item, timestampFallback)),
     lifeAreas: sanitizeArray(persistedState.lifeAreas, fallbackState.lifeAreas, (item) => sanitizeLifeArea(item, timestampFallback)),
-    projects: sanitizeArray(persistedState.projects, fallbackState.projects, (item) => sanitizeProject(item, timestampFallback)),
+    projects,
     tasks: sanitizeArray(persistedState.tasks, fallbackState.tasks, (item) => sanitizeTask(item, timestampFallback)),
     milestones: sanitizeArray(persistedState.milestones, fallbackState.milestones, (item) => sanitizeMilestone(item, timestampFallback)),
     historyEntries: sanitizeArray(persistedState.historyEntries, fallbackState.historyEntries, (item) => sanitizeHistoryEntry(item, timestampFallback)),
@@ -266,6 +335,8 @@ export const mergePersistedLifeHQState = <T extends PersistableLifeHQState>(pers
 
   return {
     ...currentState,
+    focuses: sanitizedState.focuses,
+    trueNorths: sanitizedState.trueNorths,
     lifeAreas: sanitizedState.lifeAreas,
     projects: sanitizedState.projects,
     tasks: sanitizedState.tasks,
