@@ -16,10 +16,10 @@ function BrandTreeIcon() {
 export function LifeHQBrand({ className = '' }: LifeHQBrandProps) {
   return (
     <div className={`flex items-center gap-3 ${className}`} aria-label="LifeHQ V1">
-      <div className="lifehq-brand-tree" aria-hidden="true"><BrandTreeIcon /></div>
+      <div className="lifehq-brand-tree shadow-[0_0_30px_rgba(214,173,100,0.10)]" aria-hidden="true"><BrandTreeIcon /></div>
       <div className="flex items-baseline gap-2">
-        <p className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">LifeHQ</p>
-        <p className="text-sm font-medium text-[#D6AD64]">V1</p>
+        <p className="font-serif text-[1.7rem] font-semibold tracking-tight text-[#F5F1EA]">LifeHQ</p>
+        <p className="text-sm font-semibold text-[#D6AD64]">V1</p>
       </div>
     </div>
   );

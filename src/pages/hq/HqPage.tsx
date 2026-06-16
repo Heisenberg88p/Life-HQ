@@ -1181,26 +1181,51 @@ interface DeepDiveQuickLinksProps {
   onTasksOpen: () => void;
 }
 
+type DeepDiveLinkCardProps = {
+  icon: string;
+  title: string;
+  subtitle: string;
+  onClick?: () => void;
+  disabled?: boolean;
+};
+
+function DeepDiveLinkCard({ icon, title, subtitle, onClick, disabled }: DeepDiveLinkCardProps) {
+  const content = (
+    <>
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.035] text-lg text-[#D6AD64]" aria-hidden="true">{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold text-[#F5F1EA]">{title}</span>
+        <span className="mt-1 block text-xs leading-5 text-[#7E776E]">{subtitle}</span>
+      </span>
+      <span className="text-xl text-[#D6AD64]/65 transition-transform group-enabled:group-hover:translate-x-1" aria-hidden="true">›</span>
+    </>
+  );
+
+  if (disabled || !onClick) {
+    return (
+      <div className="flex min-h-20 items-center gap-3 rounded-3xl border border-white/[0.08] bg-black/10 px-4 py-3 opacity-65">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <button type="button" onClick={onClick} className="group flex min-h-20 w-full items-center gap-3 rounded-3xl border border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.04),rgba(0,0,0,0.16))] px-4 py-3 text-left transition hover:border-[#D6AD64]/25 hover:bg-[#D6AD64]/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60">
+      {content}
+    </button>
+  );
+}
+
 function DeepDiveQuickLinks({ projects, onProjectSelect, onTasksOpen }: DeepDiveQuickLinksProps) {
   const firstProject = projects[0];
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <button type="button" onClick={() => firstProject ? onProjectSelect(firstProject.id) : undefined} disabled={!firstProject} className="lifehq-card-soft min-h-28 border-white/10 bg-black/15 p-4 text-left transition enabled:hover:border-[#D6AD64]/25 enabled:hover:bg-[#D6AD64]/[0.035] disabled:opacity-60">
-        <p className="lifehq-label">Projekte</p>
-        <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Projektansicht öffnen</h4>
-        <p className="mt-2 text-sm leading-6 text-[#7E776E]">{firstProject ? 'Springe in ein bestehendes Projekt.' : 'Noch kein Projekt vorhanden.'}</p>
-      </button>
-      <button type="button" onClick={onTasksOpen} className="lifehq-card-soft min-h-28 border-white/10 bg-black/15 p-4 text-left transition hover:border-[#D6AD64]/25 hover:bg-[#D6AD64]/[0.035] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60">
-        <p className="lifehq-label">Tasks</p>
-        <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Aufgaben öffnen</h4>
-        <p className="mt-2 text-sm leading-6 text-[#7E776E]">Wechsle in die bestehende Aufgabenansicht.</p>
-      </button>
-      <div className="lifehq-card-soft min-h-28 border-white/10 bg-black/10 p-4 text-left opacity-70">
-        <p className="lifehq-label">Kalender</p>
-        <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">Noch keine Kalenderroute</h4>
-        <p className="mt-2 text-sm leading-6 text-[#7E776E]">Es wird keine neue Navigation ergänzt.</p>
-      </div>
+    <div className="space-y-3">
+      <DeepDiveLinkCard icon="▣" title="Alle Projekte" subtitle={firstProject ? 'Bestehende Projektansicht öffnen' : 'Noch kein Projekt vorhanden'} onClick={firstProject ? () => onProjectSelect(firstProject.id) : undefined} disabled={!firstProject} />
+      <DeepDiveLinkCard icon="☑" title="Alle Aufgaben" subtitle="Alle offenen Aufgaben" onClick={onTasksOpen} />
+      <DeepDiveLinkCard icon="◷" title="Kalender" subtitle="Keine bestehende Route vorhanden" disabled />
+      <DeepDiveLinkCard icon="↺" title="Historie" subtitle="Über bestehende Projektansichten erreichbar" disabled />
+      <DeepDiveLinkCard icon="□" title="Archiv" subtitle="Keine bestehende Route vorhanden" disabled />
     </div>
   );
 }
@@ -1718,7 +1743,7 @@ export function HqPage() {
 
         <HqSection
           title="Aktueller Fokus"
-          description="Verwalte bis zu fünf aktuell priorisierte Lebensthemen."
+          description="Deine aktuellen Prioritäten auf einen Blick."
           eyebrow="02 Fokus"
           prominence="focus"
           action={<button type="button" onClick={toggleFocusForm} className="lifehq-button-primary w-fit">Fokus hinzufügen</button>}
@@ -1760,14 +1785,14 @@ export function HqPage() {
 
         </div>
 
-        <div className="space-y-6 xl:sticky xl:top-6">
+        <div className="space-y-4 rounded-[1.75rem] border border-white/[0.06] bg-white/[0.015] p-3 shadow-[0_24px_90px_rgba(0,0,0,0.20)] sm:p-4 xl:sticky xl:top-6">
           <HqSection title="Momentum" description="Komme ich aktuell voran?" eyebrow="04 Momentum">
             <MomentumCards cards={momentumCards} />
           </HqSection>
 
-          <HqSection title="Vertiefung" description="Zugang zu Projekten, Aufgaben, Kalender und Historie." eyebrow="05 Vertiefung" prominence="primary">
+          <HqSection title="Vertiefung" description="Direkter Zugriff auf bestehende operative Bereiche." eyebrow="05 Vertiefung" prominence="primary">
             <div className="space-y-8">
-            <HqSection title="Schnellzugriffe" description="Direkter Einstieg in bestehende operative Bereiche.">
+            <HqSection title="Schnellzugriff" description="Dein persönliches Command Center.">
               <DeepDiveQuickLinks projects={allStatusProjects} onProjectSelect={openProjectDetail} onTasksOpen={openTasks} />
             </HqSection>
 
