@@ -385,6 +385,40 @@ function getAttentionItems(projects: Project[], tasks: Task[], milestones: Miles
   return items.sort((firstItem, secondItem) => firstItem.rank - secondItem.rank || (firstItem.date ?? '').localeCompare(secondItem.date ?? '') || firstItem.title.localeCompare(secondItem.title));
 }
 
+type AttentionVisual = {
+  icon: string;
+  status: string;
+  iconClassName: string;
+  badgeClassName: string;
+};
+
+function getAttentionVisual(item: AttentionItem): AttentionVisual {
+  if (item.date === getTodayForAttention()) {
+    return {
+      icon: '◷',
+      status: 'Heute',
+      iconClassName: 'border-sky-400/20 bg-sky-400/10 text-sky-200',
+      badgeClassName: 'border-sky-400/25 bg-sky-400/10 text-sky-200',
+    };
+  }
+
+  if (item.rank === 3) {
+    return {
+      icon: '↺',
+      status: 'Fällig',
+      iconClassName: 'border-[#D6AD64]/25 bg-[#D6AD64]/10 text-[#F5D28B]',
+      badgeClassName: 'border-[#D6AD64]/25 bg-[#D6AD64]/10 text-[#F5D28B]',
+    };
+  }
+
+  return {
+    icon: item.type === 'Task' ? '□' : item.type === 'Meilenstein' ? '◇' : '!',
+    status: item.rank <= 5 ? 'Überfällig' : 'Prüfen',
+    iconClassName: item.rank <= 5 ? 'border-red-400/20 bg-red-500/10 text-red-200' : 'border-[#D6AD64]/20 bg-[#D6AD64]/10 text-[#F5D28B]',
+    badgeClassName: item.rank <= 5 ? 'border-red-400/25 bg-red-500/10 text-red-100' : 'border-[#D6AD64]/25 bg-[#D6AD64]/10 text-[#F5D28B]',
+  };
+}
+
 function AttentionList({ items, onProjectSelect }: { items: AttentionItem[]; onProjectSelect: (projectId: string) => void }) {
   if (items.length === 0) {
     return <EmptyState>Keine akuten Punkte benötigen gerade Aufmerksamkeit.</EmptyState>;
@@ -395,36 +429,47 @@ function AttentionList({ items, onProjectSelect }: { items: AttentionItem[]; onP
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="space-y-3">
         {visibleItems.map((item) => {
+          const visual = getAttentionVisual(item);
           const content = (
-            <>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-[#B8B1A7]">
-                <span className="lifehq-badge">{item.type}</span>
-                {item.date && <span className="lifehq-badge">Datum: {item.date}</span>}
+            <div className="flex min-h-24 items-start gap-4">
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-lg font-semibold ${visual.iconClassName}`} aria-hidden="true">
+                {visual.icon}
               </div>
-              <h4 className="mt-3 text-base font-semibold text-[#F5F1EA]">{item.title}</h4>
-              <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">{item.description}</p>
-            </>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-[#B8B1A7]">
+                      <span className="lifehq-badge">{item.type}</span>
+                      {item.date && <span className="lifehq-badge">{item.date}</span>}
+                    </div>
+                    <h4 className="mt-2 text-base font-semibold text-[#F5F1EA]">{item.title}</h4>
+                    <p className="mt-1 text-sm leading-6 text-[#B8B1A7]">{item.description}</p>
+                  </div>
+                  <span className={`w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-medium ${visual.badgeClassName}`}>{visual.status}</span>
+                </div>
+              </div>
+            </div>
           );
 
           if (item.projectId) {
             return (
-              <button key={item.id} type="button" onClick={() => onProjectSelect(item.projectId as string)} className="lifehq-card-soft min-h-28 border-[#D6AD64]/15 bg-black/15 p-4 text-left transition hover:border-[#D6AD64]/30 hover:bg-[#D6AD64]/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60">
+              <button key={item.id} type="button" onClick={() => onProjectSelect(item.projectId as string)} className="lifehq-card-soft w-full border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.14))] p-4 text-left transition hover:border-[#D6AD64]/30 hover:bg-[#D6AD64]/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60">
                 {content}
               </button>
             );
           }
 
           return (
-            <article key={item.id} className="lifehq-card-soft min-h-28 border-[#D6AD64]/15 bg-black/15 p-4">
+            <article key={item.id} className="lifehq-card-soft border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.14))] p-4">
               {content}
             </article>
           );
         })}
       </div>
       {hiddenItemCount > 0 && (
-        <p className="text-sm leading-6 text-[#7E776E]">+ {hiddenItemCount} weitere Punkte benötigen Aufmerksamkeit</p>
+        <p className="rounded-2xl border border-white/[0.08] bg-black/10 px-4 py-3 text-sm leading-6 text-[#7E776E]">+ {hiddenItemCount} weitere Punkte benötigen Aufmerksamkeit</p>
       )}
     </div>
   );
@@ -435,6 +480,7 @@ type MomentumCard = {
   value: number;
   title: string;
   context: string;
+  icon: string;
 };
 
 const getDaysAgoDate = (days: number) => {
@@ -458,24 +504,28 @@ function getMomentumCards(tasks: Task[], projects: Project[], milestones: Milest
       value: tasks.filter((task) => task.status === 'done' && isOnOrAfterDate(task.completedAt, thirtyDaysAgo)).length,
       title: 'Aufgaben erledigt',
       context: 'Letzte 30 Tage',
+      icon: '✓',
     },
     {
       id: 'projects-completed',
       value: projects.filter((project) => project.status === 'completed').length,
       title: 'Projekte abgeschlossen',
       context: 'In Bewegung',
+      icon: '↗',
     },
     {
       id: 'milestones-completed',
       value: milestones.filter((milestone) => milestone.status === 'done' && isOnOrAfterDate(milestone.completedAt, sevenDaysAgo)).length,
       title: 'Meilensteine erreicht',
       context: 'Letzte 7 Tage',
+      icon: '◆',
     },
     {
       id: 'focus-momentum',
       value: completedFocusCount > 0 ? completedFocusCount : activeFocusCount,
       title: completedFocusCount > 0 ? 'Fokus abgeschlossen' : 'Aktive Fokusse',
       context: completedFocusCount > 0 ? 'Starker Fortschritt' : 'Gut im Fluss',
+      icon: '✦',
     },
   ];
 }
@@ -488,14 +538,23 @@ function MomentumCards({ cards }: { cards: MomentumCard[] }) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {cards.map((card) => (
-        <article key={card.id} className="lifehq-premium-card p-4 sm:p-5">
-          <p className="font-serif text-4xl sm:text-5xl font-semibold tracking-tight text-[#F5F1EA]">{card.value}</p>
-          <h4 className="mt-4 text-base font-semibold text-[#F5F1EA]">{card.title}</h4>
-          <p className="mt-2 text-sm leading-6 text-[#7E776E]">{card.context}</p>
-        </article>
-      ))}
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+        {cards.map((card) => (
+          <article key={card.id} className="lifehq-premium-card border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(0,0,0,0.16))] p-4 sm:p-5">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D6AD64]/20 bg-[#D6AD64]/10 text-lg font-semibold text-[#D6AD64]" aria-hidden="true">
+                {card.icon}
+              </div>
+              <div className="min-w-0">
+                <p className="font-serif text-4xl font-semibold leading-none tracking-tight text-[#F5F1EA] sm:text-5xl">{card.value}</p>
+                <h4 className="mt-3 text-sm font-semibold leading-5 text-[#F5F1EA]">{card.title}</h4>
+                <p className="mt-2 text-xs leading-5 text-[#7E776E]">{card.context}</p>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }
