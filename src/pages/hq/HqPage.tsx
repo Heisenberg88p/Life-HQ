@@ -597,7 +597,6 @@ interface FocusListProps {
   onEditSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onArchive: (id: string) => void;
   onRestore: (id: string, status: Exclude<FocusStatus, 'Archived'>) => void;
-  onProjectSelect: (projectId: string) => void;
   restoreError?: string;
 }
 
@@ -689,7 +688,7 @@ function FocusFields({ draft, trueNorths, onChange }: { draft: FocusDraft; trueN
   );
 }
 
-function FocusList({ focuses, trueNorths, projects, tasks, editingFocusId, editDraft, editError, onEditStart, onEditCancel, onEditDraftChange, onEditSubmit, onArchive, onRestore, onProjectSelect, restoreError }: FocusListProps) {
+function FocusList({ focuses, trueNorths, projects, tasks, editingFocusId, editDraft, editError, onEditStart, onEditCancel, onEditDraftChange, onEditSubmit, onArchive, onRestore, restoreError }: FocusListProps) {
   const activeFocuses = getSortedFocuses(focuses.filter((focus) => focus.status === 'Active'));
   const pausedFocuses = getSortedFocuses(focuses.filter((focus) => focus.status === 'Paused'));
   const completedFocuses = getSortedFocuses(focuses.filter((focus) => focus.status === 'Completed'));
@@ -714,17 +713,15 @@ function FocusList({ focuses, trueNorths, projects, tasks, editingFocusId, editD
         {activeFocuses.length === 0 ? (
           <EmptyState>Lege deinen ersten aktuellen Fokus fest.</EmptyState>
         ) : (
-          <div className="grid gap-4 2xl:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
             {activeFocuses.map((focus) => {
               const isEditing = editingFocusId === focus.id;
-              const trueNorthTitle = getTrueNorthTitle(trueNorths, focus.trueNorthReference);
               const projectContext = getFocusProjectContext(focus, projects);
               const openTaskCount = getFocusOpenTaskCount(focus, projects, tasks);
               const completionPercent = getFocusCompletionPercent(focus, projects, tasks);
-              const primaryProjectLink = projectContext.projectLinks[0];
 
               return (
-                <article key={focus.id} className="lifehq-premium-card overflow-hidden border-[#D6AD64]/30 bg-[linear-gradient(135deg,rgba(214,173,100,0.095),rgba(255,255,255,0.025)_42%,rgba(0,0,0,0.16))] p-0 shadow-[0_28px_90px_rgba(0,0,0,0.28)]">
+                <article key={focus.id} className="lifehq-premium-card overflow-hidden border-[#D6AD64]/25 bg-[linear-gradient(135deg,rgba(214,173,100,0.075),rgba(255,255,255,0.02)_42%,rgba(0,0,0,0.14))] p-0 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
                   {isEditing ? (
                     <form onSubmit={onEditSubmit} className="space-y-4 p-4 sm:p-6">
                       <FocusFields draft={editDraft} trueNorths={trueNorths} onChange={onEditDraftChange} />
@@ -737,41 +734,29 @@ function FocusList({ focuses, trueNorths, projects, tasks, editingFocusId, editD
                       </div>
                     </form>
                   ) : (
-                    <div className="flex h-full flex-col justify-between gap-5 p-5 sm:p-6">
-                      <div className="space-y-5">
-                        <div className="flex items-start gap-4">
-                          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#D6AD64]/20 bg-[#D6AD64]/10 text-2xl text-[#D6AD64] shadow-[0_0_30px_rgba(214,173,100,0.10)]" aria-hidden="true">
-                            {getFocusIcon(focus.priority)}
-                          </div>
-                          <div className="min-w-0 flex-1 space-y-3">
-                            <div className="flex flex-wrap gap-2 text-xs text-[#B8B1A7]">
-                              <span className="lifehq-badge">{focusStatusLabels[focus.status]}</span>
-                              <span className="lifehq-badge">Priorität: {focusPriorityLabels[focus.priority]}</span>
-                            </div>
-                            <div className="space-y-2">
-                              <h4 className="font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA]">{focus.title}</h4>
-                              {focus.description && <p className="line-clamp-2 text-sm leading-6 text-[#B8B1A7]">{focus.description}</p>}
-                            </div>
-                          </div>
+                    <button type="button" onClick={() => onEditStart(focus)} className="group flex h-full w-full flex-col gap-4 p-4 text-left transition hover:bg-[#D6AD64]/[0.035] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/60 sm:p-5">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D6AD64]/20 bg-[#D6AD64]/10 text-xl text-[#D6AD64] shadow-[0_0_24px_rgba(214,173,100,0.10)]" aria-hidden="true">
+                          {getFocusIcon(focus.priority)}
                         </div>
-                        <p className="text-sm font-medium text-[#D8C8AF]">{projectContext.projectCount} {projectContext.projectCount === 1 ? 'Projekt' : 'Projekte'} • {openTaskCount} {openTaskCount === 1 ? 'Aufgabe' : 'Aufgaben'}</p>
-                        <div className="space-y-2">
-                          <div className="h-2 overflow-hidden rounded-full bg-white/[0.08]">
-                            <div className="h-full rounded-full bg-[#D6AD64]" style={{ width: `${completionPercent}%` }} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-[#B8B1A7]">
+                            <span className="lifehq-badge">Priorität: {focusPriorityLabels[focus.priority]}</span>
                           </div>
-                          <div className="flex items-center justify-between text-xs leading-5 text-[#7E776E]">
-                            <span>Fortschritt</span>
-                            <span className="font-medium text-[#F5F1EA]">{completionPercent}%</span>
-                          </div>
+                          <h4 className="mt-3 line-clamp-2 font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">{focus.title}</h4>
                         </div>
-                        <p className="text-xs leading-5 text-[#7E776E]">Richtung: {trueNorthTitle ?? 'Keine Richtung zugeordnet'}</p>
                       </div>
-                      <div className="flex flex-col gap-2 border-t border-white/[0.08] pt-4 sm:flex-row sm:flex-wrap">
-                        {primaryProjectLink && <button type="button" onClick={() => onProjectSelect(primaryProjectLink.id)} className="lifehq-button-secondary w-full sm:w-auto">Öffnen</button>}
-                        <button type="button" onClick={() => onEditStart(focus)} className="lifehq-button-secondary w-full sm:w-auto">Bearbeiten</button>
-                        <button type="button" onClick={() => onArchive(focus.id)} className="lifehq-button-secondary w-full sm:w-auto">Archivieren</button>
+                      <p className="text-sm font-medium text-[#D8C8AF]">{projectContext.projectCount} {projectContext.projectCount === 1 ? 'Projekt' : 'Projekte'} • {openTaskCount} {openTaskCount === 1 ? 'Aufgabe' : 'Aufgaben'}</p>
+                      <div className="space-y-2">
+                        <div className="h-2 overflow-hidden rounded-full bg-white/[0.08]">
+                          <div className="h-full rounded-full bg-[#D6AD64]" style={{ width: `${completionPercent}%` }} />
+                        </div>
+                        <div className="flex items-center justify-between text-xs leading-5 text-[#7E776E]">
+                          <span>Fortschritt</span>
+                          <span className="font-medium text-[#F5F1EA]">{completionPercent}%</span>
+                        </div>
                       </div>
-                    </div>
+                    </button>
                   )}
                 </article>
               );
@@ -781,12 +766,9 @@ function FocusList({ focuses, trueNorths, projects, tasks, editingFocusId, editD
       </div>
 
       {hasNonArchivedFocuses && (pausedFocuses.length > 0 || completedFocuses.length > 0) && (
-        <div className="space-y-4 border-t border-white/[0.08] pt-5">
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-[#D6AD64]/60">Management</p>
-            <h4 className="mt-2 text-lg font-semibold tracking-tight text-[#F5F1EA]">Pausierte und abgeschlossene Fokusse</h4>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
+        <details className="border-t border-white/[0.08] pt-4 text-sm text-[#B8B1A7]">
+          <summary className="cursor-pointer text-xs uppercase tracking-[0.24em] text-[#D6AD64]/60">Pausierte und abgeschlossene Fokusse</summary>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
             {[...pausedFocuses, ...completedFocuses].map((focus) => {
               const isEditing = editingFocusId === focus.id;
               const trueNorthTitle = getTrueNorthTitle(trueNorths, focus.trueNorthReference);
@@ -825,7 +807,7 @@ function FocusList({ focuses, trueNorths, projects, tasks, editingFocusId, editD
               );
             })}
           </div>
-        </div>
+        </details>
       )}
 
       {archivedFocuses.length > 0 && (
@@ -1785,7 +1767,6 @@ export function HqPage() {
             onEditSubmit={handleUpdateFocus}
             onArchive={handleArchiveFocus}
             onRestore={handleRestoreFocus}
-            onProjectSelect={openProjectDetail}
             restoreError={focusRestoreError}
           />
         </HqSection>
