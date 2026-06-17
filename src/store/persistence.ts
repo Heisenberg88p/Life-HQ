@@ -4,6 +4,7 @@ import type { Priority, ProjectStatus, TrafficLightStatus, TaskStatus, Milestone
 import type { Focus, FocusPriority, FocusStatus } from '../models/focus';
 import type { LifeArea } from '../models/lifeArea';
 import type { LifeSystem } from '../models/lifeSystem';
+import type { LifeSystemPhase, LifeSystemPhaseStatus } from '../models/lifeSystemPhase';
 import type { Milestone } from '../models/milestone';
 import type { Project } from '../models/project';
 import type { ProjectHistoryEntry, ProjectHistoryEntryType } from '../models/projectHistory';
@@ -19,11 +20,12 @@ import {
 } from '../constants/statusOptions';
 
 export const LIFEHQ_STORAGE_KEY = 'lifehq-v1-storage';
-export const LIFEHQ_STORAGE_VERSION = 5;
+export const LIFEHQ_STORAGE_VERSION = 6;
 
 export interface PersistableLifeHQState {
   visions: Vision[];
   lifeSystems: LifeSystem[];
+  lifeSystemPhases: LifeSystemPhase[];
   focuses: Focus[];
   trueNorths: TrueNorth[];
   lifeAreas: LifeArea[];
@@ -37,6 +39,7 @@ export interface LifeHQPersistedState extends PersistableLifeHQState {
   storageVersion: number;
 }
 
+const LIFE_SYSTEM_PHASE_STATUS_OPTIONS: LifeSystemPhaseStatus[] = ['planned', 'active', 'completed', 'archived'];
 const FOCUS_STATUS_OPTIONS: FocusStatus[] = ['Active', 'Paused', 'Completed', 'Archived'];
 const FOCUS_PRIORITY_OPTIONS: FocusPriority[] = ['High', 'Medium', 'Low'];
 
@@ -89,6 +92,55 @@ const getOptionalTimestamp = (value: unknown): string | undefined => {
   return Number.isNaN(new Date(value).getTime()) ? undefined : value;
 };
 const getRequiredTimestamp = (value: unknown, fallback: string): string => getOptionalTimestamp(value) ?? fallback;
+const getNumber = (value: unknown, fallback: number): number => (typeof value === 'number' && Number.isFinite(value) ? value : fallback);
+
+const sanitizeLifeSystemPhase = (value: unknown, timestampFallback: string): LifeSystemPhase | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const id = getRequiredString(value.id);
+  const lifeSystemId = getRequiredString(value.lifeSystemId);
+  const title = getRequiredString(value.title);
+
+  if (!id || !lifeSystemId || !title) {
+    return undefined;
+  }
+
+  return {
+    id,
+    lifeSystemId,
+    title,
+    description: getOptionalString(value.description),
+    status: getEnumValue<LifeSystemPhaseStatus>(value.status, LIFE_SYSTEM_PHASE_STATUS_OPTIONS, 'planned'),
+    order: getNumber(value.order, 0),
+    createdAt: getRequiredTimestamp(value.createdAt, timestampFallback),
+    updatedAt: getRequiredTimestamp(value.updatedAt, timestampFallback),
+  };
+};
+
+const sanitizeLifeSystem = (value: unknown, timestampFallback: string): LifeSystem | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const id = getRequiredString(value.id);
+  const name = getRequiredString(value.name);
+
+  if (!id || !name) {
+    return undefined;
+  }
+
+  return {
+    id,
+    name,
+    description: getOptionalString(value.description),
+    visionId: getOptionalString(value.visionId),
+    currentPhaseId: getOptionalString(value.currentPhaseId),
+    createdAt: getRequiredTimestamp(value.createdAt, timestampFallback),
+    updatedAt: getRequiredTimestamp(value.updatedAt, timestampFallback),
+  };
+};
 
 const sanitizeLifeSystem = (value: unknown, timestampFallback: string): LifeSystem | undefined => {
   if (!isRecord(value)) {
@@ -340,6 +392,7 @@ export const getPersistedLifeHQState = (state: PersistableLifeHQState): LifeHQPe
   storageVersion: LIFEHQ_STORAGE_VERSION,
   visions: state.visions,
   lifeSystems: state.lifeSystems,
+  lifeSystemPhases: state.lifeSystemPhases,
   focuses: state.focuses,
   trueNorths: state.trueNorths,
   lifeAreas: state.lifeAreas,
@@ -361,6 +414,23 @@ export const sanitizePersistedLifeHQState = (
 
   const visions = sanitizeArray(persistedState.visions, fallbackState.visions, (item) => sanitizeVision(item, timestampFallback));
   const lifeSystems = sanitizeArray(persistedState.lifeSystems, fallbackState.lifeSystems, (item) => sanitizeLifeSystem(item, timestampFallback));
+  const validLifeSystemIds = new Set(lifeSystems.map((lifeSystem) => lifeSystem.id));
+  const lifeSystemPhases = sanitizeArray(persistedState.lifeSystemPhases, fallbackState.lifeSystemPhases, (item) => sanitizeLifeSystemPhase(item, timestampFallback))
+    .filter((phase) => validLifeSystemIds.has(phase.lifeSystemId));
+  const validLifeSystemPhaseIdsByLifeSystemId = new Map<string, Set<string>>();
+
+  lifeSystemPhases.forEach((phase) => {
+    const phaseIds = validLifeSystemPhaseIdsByLifeSystemId.get(phase.lifeSystemId) ?? new Set<string>();
+    phaseIds.add(phase.id);
+    validLifeSystemPhaseIdsByLifeSystemId.set(phase.lifeSystemId, phaseIds);
+  });
+
+  const sanitizedLifeSystems = lifeSystems.map((lifeSystem) => ({
+    ...lifeSystem,
+    currentPhaseId: lifeSystem.currentPhaseId && validLifeSystemPhaseIdsByLifeSystemId.get(lifeSystem.id)?.has(lifeSystem.currentPhaseId)
+      ? lifeSystem.currentPhaseId
+      : undefined,
+  }));
   const focuses = sanitizeArray(persistedState.focuses, fallbackState.focuses, (item) => sanitizeFocus(item, timestampFallback));
   const validFocusIds = new Set(focuses.map((focus) => focus.id));
   const projects = sanitizeArray(persistedState.projects, fallbackState.projects, (item) => sanitizeProject(item, timestampFallback))
@@ -372,7 +442,8 @@ export const sanitizePersistedLifeHQState = (
   return {
     storageVersion: LIFEHQ_STORAGE_VERSION,
     visions,
-    lifeSystems,
+    lifeSystems: sanitizedLifeSystems,
+    lifeSystemPhases,
     focuses,
     trueNorths: sanitizeArray(persistedState.trueNorths, fallbackState.trueNorths, (item) => sanitizeTrueNorth(item, timestampFallback)),
     lifeAreas: sanitizeArray(persistedState.lifeAreas, fallbackState.lifeAreas, (item) => sanitizeLifeArea(item, timestampFallback)),
@@ -390,6 +461,7 @@ export const mergePersistedLifeHQState = <T extends PersistableLifeHQState>(pers
     ...currentState,
     visions: sanitizedState.visions,
     lifeSystems: sanitizedState.lifeSystems,
+    lifeSystemPhases: sanitizedState.lifeSystemPhases,
     focuses: sanitizedState.focuses,
     trueNorths: sanitizedState.trueNorths,
     lifeAreas: sanitizedState.lifeAreas,
