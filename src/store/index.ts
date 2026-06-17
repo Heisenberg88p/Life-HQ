@@ -1,4 +1,5 @@
 export { useLifeHQStore } from './useLifeHQStore';
+export * from './selectors/visionSelectors';
 export * from './selectors/lifeAreaSelectors';
 export * from './selectors/trueNorthSelectors';
 export * from './selectors/focusSelectors';

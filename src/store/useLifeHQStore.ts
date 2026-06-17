@@ -11,6 +11,7 @@ import type { Project } from '../models/project';
 import type { ProjectHistoryEntry } from '../models/projectHistory';
 import type { Task } from '../models/task';
 import type { TrueNorth } from '../models/trueNorth';
+import type { Vision } from '../models/vision';
 import { createProjectHistoryEntry } from './helpers/historyHelpers';
 import type { PersistableLifeHQState } from './persistence';
 import {
@@ -29,6 +30,7 @@ import type { PauseProjectInput, ProjectSlice, ReactivateProjectInput } from './
 import type { TaskSlice } from './slices/taskSlice';
 import type { TrueNorthSlice } from './slices/trueNorthSlice';
 import type { UISlice } from './slices/uiSlice';
+import type { VisionSlice } from './slices/visionSlice';
 
 interface AppDataSlice {
   resetAppData: () => void;
@@ -36,10 +38,11 @@ interface AppDataSlice {
   replaceAppData: (data: PersistableLifeHQState) => void;
 }
 
-type LifeHQState = FocusSlice & TrueNorthSlice & LifeAreaSlice & ProjectSlice & TaskSlice & MilestoneSlice & HistorySlice & UISlice & AppDataSlice;
+type LifeHQState = VisionSlice & FocusSlice & TrueNorthSlice & LifeAreaSlice & ProjectSlice & TaskSlice & MilestoneSlice & HistorySlice & UISlice & AppDataSlice;
 
 const now = () => new Date().toISOString();
 const getInitialLifeHQData = () => ({
+  visions: [] as Vision[],
   focuses: [] as Focus[],
   trueNorths: [] as TrueNorth[],
   lifeAreas: mockLifeAreas,
@@ -125,6 +128,11 @@ function getProjectUpdateHistoryEntries(project: Project, patch: Partial<Project
 
 const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
   ...getInitialLifeHQData(),
+
+  addVision: (vision: Vision) => set((state) => ({ visions: [...state.visions, vision] })),
+  updateVision: (id: string, patch: Partial<Vision>) =>
+    set((state) => ({ visions: state.visions.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
+  deleteVision: (id: string) => set((state) => ({ visions: state.visions.filter((item) => item.id !== id) })),
 
   createFocus: (focus: Focus) => set((state) => ({ focuses: [...state.focuses, focus] })),
   updateFocus: (id: string, patch: Partial<Focus>) =>
@@ -572,6 +580,7 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
 
   resetAppData: () => set(getInitialLifeHQData()),
   clearAllUserData: () => set((state) => ({
+    visions: [],
     focuses: [],
     trueNorths: [],
     lifeAreas: [],
@@ -583,6 +592,7 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
   })),
   replaceAppData: (data: PersistableLifeHQState) => set((state) => {
     const sanitizedData = sanitizePersistedLifeHQState(data, {
+      visions: [],
       focuses: [],
       trueNorths: [],
       lifeAreas: [],
@@ -593,6 +603,7 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
     });
 
     return {
+      visions: sanitizedData.visions,
       focuses: sanitizedData.focuses,
       trueNorths: sanitizedData.trueNorths,
       lifeAreas: sanitizedData.lifeAreas,
