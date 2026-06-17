@@ -142,6 +142,28 @@ const sanitizeLifeSystem = (value: unknown, timestampFallback: string): LifeSyst
   };
 };
 
+const sanitizeLifeSystem = (value: unknown, timestampFallback: string): LifeSystem | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const id = getRequiredString(value.id);
+  const name = getRequiredString(value.name);
+
+  if (!id || !name) {
+    return undefined;
+  }
+
+  return {
+    id,
+    name,
+    description: getOptionalString(value.description),
+    visionId: getOptionalString(value.visionId),
+    createdAt: getRequiredTimestamp(value.createdAt, timestampFallback),
+    updatedAt: getRequiredTimestamp(value.updatedAt, timestampFallback),
+  };
+};
+
 const sanitizeLifeArea = (value: unknown, timestampFallback: string): LifeArea | undefined => {
   if (!isRecord(value)) {
     return undefined;
