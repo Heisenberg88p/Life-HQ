@@ -6,11 +6,14 @@ import { getTodayDateString, getTomorrowDateString, normalizeDate } from '../log
 import type { Priority, ProjectStatus, TrafficLightStatus, TaskStatus, MilestoneStatus } from '../models/common';
 import type { Focus } from '../models/focus';
 import type { LifeArea } from '../models/lifeArea';
+import type { LifeSystem } from '../models/lifeSystem';
+import type { LifeSystemPhase } from '../models/lifeSystemPhase';
 import type { Milestone } from '../models/milestone';
 import type { Project } from '../models/project';
 import type { ProjectHistoryEntry } from '../models/projectHistory';
 import type { Task } from '../models/task';
 import type { TrueNorth } from '../models/trueNorth';
+import type { Vision } from '../models/vision';
 import { createProjectHistoryEntry } from './helpers/historyHelpers';
 import type { PersistableLifeHQState } from './persistence';
 import {
@@ -24,11 +27,14 @@ import {
 import type { FocusSlice } from './slices/focusSlice';
 import type { HistorySlice } from './slices/historySlice';
 import type { LifeAreaSlice } from './slices/lifeAreaSlice';
+import type { LifeSystemSlice } from './slices/lifeSystemSlice';
+import type { LifeSystemPhaseSlice } from './slices/lifeSystemPhaseSlice';
 import type { MilestoneSlice } from './slices/milestoneSlice';
 import type { PauseProjectInput, ProjectSlice, ReactivateProjectInput } from './slices/projectSlice';
 import type { TaskSlice } from './slices/taskSlice';
 import type { TrueNorthSlice } from './slices/trueNorthSlice';
 import type { UISlice } from './slices/uiSlice';
+import type { VisionSlice } from './slices/visionSlice';
 
 interface AppDataSlice {
   resetAppData: () => void;
@@ -36,10 +42,13 @@ interface AppDataSlice {
   replaceAppData: (data: PersistableLifeHQState) => void;
 }
 
-type LifeHQState = FocusSlice & TrueNorthSlice & LifeAreaSlice & ProjectSlice & TaskSlice & MilestoneSlice & HistorySlice & UISlice & AppDataSlice;
+type LifeHQState = VisionSlice & LifeSystemSlice & LifeSystemPhaseSlice & FocusSlice & TrueNorthSlice & LifeAreaSlice & ProjectSlice & TaskSlice & MilestoneSlice & HistorySlice & UISlice & AppDataSlice;
 
 const now = () => new Date().toISOString();
 const getInitialLifeHQData = () => ({
+  visions: [] as Vision[],
+  lifeSystems: [] as LifeSystem[],
+  lifeSystemPhases: [] as LifeSystemPhase[],
   focuses: [] as Focus[],
   trueNorths: [] as TrueNorth[],
   lifeAreas: mockLifeAreas,
@@ -125,6 +134,54 @@ function getProjectUpdateHistoryEntries(project: Project, patch: Partial<Project
 
 const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
   ...getInitialLifeHQData(),
+
+  addVision: (vision: Vision) => set((state) => ({ visions: [...state.visions, vision] })),
+  updateVision: (id: string, patch: Partial<Vision>) =>
+    set((state) => ({ visions: state.visions.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
+  deleteVision: (id: string) => set((state) => ({ visions: state.visions.filter((item) => item.id !== id) })),
+
+  createLifeSystem: (lifeSystem: LifeSystem) => set((state) => ({ lifeSystems: [...state.lifeSystems, lifeSystem] })),
+  updateLifeSystem: (id: string, patch: Partial<LifeSystem>) =>
+    set((state) => ({ lifeSystems: state.lifeSystems.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
+  deleteLifeSystem: (id: string) => set((state) => ({
+    lifeSystems: state.lifeSystems.filter((item) => item.id !== id),
+    lifeSystemPhases: state.lifeSystemPhases.filter((item) => item.lifeSystemId !== id),
+  })),
+  createLifeSystemPhase: (phase: LifeSystemPhase) => set((state) => {
+    if (!state.lifeSystems.some((lifeSystem) => lifeSystem.id === phase.lifeSystemId)) {
+      return {};
+    }
+
+    return { lifeSystemPhases: [...state.lifeSystemPhases, phase] };
+  }),
+  updateLifeSystemPhase: (id: string, patch: Partial<LifeSystemPhase>) =>
+    set((state) => {
+      const existingPhase = state.lifeSystemPhases.find((item) => item.id === id);
+
+      if (!existingPhase || (patch.lifeSystemId && !state.lifeSystems.some((lifeSystem) => lifeSystem.id === patch.lifeSystemId))) {
+        return {};
+      }
+
+      const nextLifeSystemId = patch.lifeSystemId ?? existingPhase.lifeSystemId;
+
+      return {
+        lifeSystemPhases: state.lifeSystemPhases.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)),
+        lifeSystems: state.lifeSystems.map((item) => (item.currentPhaseId === id && item.id !== nextLifeSystemId ? withUpdatedAt({ ...item, currentPhaseId: undefined }) : item)),
+      };
+    }),
+  deleteLifeSystemPhase: (id: string) => set((state) => ({
+    lifeSystemPhases: state.lifeSystemPhases.filter((item) => item.id !== id),
+    lifeSystems: state.lifeSystems.map((item) => (item.currentPhaseId === id ? withUpdatedAt({ ...item, currentPhaseId: undefined }) : item)),
+  })),
+  setCurrentLifeSystemPhase: (lifeSystemId: string, phaseId?: string) => set((state) => {
+    if (phaseId && !state.lifeSystemPhases.some((phase) => phase.id === phaseId && phase.lifeSystemId === lifeSystemId)) {
+      return {};
+    }
+
+    return {
+      lifeSystems: state.lifeSystems.map((item) => (item.id === lifeSystemId ? withUpdatedAt({ ...item, currentPhaseId: phaseId }) : item)),
+    };
+  }),
 
   createFocus: (focus: Focus) => set((state) => ({ focuses: [...state.focuses, focus] })),
   updateFocus: (id: string, patch: Partial<Focus>) =>
@@ -572,6 +629,9 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
 
   resetAppData: () => set(getInitialLifeHQData()),
   clearAllUserData: () => set((state) => ({
+    visions: [],
+    lifeSystems: [],
+    lifeSystemPhases: [],
     focuses: [],
     trueNorths: [],
     lifeAreas: [],
@@ -583,6 +643,9 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
   })),
   replaceAppData: (data: PersistableLifeHQState) => set((state) => {
     const sanitizedData = sanitizePersistedLifeHQState(data, {
+      visions: [],
+      lifeSystems: [],
+      lifeSystemPhases: [],
       focuses: [],
       trueNorths: [],
       lifeAreas: [],
@@ -593,6 +656,9 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
     });
 
     return {
+      visions: sanitizedData.visions,
+      lifeSystems: sanitizedData.lifeSystems,
+      lifeSystemPhases: sanitizedData.lifeSystemPhases,
       focuses: sanitizedData.focuses,
       trueNorths: sanitizedData.trueNorths,
       lifeAreas: sanitizedData.lifeAreas,
