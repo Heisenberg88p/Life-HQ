@@ -348,6 +348,15 @@ const sanitizeFocus = (value: unknown, timestampFallback: string): Focus | undef
   };
 };
 
+
+const shouldMigrateLifeAreasToLifeSystems = (persistedState: Record<string, unknown>): boolean => {
+  if (typeof persistedState.storageVersion === 'number') {
+    return persistedState.storageVersion < 7;
+  }
+
+  return !Array.isArray(persistedState.lifeSystems);
+};
+
 const sanitizeTrueNorth = (value: unknown, timestampFallback: string): TrueNorth | undefined => {
   if (!isRecord(value)) {
     return undefined;
@@ -421,11 +430,17 @@ export const sanitizePersistedLifeHQState = (
       focusId: project.focusId && validFocusIds.has(project.focusId) ? project.focusId : null,
     }));
   const lifeAreas = sanitizeArray(persistedState.lifeAreas, fallbackState.lifeAreas, (item) => sanitizeLifeArea(item, timestampFallback));
-  const migratedState = migrateLifeAreasToLifeSystems({
-    lifeAreas,
-    lifeSystems: sanitizedLifeSystems,
-    projects,
-  }, timestampFallback);
+  const migratedState = shouldMigrateLifeAreasToLifeSystems(persistedState)
+    ? migrateLifeAreasToLifeSystems({
+      lifeAreas,
+      lifeSystems: sanitizedLifeSystems,
+      projects,
+    }, timestampFallback)
+    : {
+      lifeAreas,
+      lifeSystems: sanitizedLifeSystems,
+      projects,
+    };
 
   return {
     storageVersion: LIFEHQ_STORAGE_VERSION,

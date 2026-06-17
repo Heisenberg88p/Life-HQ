@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { LifeSystem } from '../../models/lifeSystem';
 import type { LifeSystemPhase, LifeSystemPhaseStatus } from '../../models/lifeSystemPhase';
 import type { Project } from '../../models/project';
@@ -245,6 +246,7 @@ function LifeSystemCard({ lifeSystem, currentPhaseLabel, projectCount, onClick }
 }
 
 function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, onClose }: { lifeSystem: LifeSystem; currentPhaseLabel: string; projectCount: number; onClose: () => void }) {
+  const navigate = useNavigate();
   const updateLifeSystem = useLifeHQStore((state) => state.updateLifeSystem);
   const deleteLifeSystem = useLifeHQStore((state) => state.deleteLifeSystem);
   const phases = useLifeHQStore((state) => state.lifeSystemPhases.filter((phase) => phase.lifeSystemId === lifeSystem.id));
@@ -421,9 +423,14 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
                 key={project.id}
                 project={project}
                 action={(
-                  <button type="button" onClick={() => removeProjectFromLifeSystem(project.id)} className="w-fit rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-[#C9C1B8] transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
-                    Zuordnung entfernen
-                  </button>
+                  <div className="flex flex-col gap-2 sm:items-end">
+                    <button type="button" onClick={() => navigate(`/projects/${project.id}`)} className="w-fit rounded-full border border-[#D6AD64]/25 px-4 py-2 text-sm font-medium text-[#F5D28B] transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+                      Projekt öffnen
+                    </button>
+                    <button type="button" onClick={() => removeProjectFromLifeSystem(project.id)} className="w-fit rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-[#C9C1B8] transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
+                      Zuordnung entfernen
+                    </button>
+                  </div>
                 )}
               />
             ))}

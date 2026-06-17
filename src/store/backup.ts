@@ -115,12 +115,13 @@ export const parseLifeHQBackup = (value: unknown): LifeHQBackupParseResult => {
 
   const backupData = {
     ...data,
+    storageVersion: hasWrappedBackupShape && isRecord(value.metadata) && typeof value.metadata.storageVersion === 'number' ? value.metadata.storageVersion : data.storageVersion,
     visions: Array.isArray(data.visions) ? data.visions : [],
     lifeSystems: Array.isArray(data.lifeSystems) ? data.lifeSystems : [],
     lifeSystemPhases: Array.isArray(data.lifeSystemPhases) ? data.lifeSystemPhases : [],
     focuses: Array.isArray(data.focuses) ? data.focuses : [],
     trueNorths: Array.isArray(data.trueNorths) ? data.trueNorths : [],
-  } as Record<(typeof LIFEHQ_BACKUP_ARRAY_KEYS)[number], unknown>;
+  } as unknown as Record<(typeof LIFEHQ_BACKUP_ARRAY_KEYS)[number], unknown> & { storageVersion?: unknown };
   const sanitizedData = sanitizePersistedLifeHQState(backupData, EMPTY_LIFEHQ_DATA);
   const invalidItemKey = LIFEHQ_BACKUP_ARRAY_KEYS.find((key) => {
     const sourceItems = backupData[key];
