@@ -3,6 +3,7 @@ import { isValidDateString, safeNormalizeDate } from '../logic/dateLogic';
 import type { Priority, ProjectStatus, TrafficLightStatus, TaskStatus, MilestoneStatus } from '../models/common';
 import type { Focus, FocusPriority, FocusStatus } from '../models/focus';
 import type { LifeArea } from '../models/lifeArea';
+import type { LifeSystem } from '../models/lifeSystem';
 import type { Milestone } from '../models/milestone';
 import type { Project } from '../models/project';
 import type { ProjectHistoryEntry, ProjectHistoryEntryType } from '../models/projectHistory';
@@ -18,10 +19,11 @@ import {
 } from '../constants/statusOptions';
 
 export const LIFEHQ_STORAGE_KEY = 'lifehq-v1-storage';
-export const LIFEHQ_STORAGE_VERSION = 4;
+export const LIFEHQ_STORAGE_VERSION = 5;
 
 export interface PersistableLifeHQState {
   visions: Vision[];
+  lifeSystems: LifeSystem[];
   focuses: Focus[];
   trueNorths: TrueNorth[];
   lifeAreas: LifeArea[];
@@ -87,6 +89,28 @@ const getOptionalTimestamp = (value: unknown): string | undefined => {
   return Number.isNaN(new Date(value).getTime()) ? undefined : value;
 };
 const getRequiredTimestamp = (value: unknown, fallback: string): string => getOptionalTimestamp(value) ?? fallback;
+
+const sanitizeLifeSystem = (value: unknown, timestampFallback: string): LifeSystem | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const id = getRequiredString(value.id);
+  const name = getRequiredString(value.name);
+
+  if (!id || !name) {
+    return undefined;
+  }
+
+  return {
+    id,
+    name,
+    description: getOptionalString(value.description),
+    visionId: getOptionalString(value.visionId),
+    createdAt: getRequiredTimestamp(value.createdAt, timestampFallback),
+    updatedAt: getRequiredTimestamp(value.updatedAt, timestampFallback),
+  };
+};
 
 const sanitizeLifeArea = (value: unknown, timestampFallback: string): LifeArea | undefined => {
   if (!isRecord(value)) {
@@ -315,6 +339,7 @@ const sanitizeTrueNorth = (value: unknown, timestampFallback: string): TrueNorth
 export const getPersistedLifeHQState = (state: PersistableLifeHQState): LifeHQPersistedState => ({
   storageVersion: LIFEHQ_STORAGE_VERSION,
   visions: state.visions,
+  lifeSystems: state.lifeSystems,
   focuses: state.focuses,
   trueNorths: state.trueNorths,
   lifeAreas: state.lifeAreas,
@@ -335,6 +360,7 @@ export const sanitizePersistedLifeHQState = (
   const timestampFallback = new Date().toISOString();
 
   const visions = sanitizeArray(persistedState.visions, fallbackState.visions, (item) => sanitizeVision(item, timestampFallback));
+  const lifeSystems = sanitizeArray(persistedState.lifeSystems, fallbackState.lifeSystems, (item) => sanitizeLifeSystem(item, timestampFallback));
   const focuses = sanitizeArray(persistedState.focuses, fallbackState.focuses, (item) => sanitizeFocus(item, timestampFallback));
   const validFocusIds = new Set(focuses.map((focus) => focus.id));
   const projects = sanitizeArray(persistedState.projects, fallbackState.projects, (item) => sanitizeProject(item, timestampFallback))
@@ -346,6 +372,7 @@ export const sanitizePersistedLifeHQState = (
   return {
     storageVersion: LIFEHQ_STORAGE_VERSION,
     visions,
+    lifeSystems,
     focuses,
     trueNorths: sanitizeArray(persistedState.trueNorths, fallbackState.trueNorths, (item) => sanitizeTrueNorth(item, timestampFallback)),
     lifeAreas: sanitizeArray(persistedState.lifeAreas, fallbackState.lifeAreas, (item) => sanitizeLifeArea(item, timestampFallback)),
@@ -362,6 +389,7 @@ export const mergePersistedLifeHQState = <T extends PersistableLifeHQState>(pers
   return {
     ...currentState,
     visions: sanitizedState.visions,
+    lifeSystems: sanitizedState.lifeSystems,
     focuses: sanitizedState.focuses,
     trueNorths: sanitizedState.trueNorths,
     lifeAreas: sanitizedState.lifeAreas,
