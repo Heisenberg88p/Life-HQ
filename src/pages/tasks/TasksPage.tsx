@@ -209,23 +209,23 @@ function getTaskContext(task: Task, projects: Project[], lifeAreas: LifeArea[]):
 
   if (project) {
     return {
-      label: projectLifeArea ? `${projectLifeArea.name} → ${project.name}` : `Projekt: ${project.name}`,
-      detail: projectLifeArea ? 'Lebensbereich → Projekt → Aufgabe' : 'Projekt → Aufgabe',
+      label: project.name,
+      detail: projectLifeArea?.name ?? 'Projekt',
       tone: 'project',
     };
   }
 
   if (directLifeArea) {
     return {
-      label: `${directLifeArea.name} → Direkte Aufgabe`,
-      detail: 'Lebensbereich → Aufgabe ohne Projekt',
+      label: directLifeArea.name,
+      detail: 'Direkte Aufgabe',
       tone: 'lifeArea',
     };
   }
 
   return {
     label: 'Ohne Zuordnung',
-    detail: 'Kein Projekt- oder Lebensbereichskontext gesetzt',
+    detail: 'Keine Kategorie',
     tone: 'unassigned',
   };
 }
@@ -356,71 +356,72 @@ function TaskCard({
   }
 
   return (
-    <article className={`lifehq-task-row ${isDone ? 'opacity-65' : ''} ${overdue ? 'border-[#D6AD64]/35' : ''}`}>
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-        <div className="flex min-w-0 flex-1 items-start gap-3">
-          <span className={`lifehq-task-status-dot ${task.status === 'in_progress' ? 'border-[#D6AD64]/35 bg-[#D6AD64]/15' : ''} ${isDone ? 'opacity-60' : ''}`} aria-hidden="true">
-            {isDone && <span className="h-1.5 w-1.5 rounded-full bg-[#7E776E]" />}
-            {task.status === 'in_progress' && <span className="h-1.5 w-1.5 rounded-full bg-[#D6AD64]" />}
-          </span>
+    <article className={`lifehq-task-row group ${isDone ? 'opacity-65' : ''} ${overdue ? 'border-[#D6AD64]/35' : ''}`}>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex min-w-0 flex-1 items-start gap-4">
+          <button
+            type="button"
+            onClick={() => onStatusChange(task.id, isDone ? 'open' : 'done')}
+            className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${isDone ? 'border-[#D6AD64]/35 bg-[#D6AD64]/15 text-[#D6AD64]' : 'border-white/20 bg-black/20 text-transparent hover:border-[#D6AD64]/45'}`}
+            aria-label={isDone ? 'Aufgabe wieder öffnen' : 'Aufgabe erledigen'}
+          >
+            <span aria-hidden="true">✓</span>
+          </button>
 
-          <div className="min-w-0 space-y-2">
+          <div className="min-w-0 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className={isDone ? 'text-base font-semibold leading-6 text-[#7E776E]' : 'text-base font-semibold leading-6 text-[#F5F1EA]'}>{task.title}</h3>
-              {overdue && <span className="lifehq-task-chip border-[#D6AD64]/30 bg-[#D6AD64]/10 text-[#F5F1EA]">Überfällig</span>}
+              {overdue && <span className="lifehq-task-chip border-red-400/25 bg-red-500/10 text-red-100">Überfällig</span>}
             </div>
-            {task.description && <p className="line-clamp-2 max-w-3xl text-xs leading-5 text-[#7E776E]">{task.description}</p>}
-            <div className={`lifehq-task-context ${contextStyles[context.tone]}`}>
-              <p className="font-medium">{context.label}</p>
-              {context.detail && <p className="mt-1 text-[0.72rem] leading-4 text-[#7E776E]">{context.detail}</p>}
+            <p className="text-sm leading-5 text-[#7E776E]">{context.label}</p>
+            <div className="flex flex-wrap gap-1.5 pt-1 text-xs text-[#B8B1A7]">
+              <span className={task.priority === 'critical' || task.priority === 'high' ? 'lifehq-task-chip border-[#D6AD64]/30 bg-[#D6AD64]/10 text-[#F5F1EA]' : 'lifehq-task-chip'}>{priorityLabels[task.priority]}</span>
+              <span className={`lifehq-task-chip ${contextStyles[context.tone]}`}>{context.detail ?? 'Kategorie'}</span>
+              <span className={`lifehq-task-chip ${statusStyles[task.status]}`}>{statusLabels[task.status]}</span>
             </div>
           </div>
         </div>
 
-        <div className="flex w-full flex-wrap gap-1.5 text-xs text-[#B8B1A7] xl:w-auto xl:max-w-[27rem] xl:justify-end">
-          <span className={`lifehq-task-chip ${statusStyles[task.status]}`}>{statusLabels[task.status]}</span>
-          <span className={task.priority === 'critical' ? 'lifehq-task-chip border-[#D6AD64]/30 bg-[#D6AD64]/10 text-[#F5F1EA]' : 'lifehq-task-chip'}>
-            Priorität: {priorityLabels[task.priority]}
-          </span>
-          <span className={`lifehq-task-chip ${overdue ? 'border-[#D6AD64]/25 bg-[#D6AD64]/10 text-[#F5F1EA]' : ''}`}>
-            Fällig: {formatDateDisplay(task.dueDate, 'Keine Fälligkeit')}{overdue ? ' · prüfen' : ''}
-          </span>
-          <span className="lifehq-task-chip">Geplant: {formatDateDisplay(task.plannedDate, 'Nicht geplant')}</span>
+        <div className="flex shrink-0 items-center gap-2 text-sm text-[#B8B1A7] lg:justify-end">
+          <span className="text-[#7E776E]" aria-hidden="true">◷</span>
+          <span>{formatDateDisplay(task.dueDate ?? task.plannedDate, 'Ohne Termin')}</span>
         </div>
       </div>
 
       {isDone && task.completedAt && <p className="mt-2 text-xs text-[#7E776E]">Erledigt am {formatDateDisplay(task.completedAt)}</p>}
 
-      <div className="mt-3 flex flex-wrap gap-1.5 border-t border-white/[0.07] pt-3 text-xs" aria-label={`Status und Aktionen für ${task.title}`}>
-        {task.status !== 'open' && (
-          <button type="button" onClick={() => onStatusChange(task.id, 'open')} className="lifehq-task-action-button">
-            Wieder öffnen
+      <div className="max-h-0 overflow-hidden border-white/[0.07] pt-0 text-xs opacity-0 transition-all duration-200 group-hover:mt-3 group-hover:max-h-24 group-hover:border-t group-hover:pt-3 group-hover:opacity-100 group-focus-within:mt-3 group-focus-within:max-h-24 group-focus-within:border-t group-focus-within:pt-3 group-focus-within:opacity-100">
+        <div className="flex flex-wrap gap-1.5" aria-label={`Status und Aktionen für ${task.title}`}>
+          {task.status !== 'open' && (
+            <button type="button" onClick={() => onStatusChange(task.id, 'open')} className="lifehq-task-action-button">
+              Wieder öffnen
+            </button>
+          )}
+          {task.status !== 'in_progress' && (
+            <button type="button" onClick={() => onStatusChange(task.id, 'in_progress')} className="lifehq-task-action-button lifehq-task-action-button-gold">
+              In Arbeit
+            </button>
+          )}
+          {task.status !== 'done' && (
+            <button type="button" onClick={() => onStatusChange(task.id, 'done')} className="lifehq-task-action-button">
+              Erledigen
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              resetEditDraft();
+              setIsEditOpen((current) => !current);
+              setIsDeleteConfirmOpen(false);
+            }}
+            className="lifehq-task-action-button"
+          >
+            Details
           </button>
-        )}
-        {task.status !== 'in_progress' && (
-          <button type="button" onClick={() => onStatusChange(task.id, 'in_progress')} className="lifehq-task-action-button lifehq-task-action-button-gold">
-            In Arbeit
+          <button type="button" onClick={() => setIsDeleteConfirmOpen((current) => !current)} className="lifehq-task-action-button">
+            Löschen
           </button>
-        )}
-        {task.status !== 'done' && (
-          <button type="button" onClick={() => onStatusChange(task.id, 'done')} className="lifehq-task-action-button">
-            Erledigen
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => {
-            resetEditDraft();
-            setIsEditOpen((current) => !current);
-            setIsDeleteConfirmOpen(false);
-          }}
-          className="lifehq-task-action-button"
-        >
-          Details
-        </button>
-        <button type="button" onClick={() => setIsDeleteConfirmOpen((current) => !current)} className="lifehq-task-action-button">
-          Löschen
-        </button>
+        </div>
       </div>
 
       {isDeleteConfirmOpen && (
@@ -490,7 +491,7 @@ function TaskCard({
         </form>
       )}
 
-      <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
+      <div className="max-h-0 overflow-hidden text-xs opacity-0 transition-all duration-200 group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100 group-focus-within:mt-2 group-focus-within:max-h-12 group-focus-within:opacity-100">
         <button type="button" onClick={() => setIsPlanningOpen((current) => !current)} className="lifehq-task-action-button">
           {isPlanningOpen ? 'Planung ausblenden' : 'Planung'}
         </button>
@@ -723,12 +724,12 @@ export function TasksPage() {
   }
 
   return (
-    <section className="space-y-8">
+    <section className="space-y-9">
       <div className="lifehq-tasks-hero">
-        <div className="max-w-3xl space-y-3">
+        <div className="max-w-3xl space-y-4">
           <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/70">OPERATIVE EBENE</p>
-          <div className="space-y-2">
-            <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4rem]">Aufgaben</h1>
+          <div className="space-y-3">
+            <h1 className="font-serif text-5xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4.5rem]">Aufgaben</h1>
             <p className="max-w-2xl text-base leading-7 text-[#B8B1A7]">
               Eine ruhige operative Arbeitsfläche für die nächsten konkreten Schritte.
             </p>
@@ -742,7 +743,7 @@ export function TasksPage() {
           onClick={() => setIsCreateOpen((current) => !current)}
           className="lifehq-button-primary w-full sm:w-fit"
         >
-          Neue Aufgabe
+          Aufgabe hinzufügen
         </button>
       </div>
 
@@ -891,8 +892,8 @@ export function TasksPage() {
               <span aria-hidden="true" />
               <p className="lifehq-label">Aktive Ansicht</p>
             </div>
-            <h2 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">{activeViewMeta.label}</h2>
-            <p className="mt-2 text-sm leading-6 text-[#7E776E]">{activeViewMeta.description}</p>
+            <h2 className="mt-2 font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA]">{activeViewMeta.label}</h2>
+            <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">{activeViewMeta.description}</p>
           </div>
           <p className="lifehq-badge w-fit">{visibleTasks.length} sichtbar</p>
         </div>

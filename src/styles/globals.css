@@ -245,27 +245,27 @@ textarea {
 
 @layer components {
   .lifehq-tasks-hero {
-    @apply flex min-w-0 flex-col gap-5 lg:flex-row lg:items-end lg:justify-between;
+    @apply flex min-w-0 flex-col gap-6 py-2 lg:flex-row lg:items-end lg:justify-between;
   }
 
   .lifehq-task-view-switcher {
-    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-2;
+    @apply min-w-0 rounded-[1.6rem] border border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.04),rgba(0,0,0,0.16))] p-2 shadow-[0_20px_70px_rgba(0,0,0,0.18)];
   }
 
   .lifehq-task-view-item {
-    @apply min-h-16 min-w-[9.5rem] rounded-2xl border border-transparent px-3 py-3 text-left text-sm text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/25 hover:bg-white/[0.025] hover:text-[#F5F1EA];
+    @apply min-h-16 min-w-[9.5rem] rounded-2xl border border-transparent px-4 py-3 text-left text-sm text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/25 hover:bg-white/[0.03] hover:text-[#F5F1EA];
   }
 
   .lifehq-task-view-item-active {
-    @apply border-[#D6AD64]/35 bg-[#0A0A0A] text-[#F5F1EA] shadow-[0_0_24px_rgba(214,173,100,0.06)];
+    @apply border-[#D6AD64]/45 bg-[#D6AD64]/10 text-[#F5F1EA] shadow-[0_0_28px_rgba(214,173,100,0.08),inset_0_-2px_0_rgba(214,173,100,0.75)];
   }
 
   .lifehq-task-section {
-    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-5 sm:p-6;
+    @apply min-w-0 rounded-[1.6rem] border border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.16))] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.20)] sm:p-7;
   }
 
   .lifehq-task-row {
-    @apply min-w-0 break-words rounded-[1rem] border border-white/10 bg-[#090909] p-3.5 transition-colors hover:border-[#D6AD64]/25 hover:bg-[#0D0D0D] sm:p-4;
+    @apply min-w-0 break-words rounded-[1.2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.18))] p-3.5 transition-colors hover:border-[#D6AD64]/25 hover:bg-[#0D0D0D] sm:p-4;
   }
 
   .lifehq-task-status-dot {
@@ -281,7 +281,7 @@ textarea {
   }
 
   .lifehq-task-action-button {
-    @apply inline-flex min-h-8 max-w-full items-center justify-center whitespace-normal rounded-lg border border-white/10 bg-black/25 px-2.5 py-1.5 text-center text-xs font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/30 hover:text-[#F5F1EA];
+    @apply inline-flex min-h-8 max-w-full items-center justify-center whitespace-normal rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-center text-xs font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/30 hover:text-[#F5F1EA];
   }
 
   .lifehq-task-action-button-gold {
@@ -304,7 +304,7 @@ textarea {
 
   .lifehq-task-form,
   .lifehq-week-section {
-    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-white/[0.018] p-5 sm:p-6;
+    @apply min-w-0 rounded-[1.5rem] border border-white/[0.08] bg-white/[0.018] p-5 sm:p-6;
   }
 
   .lifehq-task-form-control {
