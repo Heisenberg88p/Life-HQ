@@ -21,6 +21,8 @@ export interface ProjectSlice {
   addProject: (project: Project) => void;
   updateProject: (id: string, patch: Partial<Project>) => void;
   deleteProject: (id: string) => void;
+  assignProjectToLifeSystem: (projectId: string, lifeSystemId: string) => void;
+  removeProjectFromLifeSystem: (projectId: string) => void;
   pauseProject: (id: string, input?: PauseProjectInput | string, note?: string) => void;
   reactivateProject: (id: string, input?: ReactivateProjectInput | string) => void;
   updateProjectStatus: (id: string, status: ProjectStatus) => void;
