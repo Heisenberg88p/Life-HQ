@@ -265,7 +265,7 @@ textarea {
   }
 
   .lifehq-task-row {
-    @apply min-w-0 break-words rounded-[1.2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.18))] p-4 transition-colors hover:border-[#D6AD64]/25 hover:bg-[#0D0D0D] sm:p-5;
+    @apply min-w-0 break-words rounded-[1.2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.18))] p-3.5 transition-colors hover:border-[#D6AD64]/25 hover:bg-[#0D0D0D] sm:p-4;
   }
 
   .lifehq-task-status-dot {

@@ -356,8 +356,8 @@ function TaskCard({
   }
 
   return (
-    <article className={`lifehq-task-row ${isDone ? 'opacity-65' : ''} ${overdue ? 'border-[#D6AD64]/35' : ''}`}>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <article className={`lifehq-task-row group ${isDone ? 'opacity-65' : ''} ${overdue ? 'border-[#D6AD64]/35' : ''}`}>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex min-w-0 flex-1 items-start gap-4">
           <button
             type="button"
@@ -368,13 +368,12 @@ function TaskCard({
             <span aria-hidden="true">✓</span>
           </button>
 
-          <div className="min-w-0 space-y-2">
+          <div className="min-w-0 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className={isDone ? 'text-base font-semibold leading-6 text-[#7E776E]' : 'text-base font-semibold leading-6 text-[#F5F1EA]'}>{task.title}</h3>
               {overdue && <span className="lifehq-task-chip border-red-400/25 bg-red-500/10 text-red-100">Überfällig</span>}
             </div>
             <p className="text-sm leading-5 text-[#7E776E]">{context.label}</p>
-            {task.description && <p className="line-clamp-2 max-w-3xl text-xs leading-5 text-[#7E776E]">{task.description}</p>}
             <div className="flex flex-wrap gap-1.5 pt-1 text-xs text-[#B8B1A7]">
               <span className={task.priority === 'critical' || task.priority === 'high' ? 'lifehq-task-chip border-[#D6AD64]/30 bg-[#D6AD64]/10 text-[#F5F1EA]' : 'lifehq-task-chip'}>{priorityLabels[task.priority]}</span>
               <span className={`lifehq-task-chip ${contextStyles[context.tone]}`}>{context.detail ?? 'Kategorie'}</span>
@@ -391,36 +390,38 @@ function TaskCard({
 
       {isDone && task.completedAt && <p className="mt-3 text-xs text-[#7E776E]">Erledigt am {formatDateDisplay(task.completedAt)}</p>}
 
-      <div className="mt-3 flex flex-wrap gap-1.5 border-t border-white/[0.07] pt-3 text-xs" aria-label={`Status und Aktionen für ${task.title}`}>
-        {task.status !== 'open' && (
-          <button type="button" onClick={() => onStatusChange(task.id, 'open')} className="lifehq-task-action-button">
-            Wieder öffnen
+      <div className="max-h-0 overflow-hidden border-white/[0.07] pt-0 text-xs opacity-0 transition-all duration-200 group-hover:mt-3 group-hover:max-h-24 group-hover:border-t group-hover:pt-3 group-hover:opacity-100 group-focus-within:mt-3 group-focus-within:max-h-24 group-focus-within:border-t group-focus-within:pt-3 group-focus-within:opacity-100">
+        <div className="flex flex-wrap gap-1.5" aria-label={`Status und Aktionen für ${task.title}`}>
+          {task.status !== 'open' && (
+            <button type="button" onClick={() => onStatusChange(task.id, 'open')} className="lifehq-task-action-button">
+              Wieder öffnen
+            </button>
+          )}
+          {task.status !== 'in_progress' && (
+            <button type="button" onClick={() => onStatusChange(task.id, 'in_progress')} className="lifehq-task-action-button lifehq-task-action-button-gold">
+              In Arbeit
+            </button>
+          )}
+          {task.status !== 'done' && (
+            <button type="button" onClick={() => onStatusChange(task.id, 'done')} className="lifehq-task-action-button">
+              Erledigen
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              resetEditDraft();
+              setIsEditOpen((current) => !current);
+              setIsDeleteConfirmOpen(false);
+            }}
+            className="lifehq-task-action-button"
+          >
+            Details
           </button>
-        )}
-        {task.status !== 'in_progress' && (
-          <button type="button" onClick={() => onStatusChange(task.id, 'in_progress')} className="lifehq-task-action-button lifehq-task-action-button-gold">
-            In Arbeit
+          <button type="button" onClick={() => setIsDeleteConfirmOpen((current) => !current)} className="lifehq-task-action-button">
+            Löschen
           </button>
-        )}
-        {task.status !== 'done' && (
-          <button type="button" onClick={() => onStatusChange(task.id, 'done')} className="lifehq-task-action-button">
-            Erledigen
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => {
-            resetEditDraft();
-            setIsEditOpen((current) => !current);
-            setIsDeleteConfirmOpen(false);
-          }}
-          className="lifehq-task-action-button"
-        >
-          Details
-        </button>
-        <button type="button" onClick={() => setIsDeleteConfirmOpen((current) => !current)} className="lifehq-task-action-button">
-          Löschen
-        </button>
+        </div>
       </div>
 
       {isDeleteConfirmOpen && (
@@ -490,7 +491,7 @@ function TaskCard({
         </form>
       )}
 
-      <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
+      <div className="max-h-0 overflow-hidden text-xs opacity-0 transition-all duration-200 group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100 group-focus-within:mt-2 group-focus-within:max-h-12 group-focus-within:opacity-100">
         <button type="button" onClick={() => setIsPlanningOpen((current) => !current)} className="lifehq-task-action-button">
           {isPlanningOpen ? 'Planung ausblenden' : 'Planung'}
         </button>
