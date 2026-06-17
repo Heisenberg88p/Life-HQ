@@ -8,6 +8,7 @@ import type { Project } from '../models/project';
 import type { ProjectHistoryEntry, ProjectHistoryEntryType } from '../models/projectHistory';
 import type { Task } from '../models/task';
 import type { TrueNorth } from '../models/trueNorth';
+import type { Vision } from '../models/vision';
 import {
   MILESTONE_STATUS_OPTIONS,
   PRIORITY_OPTIONS,
@@ -17,9 +18,10 @@ import {
 } from '../constants/statusOptions';
 
 export const LIFEHQ_STORAGE_KEY = 'lifehq-v1-storage';
-export const LIFEHQ_STORAGE_VERSION = 3;
+export const LIFEHQ_STORAGE_VERSION = 4;
 
 export interface PersistableLifeHQState {
+  visions: Vision[];
   focuses: Focus[];
   trueNorths: TrueNorth[];
   lifeAreas: LifeArea[];
@@ -242,6 +244,27 @@ const sanitizeArray = <T>(value: unknown, fallback: T[], sanitizeItem: (item: un
   }, []);
 };
 
+const sanitizeVision = (value: unknown, timestampFallback: string): Vision | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const id = getRequiredString(value.id);
+  const title = getRequiredString(value.title);
+
+  if (!id || !title) {
+    return undefined;
+  }
+
+  return {
+    id,
+    title,
+    description: getOptionalString(value.description),
+    createdAt: getRequiredTimestamp(value.createdAt, timestampFallback),
+    updatedAt: getRequiredTimestamp(value.updatedAt, timestampFallback),
+  };
+};
+
 const sanitizeFocus = (value: unknown, timestampFallback: string): Focus | undefined => {
   if (!isRecord(value)) {
     return undefined;
@@ -291,6 +314,7 @@ const sanitizeTrueNorth = (value: unknown, timestampFallback: string): TrueNorth
 
 export const getPersistedLifeHQState = (state: PersistableLifeHQState): LifeHQPersistedState => ({
   storageVersion: LIFEHQ_STORAGE_VERSION,
+  visions: state.visions,
   focuses: state.focuses,
   trueNorths: state.trueNorths,
   lifeAreas: state.lifeAreas,
@@ -310,6 +334,7 @@ export const sanitizePersistedLifeHQState = (
 
   const timestampFallback = new Date().toISOString();
 
+  const visions = sanitizeArray(persistedState.visions, fallbackState.visions, (item) => sanitizeVision(item, timestampFallback));
   const focuses = sanitizeArray(persistedState.focuses, fallbackState.focuses, (item) => sanitizeFocus(item, timestampFallback));
   const validFocusIds = new Set(focuses.map((focus) => focus.id));
   const projects = sanitizeArray(persistedState.projects, fallbackState.projects, (item) => sanitizeProject(item, timestampFallback))
@@ -320,6 +345,7 @@ export const sanitizePersistedLifeHQState = (
 
   return {
     storageVersion: LIFEHQ_STORAGE_VERSION,
+    visions,
     focuses,
     trueNorths: sanitizeArray(persistedState.trueNorths, fallbackState.trueNorths, (item) => sanitizeTrueNorth(item, timestampFallback)),
     lifeAreas: sanitizeArray(persistedState.lifeAreas, fallbackState.lifeAreas, (item) => sanitizeLifeArea(item, timestampFallback)),
@@ -335,6 +361,7 @@ export const mergePersistedLifeHQState = <T extends PersistableLifeHQState>(pers
 
   return {
     ...currentState,
+    visions: sanitizedState.visions,
     focuses: sanitizedState.focuses,
     trueNorths: sanitizedState.trueNorths,
     lifeAreas: sanitizedState.lifeAreas,
