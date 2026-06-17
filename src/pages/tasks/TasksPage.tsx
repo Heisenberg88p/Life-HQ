@@ -388,7 +388,7 @@ function TaskCard({
         </div>
       </div>
 
-      {isDone && task.completedAt && <p className="mt-2 text-xs text-[#7E776E]">Erledigt am {formatDateDisplay(task.completedAt)}</p>}
+      {isDone && task.completedAt && <p className="mt-3 text-xs text-[#7E776E]">Erledigt am {formatDateDisplay(task.completedAt)}</p>}
 
       <div className="max-h-0 overflow-hidden border-white/[0.07] pt-0 text-xs opacity-0 transition-all duration-200 group-hover:mt-3 group-hover:max-h-24 group-hover:border-t group-hover:pt-3 group-hover:opacity-100 group-focus-within:mt-3 group-focus-within:max-h-24 group-focus-within:border-t group-focus-within:pt-3 group-focus-within:opacity-100">
         <div className="flex flex-wrap gap-1.5" aria-label={`Status und Aktionen für ${task.title}`}>
