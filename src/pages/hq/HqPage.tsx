@@ -164,9 +164,9 @@ function getCurrentPhaseLabel(lifeSystem: LifeSystem, phases: LifeSystemPhase[])
   return phases.find((phase) => phase.id === lifeSystem.currentPhaseId && phase.lifeSystemId === lifeSystem.id)?.title ?? 'Phase nicht gefunden';
 }
 
-function LifeSystemCard({ lifeSystem, currentPhaseLabel, projectCount }: { lifeSystem: LifeSystem; currentPhaseLabel: string; projectCount: number }) {
+function LifeSystemCard({ lifeSystem, currentPhaseLabel, projectCount, onClick }: { lifeSystem: LifeSystem; currentPhaseLabel: string; projectCount: number; onClick: () => void }) {
   return (
-    <article className="lifehq-premium-card border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-5 sm:p-6">
+    <button type="button" onClick={onClick} className="lifehq-premium-card w-full border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-5 text-left transition hover:border-[#D6AD64]/30 hover:bg-[#D6AD64]/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70 sm:p-6">
       <div className="space-y-5">
         <div className="space-y-3">
           <p className="text-xs uppercase tracking-[0.24em] text-[#D6AD64]/60">Life System</p>
@@ -187,7 +187,104 @@ function LifeSystemCard({ lifeSystem, currentPhaseLabel, projectCount }: { lifeS
 
         {projectCount === 0 && <p className="rounded-2xl border border-[#D6AD64]/15 bg-[#D6AD64]/[0.055] px-4 py-3 text-sm leading-6 text-[#D8C7AA]">Noch keine Projekte zugeordnet.</p>}
       </div>
-    </article>
+    </button>
+  );
+}
+
+function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, onClose }: { lifeSystem: LifeSystem; currentPhaseLabel: string; projectCount: number; onClose: () => void }) {
+  const updateLifeSystem = useLifeHQStore((state) => state.updateLifeSystem);
+  const deleteLifeSystem = useLifeHQStore((state) => state.deleteLifeSystem);
+  const [draft, setDraft] = useState<LifeSystemDraft>({ name: lifeSystem.name, description: lifeSystem.description ?? '' });
+  const [error, setError] = useState<string>();
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const name = draft.name.trim();
+
+    if (!name) {
+      setError('Bitte gib einen Namen für das Lebenssystem ein.');
+      return;
+    }
+
+    updateLifeSystem(lifeSystem.id, {
+      name,
+      description: getOptionalDescription(draft.description),
+    });
+    setError(undefined);
+  };
+
+  const handleDelete = () => {
+    if (!window.confirm(`Lebenssystem "${lifeSystem.name}" wirklich löschen?`)) {
+      return;
+    }
+
+    deleteLifeSystem(lifeSystem.id);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 px-4 py-6 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-labelledby="life-system-modal-title">
+      <div className="lifehq-premium-card max-h-[calc(100vh-3rem)] w-full max-w-2xl overflow-y-auto border-[#D6AD64]/20 bg-[#17130F] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.45)] sm:p-7">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-3">
+            <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/65">Life System</p>
+            <h2 id="life-system-modal-title" className="font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA]">{lifeSystem.name}</h2>
+            {lifeSystem.description && <p className="max-w-xl text-sm leading-6 text-[#B8B1A7]">{lifeSystem.description}</p>}
+          </div>
+          <button type="button" onClick={onClose} className="w-fit rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-[#C9C1B8] transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
+            Schließen
+          </button>
+        </div>
+
+        <div className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
+          <div className="rounded-2xl border border-white/[0.08] bg-black/15 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-[#7E776E]">Aktuelle Phase</p>
+            <p className="mt-2 font-medium text-[#F5F1EA]">{currentPhaseLabel}</p>
+          </div>
+          <div className="rounded-2xl border border-white/[0.08] bg-black/15 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-[#7E776E]">Projekte</p>
+            <p className="mt-2 font-medium text-[#F5F1EA]">{projectCount === 1 ? '1 Projekt' : `${projectCount} Projekte`}</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-7 space-y-5">
+          <div className="space-y-2">
+            <label htmlFor="life-system-modal-name" className="text-sm font-medium text-[#F5F1EA]">Name</label>
+            <input
+              id="life-system-modal-name"
+              type="text"
+              value={draft.name}
+              onChange={(event) => setDraft((currentDraft) => ({ ...currentDraft, name: event.target.value }))}
+              className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-base text-[#F5F1EA] outline-none transition placeholder:text-[#7E776E] focus:border-[#D6AD64]/50 focus:ring-2 focus:ring-[#D6AD64]/15"
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="life-system-modal-description" className="text-sm font-medium text-[#F5F1EA]">Beschreibung</label>
+            <textarea
+              id="life-system-modal-description"
+              value={draft.description}
+              onChange={(event) => setDraft((currentDraft) => ({ ...currentDraft, description: event.target.value }))}
+              className="min-h-28 w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-base leading-7 text-[#F5F1EA] outline-none transition placeholder:text-[#7E776E] focus:border-[#D6AD64]/50 focus:ring-2 focus:ring-[#D6AD64]/15"
+            />
+          </div>
+          {error && <p className="text-sm text-red-200">{error}</p>}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button type="submit" className="rounded-full bg-[#D6AD64] px-5 py-2.5 text-sm font-semibold text-[#1F1A14] transition hover:bg-[#F0C979] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+                Speichern
+              </button>
+              <button type="button" onClick={onClose} className="rounded-full border border-white/10 px-5 py-2.5 text-sm font-medium text-[#C9C1B8] transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
+                Abbrechen
+              </button>
+            </div>
+            <button type="button" onClick={handleDelete} className="rounded-full border border-red-300/20 px-5 py-2.5 text-sm font-medium text-red-100 transition hover:border-red-300/35 hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-200/60">
+              Löschen
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 
@@ -199,6 +296,7 @@ function LifeSystemsGridSection() {
   const [showCreateForm, setShowCreateForm] = useState(lifeSystems.length === 0);
   const [draft, setDraft] = useState<LifeSystemDraft>(emptyLifeSystemDraft);
   const [error, setError] = useState<string>();
+  const [selectedLifeSystemId, setSelectedLifeSystemId] = useState<string>();
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -223,6 +321,10 @@ function LifeSystemsGridSection() {
     setError(undefined);
     setShowCreateForm(false);
   };
+
+  const selectedLifeSystem = lifeSystems.find((lifeSystem) => lifeSystem.id === selectedLifeSystemId);
+  const selectedLifeSystemProjectCount = selectedLifeSystem ? projects.filter((project) => project.lifeSystemId === selectedLifeSystem.id).length : 0;
+  const selectedLifeSystemPhaseLabel = selectedLifeSystem ? getCurrentPhaseLabel(selectedLifeSystem, phases) : '';
 
   return (
     <section className="lifehq-premium-card border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-6 sm:p-8">
@@ -294,10 +396,20 @@ function LifeSystemsGridSection() {
                 lifeSystem={lifeSystem}
                 currentPhaseLabel={getCurrentPhaseLabel(lifeSystem, phases)}
                 projectCount={projectCount}
+                onClick={() => setSelectedLifeSystemId(lifeSystem.id)}
               />
             );
           })}
         </div>
+      )}
+
+      {selectedLifeSystem && (
+        <LifeSystemDetailModal
+          lifeSystem={selectedLifeSystem}
+          currentPhaseLabel={selectedLifeSystemPhaseLabel}
+          projectCount={selectedLifeSystemProjectCount}
+          onClose={() => setSelectedLifeSystemId(undefined)}
+        />
       )}
     </section>
   );
