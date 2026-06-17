@@ -1,7 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import type { LifeSystem } from '../../models/lifeSystem';
 import type { LifeSystemPhase, LifeSystemPhaseStatus } from '../../models/lifeSystemPhase';
+import type { Project } from '../../models/project';
 import type { Vision } from '../../models/vision';
+import { priorityLabels, projectStatusLabels, trafficLightLabels } from '../../constants/displayLabels';
+import { formatDateDisplay } from '../../utils/dateFormat';
 import { selectLifeSystemPhases, selectLifeSystems, selectProjects, selectVisions, useLifeHQStore } from '../../store';
 
 type VisionDraft = {
@@ -18,6 +21,11 @@ type LifeSystemPhaseDraft = {
   title: string;
   description: string;
   status: LifeSystemPhaseStatus;
+};
+
+type LifeSystemPhaseDraft = {
+  title: string;
+  description: string;
 };
 
 const lifeSystemPhaseStatusOptions: Array<{ value: LifeSystemPhaseStatus; label: string }> = [
@@ -43,6 +51,7 @@ const createVisionDraft = (vision?: Vision): VisionDraft => ({
 
 const emptyLifeSystemDraft: LifeSystemDraft = { name: '', description: '' };
 const emptyLifeSystemPhaseDraft: LifeSystemPhaseDraft = { title: '', description: '', status: 'planned' };
+const emptyProjectDraft: ProjectDraft = { name: '', description: '' };
 
 function getOptionalDescription(value: string): string | undefined {
   const trimmedValue = value.trim();
@@ -187,6 +196,27 @@ function getSortedLifeSystemPhases(phases: LifeSystemPhase[]): LifeSystemPhase[]
   return [...phases].sort((firstPhase, secondPhase) => firstPhase.order - secondPhase.order || firstPhase.createdAt.localeCompare(secondPhase.createdAt));
 }
 
+
+function ProjectSummaryItem({ project, action }: { project: Project; action: React.ReactNode }) {
+  return (
+    <article className="rounded-2xl border border-white/[0.08] bg-black/15 p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-2">
+          <h4 className="font-medium text-[#F5F1EA]">{project.name}</h4>
+          {project.description && <p className="line-clamp-2 text-sm leading-6 text-[#B8B1A7]">{project.description}</p>}
+          <div className="flex flex-wrap gap-2 text-xs text-[#C9C1B8]">
+            <span className="rounded-full border border-white/10 px-3 py-1">{projectStatusLabels[project.status]}</span>
+            <span className="rounded-full border border-white/10 px-3 py-1">{priorityLabels[project.priority]}</span>
+            <span className="rounded-full border border-white/10 px-3 py-1">{trafficLightLabels[project.trafficLightStatus]}</span>
+            {project.targetDate && <span className="rounded-full border border-white/10 px-3 py-1">{formatDateDisplay(project.targetDate)}</span>}
+          </div>
+        </div>
+        {action}
+      </div>
+    </article>
+  );
+}
+
 function LifeSystemCard({ lifeSystem, currentPhaseLabel, projectCount, onClick }: { lifeSystem: LifeSystem; currentPhaseLabel: string; projectCount: number; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} className="lifehq-premium-card w-full border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-5 text-left transition hover:border-[#D6AD64]/30 hover:bg-[#D6AD64]/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70 sm:p-6">
@@ -218,15 +248,24 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
   const updateLifeSystem = useLifeHQStore((state) => state.updateLifeSystem);
   const deleteLifeSystem = useLifeHQStore((state) => state.deleteLifeSystem);
   const phases = useLifeHQStore((state) => state.lifeSystemPhases.filter((phase) => phase.lifeSystemId === lifeSystem.id));
+  const projects = useLifeHQStore(selectProjects);
+  const addProject = useLifeHQStore((state) => state.addProject);
+  const assignProjectToLifeSystem = useLifeHQStore((state) => state.assignProjectToLifeSystem);
+  const removeProjectFromLifeSystem = useLifeHQStore((state) => state.removeProjectFromLifeSystem);
   const createLifeSystemPhase = useLifeHQStore((state) => state.createLifeSystemPhase);
   const updateLifeSystemPhase = useLifeHQStore((state) => state.updateLifeSystemPhase);
   const deleteLifeSystemPhase = useLifeHQStore((state) => state.deleteLifeSystemPhase);
   const setCurrentLifeSystemPhase = useLifeHQStore((state) => state.setCurrentLifeSystemPhase);
   const sortedPhases = getSortedLifeSystemPhases(phases);
+  const assignedProjects = projects.filter((project) => project.lifeSystemId === lifeSystem.id);
+  const assignableProjects = projects.filter((project) => !project.lifeSystemId);
   const [draft, setDraft] = useState<LifeSystemDraft>({ name: lifeSystem.name, description: lifeSystem.description ?? '' });
   const [error, setError] = useState<string>();
   const [phaseDraft, setPhaseDraft] = useState<LifeSystemPhaseDraft>(emptyLifeSystemPhaseDraft);
   const [phaseError, setPhaseError] = useState<string>();
+  const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [projectDraft, setProjectDraft] = useState<ProjectDraft>(emptyProjectDraft);
+  const [projectError, setProjectError] = useState<string>();
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -252,6 +291,46 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
 
     deleteLifeSystem(lifeSystem.id);
     onClose();
+  };
+
+
+
+  const handleAssignProject = () => {
+    if (!selectedProjectId) {
+      setProjectError('Bitte wähle ein Projekt aus.');
+      return;
+    }
+
+    assignProjectToLifeSystem(selectedProjectId, lifeSystem.id);
+    setSelectedProjectId('');
+    setProjectError(undefined);
+  };
+
+  const handleCreateProject = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const name = projectDraft.name.trim();
+
+    if (!name) {
+      setProjectError('Bitte gib einen Projektnamen ein.');
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+
+    addProject({
+      id: createEntityId('project'),
+      name,
+      description: getOptionalDescription(projectDraft.description),
+      lifeSystemId: lifeSystem.id,
+      status: 'planned',
+      priority: 'medium',
+      trafficLightStatus: 'green',
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+    setProjectDraft(emptyProjectDraft);
+    setProjectError(undefined);
   };
 
   const handleCreatePhase = (event: FormEvent<HTMLFormElement>) => {
@@ -325,6 +404,79 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
           </div>
         </div>
 
+
+
+        <section className="mt-7 rounded-3xl border border-white/[0.08] bg-black/15 p-4 sm:p-5">
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.24em] text-[#D6AD64]/60">Projekte</p>
+            <h3 className="font-serif text-2xl font-semibold text-[#F5F1EA]">Projekte</h3>
+            <p className="text-sm leading-6 text-[#B8B1A7]">{assignedProjects.length === 1 ? '1 Projekt ist diesem Lebenssystem zugeordnet.' : `${assignedProjects.length} Projekte sind diesem Lebenssystem zugeordnet.`}</p>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {assignedProjects.length === 0 ? (
+              <p className="rounded-2xl border border-white/[0.08] bg-black/15 px-4 py-3 text-sm leading-6 text-[#B8B1A7]">Noch keine Projekte zugeordnet.</p>
+            ) : assignedProjects.map((project) => (
+              <ProjectSummaryItem
+                key={project.id}
+                project={project}
+                action={(
+                  <button type="button" onClick={() => removeProjectFromLifeSystem(project.id)} className="w-fit rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-[#C9C1B8] transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
+                    Zuordnung entfernen
+                  </button>
+                )}
+              />
+            ))}
+          </div>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            <div className="rounded-3xl border border-white/[0.08] bg-black/15 p-4">
+              <p className="text-sm font-medium text-[#F5F1EA]">Projekt zuordnen</p>
+              <div className="mt-3 flex flex-col gap-3">
+                <select
+                  value={selectedProjectId}
+                  onChange={(event) => setSelectedProjectId(event.target.value)}
+                  className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition focus:border-[#D6AD64]/50 focus:ring-2 focus:ring-[#D6AD64]/15"
+                  aria-label="Projekt zuordnen"
+                >
+                  <option value="">Unzugeordnetes Projekt wählen</option>
+                  {assignableProjects.map((project) => (
+                    <option key={project.id} value={project.id}>{project.name}</option>
+                  ))}
+                </select>
+                <button type="button" onClick={handleAssignProject} disabled={assignableProjects.length === 0} className="rounded-full border border-[#D6AD64]/25 px-4 py-2 text-sm font-medium text-[#F5D28B] transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+                  Projekt zuordnen
+                </button>
+              </div>
+              {assignableProjects.length === 0 && <p className="mt-3 text-sm leading-6 text-[#7E776E]">Keine unzugeordneten Projekte verfügbar.</p>}
+            </div>
+
+            <form onSubmit={handleCreateProject} className="rounded-3xl border border-white/[0.08] bg-black/15 p-4">
+              <p className="text-sm font-medium text-[#F5F1EA]">Neues Projekt erstellen</p>
+              <div className="mt-3 space-y-3">
+                <input
+                  type="text"
+                  value={projectDraft.name}
+                  onChange={(event) => setProjectDraft((currentDraft) => ({ ...currentDraft, name: event.target.value }))}
+                  className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition placeholder:text-[#7E776E] focus:border-[#D6AD64]/50 focus:ring-2 focus:ring-[#D6AD64]/15"
+                  placeholder="Projektname"
+                  aria-label="Projektname"
+                />
+                <textarea
+                  value={projectDraft.description}
+                  onChange={(event) => setProjectDraft((currentDraft) => ({ ...currentDraft, description: event.target.value }))}
+                  className="min-h-24 w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm leading-6 text-[#F5F1EA] outline-none transition placeholder:text-[#7E776E] focus:border-[#D6AD64]/50 focus:ring-2 focus:ring-[#D6AD64]/15"
+                  placeholder="Beschreibung optional"
+                  aria-label="Projektbeschreibung"
+                />
+                {projectError && <p className="text-sm text-red-200">{projectError}</p>}
+                <button type="submit" className="rounded-full bg-[#D6AD64] px-5 py-2.5 text-sm font-semibold text-[#1F1A14] transition hover:bg-[#F0C979] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+                  Projekt erstellen
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
 
 
         <section className="mt-7 rounded-3xl border border-white/[0.08] bg-black/15 p-4 sm:p-5">
