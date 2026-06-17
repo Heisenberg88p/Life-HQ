@@ -11,3 +11,6 @@ export const selectCompletedProjects = (state: LifeHQState) => state.projects.fi
 export const selectCriticalProjects = (state: LifeHQState) =>
   state.projects.filter((project) => project.priority === 'critical' || project.trafficLightStatus === 'red');
 export const selectRedTrafficLightProjects = (state: LifeHQState) => state.projects.filter((project) => project.trafficLightStatus === 'red');
+
+export const getProjectsByLifeSystem = (lifeSystemId: string) => (state: LifeHQState) => state.projects.filter((project) => project.lifeSystemId === lifeSystemId);
+export const getLifeSystemProjectCount = (lifeSystemId: string) => (state: LifeHQState) => getProjectsByLifeSystem(lifeSystemId)(state).length;
