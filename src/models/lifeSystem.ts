@@ -5,4 +5,5 @@ export interface LifeSystem extends BaseEntity {
   description?: string;
   visionId?: string;
   currentPhaseId?: string;
+  legacyLifeAreaId?: string;
 }

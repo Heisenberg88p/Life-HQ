@@ -1,7 +1,7 @@
 import type { PersistableLifeHQState } from './persistence';
 import { LIFEHQ_STORAGE_VERSION, sanitizePersistedLifeHQState } from './persistence';
 
-export const LIFEHQ_BACKUP_EXPORT_VERSION = 6;
+export const LIFEHQ_BACKUP_EXPORT_VERSION = 7;
 
 export interface LifeHQBackupMetadata {
   appName: 'LifeHQ';
@@ -125,7 +125,7 @@ export const parseLifeHQBackup = (value: unknown): LifeHQBackupParseResult => {
   const invalidItemKey = LIFEHQ_BACKUP_ARRAY_KEYS.find((key) => {
     const sourceItems = backupData[key];
 
-    return Array.isArray(sourceItems) && sourceItems.length !== getSanitizedArrayLength(sanitizedData, key);
+    return Array.isArray(sourceItems) && sourceItems.length > getSanitizedArrayLength(sanitizedData, key);
   });
 
   if (invalidItemKey) {

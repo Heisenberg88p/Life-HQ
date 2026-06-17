@@ -18,9 +18,10 @@ import {
   TASK_STATUS_OPTIONS,
   TRAFFIC_LIGHT_STATUS_OPTIONS,
 } from '../constants/statusOptions';
+import { migrateLifeAreasToLifeSystems } from './migrations';
 
 export const LIFEHQ_STORAGE_KEY = 'lifehq-v1-storage';
-export const LIFEHQ_STORAGE_VERSION = 6;
+export const LIFEHQ_STORAGE_VERSION = 7;
 
 export interface PersistableLifeHQState {
   visions: Vision[];
@@ -137,6 +138,7 @@ const sanitizeLifeSystem = (value: unknown, timestampFallback: string): LifeSyst
     description: getOptionalString(value.description),
     visionId: getOptionalString(value.visionId),
     currentPhaseId: getOptionalString(value.currentPhaseId),
+    legacyLifeAreaId: getOptionalString(value.legacyLifeAreaId),
     createdAt: getRequiredTimestamp(value.createdAt, timestampFallback),
     updatedAt: getRequiredTimestamp(value.updatedAt, timestampFallback),
   };
@@ -418,16 +420,22 @@ export const sanitizePersistedLifeHQState = (
       lifeSystemId: project.lifeSystemId && validLifeSystemIds.has(project.lifeSystemId) ? project.lifeSystemId : undefined,
       focusId: project.focusId && validFocusIds.has(project.focusId) ? project.focusId : null,
     }));
+  const lifeAreas = sanitizeArray(persistedState.lifeAreas, fallbackState.lifeAreas, (item) => sanitizeLifeArea(item, timestampFallback));
+  const migratedState = migrateLifeAreasToLifeSystems({
+    lifeAreas,
+    lifeSystems: sanitizedLifeSystems,
+    projects,
+  }, timestampFallback);
 
   return {
     storageVersion: LIFEHQ_STORAGE_VERSION,
     visions,
-    lifeSystems: sanitizedLifeSystems,
+    lifeSystems: migratedState.lifeSystems,
     lifeSystemPhases,
     focuses,
     trueNorths: sanitizeArray(persistedState.trueNorths, fallbackState.trueNorths, (item) => sanitizeTrueNorth(item, timestampFallback)),
-    lifeAreas: sanitizeArray(persistedState.lifeAreas, fallbackState.lifeAreas, (item) => sanitizeLifeArea(item, timestampFallback)),
-    projects,
+    lifeAreas: migratedState.lifeAreas,
+    projects: migratedState.projects,
     tasks: sanitizeArray(persistedState.tasks, fallbackState.tasks, (item) => sanitizeTask(item, timestampFallback)),
     milestones: sanitizeArray(persistedState.milestones, fallbackState.milestones, (item) => sanitizeMilestone(item, timestampFallback)),
     historyEntries: sanitizeArray(persistedState.historyEntries, fallbackState.historyEntries, (item) => sanitizeHistoryEntry(item, timestampFallback)),
