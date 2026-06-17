@@ -142,28 +142,6 @@ const sanitizeLifeSystem = (value: unknown, timestampFallback: string): LifeSyst
   };
 };
 
-const sanitizeLifeSystem = (value: unknown, timestampFallback: string): LifeSystem | undefined => {
-  if (!isRecord(value)) {
-    return undefined;
-  }
-
-  const id = getRequiredString(value.id);
-  const name = getRequiredString(value.name);
-
-  if (!id || !name) {
-    return undefined;
-  }
-
-  return {
-    id,
-    name,
-    description: getOptionalString(value.description),
-    visionId: getOptionalString(value.visionId),
-    createdAt: getRequiredTimestamp(value.createdAt, timestampFallback),
-    updatedAt: getRequiredTimestamp(value.updatedAt, timestampFallback),
-  };
-};
-
 const sanitizeLifeArea = (value: unknown, timestampFallback: string): LifeArea | undefined => {
   if (!isRecord(value)) {
     return undefined;
@@ -204,6 +182,7 @@ const sanitizeProject = (value: unknown, timestampFallback: string): Project | u
     name,
     description: getOptionalString(value.description),
     lifeAreaId: getOptionalString(value.lifeAreaId),
+    lifeSystemId: getOptionalString(value.lifeSystemId),
     focusId: getOptionalString(value.focusId) ?? null,
     status: getEnumValue<ProjectStatus>(value.status, PROJECT_STATUS_OPTIONS, 'planned'),
     priority: getEnumValue<Priority>(value.priority, PRIORITY_OPTIONS, 'medium'),
@@ -436,6 +415,7 @@ export const sanitizePersistedLifeHQState = (
   const projects = sanitizeArray(persistedState.projects, fallbackState.projects, (item) => sanitizeProject(item, timestampFallback))
     .map((project) => ({
       ...project,
+      lifeSystemId: project.lifeSystemId && validLifeSystemIds.has(project.lifeSystemId) ? project.lifeSystemId : undefined,
       focusId: project.focusId && validFocusIds.has(project.focusId) ? project.focusId : null,
     }));
 

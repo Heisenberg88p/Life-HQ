@@ -146,6 +146,7 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
   deleteLifeSystem: (id: string) => set((state) => ({
     lifeSystems: state.lifeSystems.filter((item) => item.id !== id),
     lifeSystemPhases: state.lifeSystemPhases.filter((item) => item.lifeSystemId !== id),
+    projects: state.projects.map((item) => (item.lifeSystemId === id ? withUpdatedAt({ ...item, lifeSystemId: undefined }) : item)),
   })),
   createLifeSystemPhase: (phase: LifeSystemPhase) => set((state) => {
     if (!state.lifeSystems.some((lifeSystem) => lifeSystem.id === phase.lifeSystemId)) {
@@ -199,23 +200,34 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
     set((state) => ({ lifeAreas: state.lifeAreas.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
   deleteLifeArea: (id: string) => set((state) => ({ lifeAreas: state.lifeAreas.filter((item) => item.id !== id) })),
 
-  addProject: (project: Project) => set((state) => ({
-    projects: [...state.projects, project],
-    historyEntries: [
-      ...state.historyEntries,
-      createProjectHistoryEntry({
-        projectId: project.id,
-        type: 'created',
-        description: `Projekt erstellt: ${project.name}.`,
-        date: project.createdAt,
-      }),
-    ],
-  })),
+  addProject: (project: Project) => set((state) => {
+    const sanitizedProject = {
+      ...project,
+      lifeSystemId: project.lifeSystemId && state.lifeSystems.some((lifeSystem) => lifeSystem.id === project.lifeSystemId) ? project.lifeSystemId : undefined,
+    };
+
+    return {
+      projects: [...state.projects, sanitizedProject],
+      historyEntries: [
+        ...state.historyEntries,
+        createProjectHistoryEntry({
+          projectId: sanitizedProject.id,
+          type: 'created',
+          description: `Projekt erstellt: ${sanitizedProject.name}.`,
+          date: sanitizedProject.createdAt,
+        }),
+      ],
+    };
+  }),
   updateProject: (id: string, patch: Partial<Project>) =>
     set((state) => {
       const project = state.projects.find((item) => item.id === id);
 
       if (!project) {
+        return {};
+      }
+
+      if (patch.lifeSystemId && !state.lifeSystems.some((lifeSystem) => lifeSystem.id === patch.lifeSystemId)) {
         return {};
       }
 
@@ -232,6 +244,18 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
     tasks: state.tasks.filter((item) => item.projectId !== id),
     milestones: state.milestones.filter((item) => item.projectId !== id),
     historyEntries: state.historyEntries.filter((item) => item.projectId !== id),
+  })),
+  assignProjectToLifeSystem: (projectId: string, lifeSystemId: string) => set((state) => {
+    if (!state.lifeSystems.some((lifeSystem) => lifeSystem.id === lifeSystemId)) {
+      return {};
+    }
+
+    return {
+      projects: state.projects.map((item) => (item.id === projectId ? withUpdatedAt({ ...item, lifeSystemId }) : item)),
+    };
+  }),
+  removeProjectFromLifeSystem: (projectId: string) => set((state) => ({
+    projects: state.projects.map((item) => (item.id === projectId ? withUpdatedAt({ ...item, lifeSystemId: undefined }) : item)),
   })),
   pauseProject: (id: string, input?: PauseProjectInput | string, note?: string) =>
     set((state) => {
