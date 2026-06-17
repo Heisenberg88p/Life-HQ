@@ -23,8 +23,8 @@ type LifeSystemPhaseDraft = {
   status: LifeSystemPhaseStatus;
 };
 
-type ProjectDraft = {
-  name: string;
+type LifeSystemPhaseDraft = {
+  title: string;
   description: string;
 };
 
