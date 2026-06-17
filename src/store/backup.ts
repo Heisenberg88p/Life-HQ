@@ -1,7 +1,7 @@
 import type { PersistableLifeHQState } from './persistence';
 import { LIFEHQ_STORAGE_VERSION, sanitizePersistedLifeHQState } from './persistence';
 
-export const LIFEHQ_BACKUP_EXPORT_VERSION = 3;
+export const LIFEHQ_BACKUP_EXPORT_VERSION = 5;
 
 export interface LifeHQBackupMetadata {
   appName: 'LifeHQ';
@@ -21,6 +21,8 @@ export type LifeHQBackupParseResult =
   | { ok: false; error: string };
 
 const EMPTY_LIFEHQ_DATA: PersistableLifeHQState = {
+  visions: [],
+  lifeSystems: [],
   focuses: [],
   trueNorths: [],
   lifeAreas: [],
@@ -30,7 +32,7 @@ const EMPTY_LIFEHQ_DATA: PersistableLifeHQState = {
   historyEntries: [],
 };
 
-const LIFEHQ_BACKUP_ARRAY_KEYS = ['focuses', 'trueNorths', 'lifeAreas', 'projects', 'tasks', 'milestones', 'historyEntries'] as const;
+const LIFEHQ_BACKUP_ARRAY_KEYS = ['visions', 'lifeSystems', 'focuses', 'trueNorths', 'lifeAreas', 'projects', 'tasks', 'milestones', 'historyEntries'] as const;
 const LIFEHQ_REQUIRED_BACKUP_ARRAY_KEYS = ['lifeAreas', 'projects', 'tasks', 'milestones', 'historyEntries'] as const;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
@@ -66,6 +68,8 @@ export const createLifeHQBackup = (state: PersistableLifeHQState, exportedAt = n
     storageVersion: LIFEHQ_STORAGE_VERSION,
   },
   data: {
+    visions: state.visions,
+    lifeSystems: state.lifeSystems,
     focuses: state.focuses,
     trueNorths: state.trueNorths,
     lifeAreas: state.lifeAreas,
@@ -109,6 +113,8 @@ export const parseLifeHQBackup = (value: unknown): LifeHQBackupParseResult => {
 
   const backupData = {
     ...data,
+    visions: Array.isArray(data.visions) ? data.visions : [],
+    lifeSystems: Array.isArray(data.lifeSystems) ? data.lifeSystems : [],
     focuses: Array.isArray(data.focuses) ? data.focuses : [],
     trueNorths: Array.isArray(data.trueNorths) ? data.trueNorths : [],
   } as Record<(typeof LIFEHQ_BACKUP_ARRAY_KEYS)[number], unknown>;
@@ -136,6 +142,8 @@ export const parseLifeHQBackup = (value: unknown): LifeHQBackupParseResult => {
         storageVersion: LIFEHQ_STORAGE_VERSION,
       },
       data: {
+        visions: sanitizedData.visions,
+        lifeSystems: sanitizedData.lifeSystems,
         focuses: sanitizedData.focuses,
         trueNorths: sanitizedData.trueNorths,
         lifeAreas: sanitizedData.lifeAreas,
