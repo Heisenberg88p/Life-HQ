@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import type { LifeSystem } from '../../models/lifeSystem';
-import type { LifeSystemPhase } from '../../models/lifeSystemPhase';
+import type { LifeSystemPhase, LifeSystemPhaseStatus } from '../../models/lifeSystemPhase';
 import type { Vision } from '../../models/vision';
 import { selectLifeSystemPhases, selectLifeSystems, selectProjects, selectVisions, useLifeHQStore } from '../../store';
 
@@ -13,6 +13,19 @@ type LifeSystemDraft = {
   name: string;
   description: string;
 };
+
+type LifeSystemPhaseDraft = {
+  title: string;
+  description: string;
+  status: LifeSystemPhaseStatus;
+};
+
+const lifeSystemPhaseStatusOptions: Array<{ value: LifeSystemPhaseStatus; label: string }> = [
+  { value: 'planned', label: 'Geplant' },
+  { value: 'active', label: 'Aktiv' },
+  { value: 'completed', label: 'Abgeschlossen' },
+  { value: 'archived', label: 'Archiviert' },
+];
 
 const focusPlaceholder = {
   title: 'Focus',
@@ -29,6 +42,7 @@ const createVisionDraft = (vision?: Vision): VisionDraft => ({
 });
 
 const emptyLifeSystemDraft: LifeSystemDraft = { name: '', description: '' };
+const emptyLifeSystemPhaseDraft: LifeSystemPhaseDraft = { title: '', description: '', status: 'planned' };
 
 function getOptionalDescription(value: string): string | undefined {
   const trimmedValue = value.trim();
@@ -164,6 +178,15 @@ function getCurrentPhaseLabel(lifeSystem: LifeSystem, phases: LifeSystemPhase[])
   return phases.find((phase) => phase.id === lifeSystem.currentPhaseId && phase.lifeSystemId === lifeSystem.id)?.title ?? 'Phase nicht gefunden';
 }
 
+
+function getPhaseStatusLabel(status: LifeSystemPhaseStatus): string {
+  return lifeSystemPhaseStatusOptions.find((option) => option.value === status)?.label ?? status;
+}
+
+function getSortedLifeSystemPhases(phases: LifeSystemPhase[]): LifeSystemPhase[] {
+  return [...phases].sort((firstPhase, secondPhase) => firstPhase.order - secondPhase.order || firstPhase.createdAt.localeCompare(secondPhase.createdAt));
+}
+
 function LifeSystemCard({ lifeSystem, currentPhaseLabel, projectCount, onClick }: { lifeSystem: LifeSystem; currentPhaseLabel: string; projectCount: number; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} className="lifehq-premium-card w-full border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-5 text-left transition hover:border-[#D6AD64]/30 hover:bg-[#D6AD64]/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70 sm:p-6">
@@ -194,8 +217,16 @@ function LifeSystemCard({ lifeSystem, currentPhaseLabel, projectCount, onClick }
 function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, onClose }: { lifeSystem: LifeSystem; currentPhaseLabel: string; projectCount: number; onClose: () => void }) {
   const updateLifeSystem = useLifeHQStore((state) => state.updateLifeSystem);
   const deleteLifeSystem = useLifeHQStore((state) => state.deleteLifeSystem);
+  const phases = useLifeHQStore((state) => state.lifeSystemPhases.filter((phase) => phase.lifeSystemId === lifeSystem.id));
+  const createLifeSystemPhase = useLifeHQStore((state) => state.createLifeSystemPhase);
+  const updateLifeSystemPhase = useLifeHQStore((state) => state.updateLifeSystemPhase);
+  const deleteLifeSystemPhase = useLifeHQStore((state) => state.deleteLifeSystemPhase);
+  const setCurrentLifeSystemPhase = useLifeHQStore((state) => state.setCurrentLifeSystemPhase);
+  const sortedPhases = getSortedLifeSystemPhases(phases);
   const [draft, setDraft] = useState<LifeSystemDraft>({ name: lifeSystem.name, description: lifeSystem.description ?? '' });
   const [error, setError] = useState<string>();
+  const [phaseDraft, setPhaseDraft] = useState<LifeSystemPhaseDraft>(emptyLifeSystemPhaseDraft);
+  const [phaseError, setPhaseError] = useState<string>();
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -223,6 +254,52 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
     onClose();
   };
 
+  const handleCreatePhase = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const title = phaseDraft.title.trim();
+
+    if (!title) {
+      setPhaseError('Bitte gib einen Phasentitel ein.');
+      return;
+    }
+
+    const timestamp = new Date().toISOString();
+    const nextOrder = sortedPhases.reduce((maxOrder, phase) => Math.max(maxOrder, phase.order), 0) + 1;
+
+    createLifeSystemPhase({
+      id: createEntityId('life-system-phase'),
+      lifeSystemId: lifeSystem.id,
+      title,
+      description: getOptionalDescription(phaseDraft.description),
+      status: 'planned',
+      order: nextOrder,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+    setPhaseDraft(emptyLifeSystemPhaseDraft);
+    setPhaseError(undefined);
+  };
+
+  const handleUpdatePhase = (phaseId: string, patch: Partial<LifeSystemPhase>) => {
+    if (typeof patch.title === 'string' && !patch.title.trim()) {
+      setPhaseError('Bitte gib einen Phasentitel ein.');
+      return;
+    }
+
+    setPhaseError(undefined);
+    updateLifeSystemPhase(phaseId, patch);
+  };
+
+  const handleDeletePhase = (phase: LifeSystemPhase) => {
+    if (!window.confirm(`Phase "${phase.title}" wirklich löschen?`)) {
+      return;
+    }
+
+    deleteLifeSystemPhase(phase.id);
+  };
+
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 px-4 py-6 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-labelledby="life-system-modal-title">
       <div className="lifehq-premium-card max-h-[calc(100vh-3rem)] w-full max-w-2xl overflow-y-auto border-[#D6AD64]/20 bg-[#17130F] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.45)] sm:p-7">
@@ -247,6 +324,100 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
             <p className="mt-2 font-medium text-[#F5F1EA]">{projectCount === 1 ? '1 Projekt' : `${projectCount} Projekte`}</p>
           </div>
         </div>
+
+
+
+        <section className="mt-7 rounded-3xl border border-white/[0.08] bg-black/15 p-4 sm:p-5">
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.24em] text-[#D6AD64]/60">Entwicklungsphasen</p>
+            <h3 className="font-serif text-2xl font-semibold text-[#F5F1EA]">Entwicklungsphasen</h3>
+            <p className="text-sm leading-6 text-[#B8B1A7]">{lifeSystem.currentPhaseId ? `Aktuelle Phase: ${currentPhaseLabel}` : 'Keine aktuelle Phase'}</p>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {sortedPhases.length === 0 ? (
+              <p className="rounded-2xl border border-white/[0.08] bg-black/15 px-4 py-3 text-sm leading-6 text-[#B8B1A7]">Noch keine Entwicklungsphasen angelegt.</p>
+            ) : sortedPhases.map((phase) => {
+              const isCurrentPhase = phase.id === lifeSystem.currentPhaseId;
+
+              return (
+                <article key={phase.id} className={`rounded-3xl border p-4 ${isCurrentPhase ? 'border-[#D6AD64]/35 bg-[#D6AD64]/[0.06]' : 'border-white/[0.08] bg-black/15'}`}>
+                  <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-[#7E776E]">Reihenfolge {phase.order}</p>
+                      {isCurrentPhase && <p className="mt-1 text-xs font-medium text-[#F5D28B]">Aktuelle Phase</p>}
+                    </div>
+                    <span className="w-fit rounded-full border border-white/10 px-3 py-1 text-xs text-[#C9C1B8]">{getPhaseStatusLabel(phase.status)}</span>
+                  </div>
+
+                  <div className="grid gap-3">
+                    <input
+                      type="text"
+                      value={phase.title}
+                      onChange={(event) => handleUpdatePhase(phase.id, { title: event.target.value })}
+                      className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition focus:border-[#D6AD64]/50 focus:ring-2 focus:ring-[#D6AD64]/15"
+                      aria-label="Phasentitel"
+                    />
+                    <textarea
+                      value={phase.description ?? ''}
+                      onChange={(event) => handleUpdatePhase(phase.id, { description: getOptionalDescription(event.target.value) })}
+                      className="min-h-24 w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm leading-6 text-[#F5F1EA] outline-none transition placeholder:text-[#7E776E] focus:border-[#D6AD64]/50 focus:ring-2 focus:ring-[#D6AD64]/15"
+                      placeholder="Beschreibung optional"
+                      aria-label="Phasenbeschreibung"
+                    />
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <select
+                        value={phase.status}
+                        onChange={(event) => handleUpdatePhase(phase.id, { status: event.target.value as LifeSystemPhaseStatus })}
+                        className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition focus:border-[#D6AD64]/50 focus:ring-2 focus:ring-[#D6AD64]/15"
+                        aria-label="Phasenstatus"
+                      >
+                        {lifeSystemPhaseStatusOptions.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        {!isCurrentPhase && (
+                          <button type="button" onClick={() => setCurrentLifeSystemPhase(lifeSystem.id, phase.id)} className="rounded-full border border-[#D6AD64]/25 px-4 py-2 text-sm font-medium text-[#F5D28B] transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+                            Als aktuelle Phase setzen
+                          </button>
+                        )}
+                        <button type="button" onClick={() => handleDeletePhase(phase)} className="rounded-full border border-red-300/20 px-4 py-2 text-sm font-medium text-red-100 transition hover:border-red-300/35 hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-200/60">
+                          Phase löschen
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+          <form onSubmit={handleCreatePhase} className="mt-5 space-y-4 rounded-3xl border border-white/[0.08] bg-black/15 p-4">
+            <div className="space-y-2">
+              <label htmlFor="new-phase-title" className="text-sm font-medium text-[#F5F1EA]">Neue Phase</label>
+              <input
+                id="new-phase-title"
+                type="text"
+                value={phaseDraft.title}
+                onChange={(event) => setPhaseDraft((currentDraft) => ({ ...currentDraft, title: event.target.value }))}
+                className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition placeholder:text-[#7E776E] focus:border-[#D6AD64]/50 focus:ring-2 focus:ring-[#D6AD64]/15"
+                placeholder="Titel der Entwicklungsphase"
+              />
+            </div>
+            <textarea
+              value={phaseDraft.description}
+              onChange={(event) => setPhaseDraft((currentDraft) => ({ ...currentDraft, description: event.target.value }))}
+              className="min-h-24 w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm leading-6 text-[#F5F1EA] outline-none transition placeholder:text-[#7E776E] focus:border-[#D6AD64]/50 focus:ring-2 focus:ring-[#D6AD64]/15"
+              placeholder="Beschreibung optional"
+              aria-label="Beschreibung der neuen Phase"
+            />
+            {phaseError && <p className="text-sm text-red-200">{phaseError}</p>}
+            <button type="submit" className="rounded-full bg-[#D6AD64] px-5 py-2.5 text-sm font-semibold text-[#1F1A14] transition hover:bg-[#F0C979] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+              Phase erstellen
+            </button>
+          </form>
+        </section>
 
         <form onSubmit={handleSubmit} className="mt-7 space-y-5">
           <div className="space-y-2">
