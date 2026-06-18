@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { LifeSystem } from '../../models/lifeSystem';
 import type { LifeSystemPhase, LifeSystemPhaseStatus } from '../../models/lifeSystemPhase';
@@ -184,6 +184,11 @@ function getCurrentPhaseLabel(lifeSystem: LifeSystem, phases: LifeSystemPhase[])
     return 'Keine aktuelle Phase';
   }
 
+function getCurrentPhaseLabel(lifeSystem: LifeSystem, phases: LifeSystemPhase[]): string {
+  if (!lifeSystem.currentPhaseId) {
+    return 'Keine aktuelle Phase';
+  }
+
   return phases.find((phase) => phase.id === lifeSystem.currentPhaseId && phase.lifeSystemId === lifeSystem.id)?.title ?? 'Phase nicht gefunden';
 }
 
@@ -197,7 +202,7 @@ function getSortedLifeSystemPhases(phases: LifeSystemPhase[]): LifeSystemPhase[]
 }
 
 
-function ProjectSummaryItem({ project, action }: { project: Project; action: ReactNode }) {
+function ProjectSummaryItem({ project, action }: { project: Project; action: React.ReactNode }) {
   return (
     <article className="rounded-2xl border border-white/[0.08] bg-black/15 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
