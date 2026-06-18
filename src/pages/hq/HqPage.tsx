@@ -179,6 +179,10 @@ function VisionHeroSection() {
   );
 }
 
+function getCurrentPhaseLabel(lifeSystem: LifeSystem, phases: LifeSystemPhase[]): string {
+  if (!lifeSystem.currentPhaseId) {
+    return 'Keine aktuelle Phase';
+  }
 
 function getCurrentPhaseLabel(lifeSystem: LifeSystem, phases: LifeSystemPhase[]): string {
   if (!lifeSystem.currentPhaseId) {
