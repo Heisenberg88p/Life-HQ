@@ -464,14 +464,21 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
                 <input
                   type="text"
                   value={projectDraft.name}
-                  onChange={(event) => setProjectDraft((currentDraft) => ({ ...currentDraft, name: event.target.value }))}
+                  onChange={(event) =>
+                    setProjectDraft((currentDraft: ProjectDraft) => ({ ...currentDraft, name: event.target.value }))
+                  }
                   className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition placeholder:text-[#7E776E] focus:border-[#D6AD64]/50 focus:ring-2 focus:ring-[#D6AD64]/15"
                   placeholder="Projektname"
                   aria-label="Projektname"
                 />
                 <textarea
                   value={projectDraft.description}
-                  onChange={(event) => setProjectDraft((currentDraft) => ({ ...currentDraft, description: event.target.value }))}
+                  onChange={(event) =>
+                    setProjectDraft((currentDraft: ProjectDraft) => ({
+                      ...currentDraft,
+                      description: event.target.value,
+                    }))
+                  }
                   className="min-h-24 w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm leading-6 text-[#F5F1EA] outline-none transition placeholder:text-[#7E776E] focus:border-[#D6AD64]/50 focus:ring-2 focus:ring-[#D6AD64]/15"
                   placeholder="Beschreibung optional"
                   aria-label="Projektbeschreibung"
