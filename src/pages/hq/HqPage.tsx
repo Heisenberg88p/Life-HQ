@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { LifeSystem } from '../../models/lifeSystem';
 import type { LifeSystemPhase, LifeSystemPhaseStatus } from '../../models/lifeSystemPhase';
@@ -18,15 +18,15 @@ type LifeSystemDraft = {
   description: string;
 };
 
-type LifeSystemPhaseDraft = {
-  title: string;
+type ProjectDraft = {
+  name: string;
   description: string;
-  status: LifeSystemPhaseStatus;
 };
 
 type LifeSystemPhaseDraft = {
   title: string;
   description: string;
+  status: LifeSystemPhaseStatus;
 };
 
 const lifeSystemPhaseStatusOptions: Array<{ value: LifeSystemPhaseStatus; label: string }> = [
@@ -179,7 +179,6 @@ function VisionHeroSection() {
   );
 }
 
-
 function getCurrentPhaseLabel(lifeSystem: LifeSystem, phases: LifeSystemPhase[]): string {
   if (!lifeSystem.currentPhaseId) {
     return 'Keine aktuelle Phase';
@@ -187,7 +186,6 @@ function getCurrentPhaseLabel(lifeSystem: LifeSystem, phases: LifeSystemPhase[])
 
   return phases.find((phase) => phase.id === lifeSystem.currentPhaseId && phase.lifeSystemId === lifeSystem.id)?.title ?? 'Phase nicht gefunden';
 }
-
 
 function getPhaseStatusLabel(status: LifeSystemPhaseStatus): string {
   return lifeSystemPhaseStatusOptions.find((option) => option.value === status)?.label ?? status;
@@ -197,8 +195,7 @@ function getSortedLifeSystemPhases(phases: LifeSystemPhase[]): LifeSystemPhase[]
   return [...phases].sort((firstPhase, secondPhase) => firstPhase.order - secondPhase.order || firstPhase.createdAt.localeCompare(secondPhase.createdAt));
 }
 
-
-function ProjectSummaryItem({ project, action }: { project: Project; action: React.ReactNode }) {
+function ProjectSummaryItem({ project, action }: { project: Project; action: ReactNode }) {
   return (
     <article className="rounded-2xl border border-white/[0.08] bg-black/15 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -295,8 +292,6 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
     onClose();
   };
 
-
-
   const handleAssignProject = () => {
     if (!selectedProjectId) {
       setProjectError('Bitte wähle ein Projekt aus.');
@@ -380,7 +375,6 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
     deleteLifeSystemPhase(phase.id);
   };
 
-
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 px-4 py-6 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-labelledby="life-system-modal-title">
       <div className="lifehq-premium-card max-h-[calc(100vh-3rem)] w-full max-w-2xl overflow-y-auto border-[#D6AD64]/20 bg-[#17130F] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.45)] sm:p-7">
@@ -405,8 +399,6 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
             <p className="mt-2 font-medium text-[#F5F1EA]">{projectCount === 1 ? '1 Projekt' : `${projectCount} Projekte`}</p>
           </div>
         </div>
-
-
 
         <section className="mt-7 rounded-3xl border border-white/[0.08] bg-black/15 p-4 sm:p-5">
           <div className="space-y-2">
@@ -491,7 +483,6 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
             </form>
           </div>
         </section>
-
 
         <section className="mt-7 rounded-3xl border border-white/[0.08] bg-black/15 p-4 sm:p-5">
           <div className="space-y-2">
