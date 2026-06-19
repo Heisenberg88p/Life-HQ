@@ -1,12 +1,13 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { LifeSystem } from '../../models/lifeSystem';
 import type { LifeSystemPhase, LifeSystemPhaseStatus } from '../../models/lifeSystemPhase';
 import type { Project } from '../../models/project';
 import type { Vision } from '../../models/vision';
+import { buildPrioritizedFocusCandidates, type FocusPriorityLevel, type FocusCandidateSourceType, type PrioritizedFocusCandidate } from '../../features/focus';
 import { priorityLabels, projectStatusLabels, trafficLightLabels } from '../../constants/displayLabels';
 import { formatDateDisplay } from '../../utils/dateFormat';
-import { selectLifeSystemPhases, selectLifeSystems, selectProjects, selectVisions, useLifeHQStore } from '../../store';
+import { selectLifeSystemPhases, selectLifeSystems, selectMilestones, selectProjects, selectTasks, selectVisions, useLifeHQStore } from '../../store';
 
 type VisionDraft = {
   title: string;
@@ -36,10 +37,26 @@ const lifeSystemPhaseStatusOptions: Array<{ value: LifeSystemPhaseStatus; label:
   { value: 'archived', label: 'Archiviert' },
 ];
 
-const focusPlaceholder = {
-  title: 'Focus',
-  description: 'Die aktuell wichtigsten Themen.',
-} as const;
+const focusPriorityLabels: Record<FocusPriorityLevel, string> = {
+  critical: 'Kritisch',
+  high: 'Hoch',
+  medium: 'Mittel',
+  low: 'Niedrig',
+};
+
+const focusSourceTypeLabels: Record<FocusCandidateSourceType, string> = {
+  project: 'Projekt',
+  task: 'Aufgabe',
+  milestone: 'Meilenstein',
+  lifeSystem: 'Lebenssystem',
+};
+
+const focusPriorityStyles: Record<FocusPriorityLevel, string> = {
+  critical: 'border-red-300/35 bg-red-500/10 text-red-100',
+  high: 'border-orange-300/30 bg-orange-500/10 text-orange-100',
+  medium: 'border-[#D6AD64]/35 bg-[#D6AD64]/10 text-[#F5D28B]',
+  low: 'border-white/10 bg-white/[0.04] text-[#C9C1B8]',
+};
 
 const createEntityId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const createVisionId = () => createEntityId('vision');
@@ -782,17 +799,67 @@ function LifeSystemsGridSection() {
   );
 }
 
-function PlaceholderSection({ title, description }: { title: string; description: string }) {
+
+function FocusCandidateItem({ candidate }: { candidate: PrioritizedFocusCandidate }) {
+  return (
+    <article className="rounded-3xl border border-white/[0.08] bg-black/15 p-4 transition hover:border-[#D6AD64]/20 hover:bg-[#D6AD64]/[0.035] sm:p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-3">
+          <div className="flex flex-wrap gap-2 text-xs">
+            <span className="rounded-full border border-white/10 px-3 py-1 text-[#C9C1B8]">{focusSourceTypeLabels[candidate.sourceType]}</span>
+            <span className={`rounded-full border px-3 py-1 font-medium ${focusPriorityStyles[candidate.priorityLevel]}`}>
+              {focusPriorityLabels[candidate.priorityLevel]}
+            </span>
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">{candidate.title}</h3>
+            {candidate.primaryReason && <p className="text-sm font-medium text-[#F5D28B]">{candidate.primaryReason}</p>}
+            {candidate.description && <p className="line-clamp-3 text-sm leading-6 text-[#B8B1A7]">{candidate.description}</p>}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function FocusDashboardSection() {
+  const projects = useLifeHQStore(selectProjects);
+  const tasks = useLifeHQStore(selectTasks);
+  const milestones = useLifeHQStore(selectMilestones);
+  const lifeSystems = useLifeHQStore(selectLifeSystems);
+  const lifeSystemPhases = useLifeHQStore(selectLifeSystemPhases);
+
+  const focusCandidates = useMemo(
+    () => buildPrioritizedFocusCandidates({ projects, tasks, milestones, lifeSystems, lifeSystemPhases }).slice(0, 5),
+    [lifeSystemPhases, lifeSystems, milestones, projects, tasks],
+  );
+
   return (
     <section className="lifehq-premium-card border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-6 sm:p-8">
       <div className="max-w-2xl space-y-3">
         <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/65">Life Operating System</p>
-        <h2 className="font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA] sm:text-4xl">{title}</h2>
-        <p className="text-base leading-7 text-[#B8B1A7] sm:text-lg">{description}</p>
+        <h2 className="font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA] sm:text-4xl">Focus</h2>
+        <p className="text-base leading-7 text-[#B8B1A7] sm:text-lg">Worauf du dich aktuell konzentrieren solltest.</p>
       </div>
+
+      {focusCandidates.length === 0 ? (
+        <div className="mt-8 rounded-3xl border border-white/[0.08] bg-black/15 p-5 sm:p-6">
+          <h3 className="font-serif text-2xl font-semibold text-[#F5F1EA]">Kein akuter Fokus erkannt</h3>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#B8B1A7]">
+            Sobald Projekte, Aufgaben, Fristen oder aktive Lebenssystem-Phasen Aufmerksamkeit benötigen, erscheinen sie hier.
+          </p>
+        </div>
+      ) : (
+        <div className="mt-8 space-y-3">
+          {focusCandidates.map((candidate) => (
+            <FocusCandidateItem key={candidate.id} candidate={candidate} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
+
 
 export function HqPage() {
   return (
@@ -800,7 +867,7 @@ export function HqPage() {
       <main className="space-y-5 sm:space-y-6" aria-label="LifeHQ HQ">
         <VisionHeroSection />
         <LifeSystemsGridSection />
-        <PlaceholderSection title={focusPlaceholder.title} description={focusPlaceholder.description} />
+        <FocusDashboardSection />
       </main>
     </div>
   );

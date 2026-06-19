@@ -21,6 +21,14 @@ export type FocusCandidateReason =
 
 export type FocusCandidateSignalValue = string | number | boolean | null;
 
+export type FocusPriorityLevel = 'critical' | 'high' | 'medium' | 'low';
+
+export interface PrioritizedFocusCandidate extends FocusCandidate {
+  score: number;
+  priorityLevel: FocusPriorityLevel;
+  primaryReason?: string;
+}
+
 export interface FocusCandidate {
   id: string;
   sourceType: FocusCandidateSourceType;
@@ -50,6 +58,36 @@ export interface BuildFocusCandidatesOptions {
 }
 
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+const FOCUS_REASON_SCORES: Record<FocusCandidateReason, number> = {
+  'critical-priority': 100,
+  'high-priority': 70,
+  overdue: 80,
+  'due-today': 60,
+  'due-soon': 30,
+  'red-traffic-light': 70,
+  'yellow-traffic-light': 30,
+  'active-project': 20,
+  'active-life-system-phase': 15,
+};
+
+const FOCUS_REASON_LABELS: Record<FocusCandidateReason, string> = {
+  'critical-priority': 'Kritische Priorität',
+  'high-priority': 'Hohe Priorität',
+  overdue: 'Überfällig',
+  'due-today': 'Heute fällig',
+  'due-soon': 'Bald fällig',
+  'red-traffic-light': 'Roter Ampelstatus',
+  'yellow-traffic-light': 'Gelber Ampelstatus',
+  'active-project': 'Aktives Projekt',
+  'active-life-system-phase': 'Aktive Lebenssystem-Phase',
+};
+
+const TIME_SIGNAL_RANKS: Partial<Record<FocusCandidateReason, number>> = {
+  overdue: 3,
+  'due-today': 2,
+  'due-soon': 1,
+};
 
 function addDays(date: string, days: number): string {
   const match = DATE_ONLY_PATTERN.exec(date);
@@ -258,4 +296,96 @@ export function buildFocusCandidates(
   });
 
   return candidates;
+}
+
+
+function getFocusCandidateScore(candidate: FocusCandidate): number {
+  return candidate.reasons.reduce((score, reason) => score + FOCUS_REASON_SCORES[reason], 0);
+}
+
+function getPriorityLevel(score: number): FocusPriorityLevel {
+  if (score >= 120) {
+    return 'critical';
+  }
+
+  if (score >= 80) {
+    return 'high';
+  }
+
+  if (score >= 40) {
+    return 'medium';
+  }
+
+  return 'low';
+}
+
+function getPrimaryReason(candidate: FocusCandidate): string | undefined {
+  const strongestReason = [...candidate.reasons].sort(
+    (firstReason, secondReason) => FOCUS_REASON_SCORES[secondReason] - FOCUS_REASON_SCORES[firstReason],
+  )[0];
+
+  return strongestReason ? FOCUS_REASON_LABELS[strongestReason] : undefined;
+}
+
+function getTimeSignalRank(candidate: FocusCandidate): number {
+  return candidate.reasons.reduce((rank, reason) => Math.max(rank, TIME_SIGNAL_RANKS[reason] ?? 0), 0);
+}
+
+function compareCreatedAt(firstCandidate: FocusCandidate, secondCandidate: FocusCandidate): number {
+  if (!firstCandidate.createdAt && !secondCandidate.createdAt) {
+    return 0;
+  }
+
+  if (!firstCandidate.createdAt) {
+    return 1;
+  }
+
+  if (!secondCandidate.createdAt) {
+    return -1;
+  }
+
+  return firstCandidate.createdAt.localeCompare(secondCandidate.createdAt);
+}
+
+function comparePrioritizedFocusCandidates(
+  firstCandidate: PrioritizedFocusCandidate,
+  secondCandidate: PrioritizedFocusCandidate,
+): number {
+  const scoreComparison = secondCandidate.score - firstCandidate.score;
+
+  if (scoreComparison !== 0) {
+    return scoreComparison;
+  }
+
+  const timeSignalComparison = getTimeSignalRank(secondCandidate) - getTimeSignalRank(firstCandidate);
+
+  if (timeSignalComparison !== 0) {
+    return timeSignalComparison;
+  }
+
+  const createdAtComparison = compareCreatedAt(firstCandidate, secondCandidate);
+
+  if (createdAtComparison !== 0) {
+    return createdAtComparison;
+  }
+
+  return firstCandidate.title.localeCompare(secondCandidate.title);
+}
+
+export function buildPrioritizedFocusCandidates(
+  state: FocusEngineState,
+  options: BuildFocusCandidatesOptions = {},
+): PrioritizedFocusCandidate[] {
+  return buildFocusCandidates(state, options)
+    .map((candidate) => {
+      const score = getFocusCandidateScore(candidate);
+
+      return {
+        ...candidate,
+        score,
+        priorityLevel: getPriorityLevel(score),
+        primaryReason: getPrimaryReason(candidate),
+      };
+    })
+    .sort(comparePrioritizedFocusCandidates);
 }
