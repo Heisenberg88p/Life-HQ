@@ -800,29 +800,69 @@ function LifeSystemsGridSection() {
 }
 
 
-function FocusCandidateItem({ candidate }: { candidate: PrioritizedFocusCandidate }) {
+type FocusCardProps = {
+  candidate: PrioritizedFocusCandidate;
+  lifeSystemName?: string;
+  projectName?: string;
+  onOpenProject?: () => void;
+};
+
+function FocusCard({ candidate, lifeSystemName, projectName, onOpenProject }: FocusCardProps) {
+  const accentClass = candidate.priorityLevel === 'critical' ? 'border-l-red-300/55' : 'border-l-[#D6AD64]/40';
+
   return (
-    <article className="rounded-3xl border border-white/[0.08] bg-black/15 p-4 transition hover:border-[#D6AD64]/20 hover:bg-[#D6AD64]/[0.035] sm:p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 space-y-3">
+    <article className={`rounded-3xl border border-white/[0.08] border-l-4 ${accentClass} bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.18))] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.18)] transition hover:border-white/[0.14] hover:bg-[#D6AD64]/[0.035] sm:p-6`}>
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1 space-y-4">
           <div className="flex flex-wrap gap-2 text-xs">
-            <span className="rounded-full border border-white/10 px-3 py-1 text-[#C9C1B8]">{focusSourceTypeLabels[candidate.sourceType]}</span>
-            <span className={`rounded-full border px-3 py-1 font-medium ${focusPriorityStyles[candidate.priorityLevel]}`}>
+            <span className="rounded-full border border-white/10 bg-black/15 px-3 py-1 font-medium text-[#F5F1EA]">
+              {focusSourceTypeLabels[candidate.sourceType]}
+            </span>
+            <span className={`rounded-full border px-3 py-1 font-semibold ${focusPriorityStyles[candidate.priorityLevel]}`}>
               {focusPriorityLabels[candidate.priorityLevel]}
             </span>
           </div>
-          <div className="space-y-2">
-            <h3 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">{candidate.title}</h3>
-            {candidate.primaryReason && <p className="text-sm font-medium text-[#F5D28B]">{candidate.primaryReason}</p>}
-            {candidate.description && <p className="line-clamp-3 text-sm leading-6 text-[#B8B1A7]">{candidate.description}</p>}
+
+          <div className="space-y-3">
+            <h3 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA] sm:text-3xl">{candidate.title}</h3>
+            {candidate.primaryReason && (
+              <p className="w-fit rounded-2xl border border-[#D6AD64]/20 bg-[#D6AD64]/[0.07] px-3 py-2 text-sm font-medium text-[#F5D28B]">
+                {candidate.primaryReason}
+              </p>
+            )}
+            {candidate.description && <p className="line-clamp-3 max-w-3xl text-sm leading-6 text-[#B8B1A7]">{candidate.description}</p>}
           </div>
         </div>
+
+        {onOpenProject && (
+          <button type="button" onClick={onOpenProject} className="w-fit rounded-full border border-[#D6AD64]/25 px-4 py-2 text-sm font-medium text-[#F5D28B] transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+            Projekt öffnen
+          </button>
+        )}
       </div>
+
+      {(lifeSystemName || projectName) && (
+        <div className="mt-5 grid gap-3 border-t border-white/[0.08] pt-4 text-sm sm:grid-cols-2">
+          {lifeSystemName && (
+            <div className="rounded-2xl border border-white/[0.08] bg-black/15 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.18em] text-[#7E776E]">Life System</p>
+              <p className="mt-1 font-medium text-[#C9C1B8]">{lifeSystemName}</p>
+            </div>
+          )}
+          {projectName && (
+            <div className="rounded-2xl border border-white/[0.08] bg-black/15 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.18em] text-[#7E776E]">Projekt</p>
+              <p className="mt-1 font-medium text-[#C9C1B8]">{projectName}</p>
+            </div>
+          )}
+        </div>
+      )}
     </article>
   );
 }
 
 function FocusDashboardSection() {
+  const navigate = useNavigate();
   const projects = useLifeHQStore(selectProjects);
   const tasks = useLifeHQStore(selectTasks);
   const milestones = useLifeHQStore(selectMilestones);
@@ -833,6 +873,8 @@ function FocusDashboardSection() {
     () => buildPrioritizedFocusCandidates({ projects, tasks, milestones, lifeSystems, lifeSystemPhases }).slice(0, 5),
     [lifeSystemPhases, lifeSystems, milestones, projects, tasks],
   );
+  const projectsById = useMemo(() => new Map(projects.map((project) => [project.id, project])), [projects]);
+  const lifeSystemsById = useMemo(() => new Map(lifeSystems.map((lifeSystem) => [lifeSystem.id, lifeSystem])), [lifeSystems]);
 
   return (
     <section className="lifehq-premium-card border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-6 sm:p-8">
@@ -850,10 +892,21 @@ function FocusDashboardSection() {
           </p>
         </div>
       ) : (
-        <div className="mt-8 space-y-3">
-          {focusCandidates.map((candidate) => (
-            <FocusCandidateItem key={candidate.id} candidate={candidate} />
-          ))}
+        <div className="mt-8 grid gap-4">
+          {focusCandidates.map((candidate) => {
+            const project = candidate.projectId ? projectsById.get(candidate.projectId) : undefined;
+            const lifeSystem = candidate.lifeSystemId ? lifeSystemsById.get(candidate.lifeSystemId) : undefined;
+
+            return (
+              <FocusCard
+                key={candidate.id}
+                candidate={candidate}
+                lifeSystemName={lifeSystem?.name}
+                projectName={project?.name}
+                onOpenProject={candidate.projectId ? () => navigate(`/projects/${candidate.projectId}`) : undefined}
+              />
+            );
+          })}
         </div>
       )}
     </section>
