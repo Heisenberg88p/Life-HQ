@@ -9,5 +9,6 @@ export interface Task extends BaseEntity {
   plannedDate?: string;
   completedAt?: string;
   projectId?: string;
+  lifeSystemId?: string;
   lifeAreaId?: string;
 }
