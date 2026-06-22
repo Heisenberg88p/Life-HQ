@@ -224,6 +224,7 @@ const sanitizeTask = (value: unknown, timestampFallback: string): Task | undefin
     plannedDate: getOptionalDateOnly(value.plannedDate),
     completedAt: getOptionalTimestamp(value.completedAt),
     projectId: getOptionalString(value.projectId),
+    lifeSystemId: getOptionalString(value.lifeSystemId),
     lifeAreaId: getOptionalString(value.lifeAreaId),
     createdAt: getRequiredTimestamp(value.createdAt, timestampFallback),
     updatedAt: getRequiredTimestamp(value.updatedAt, timestampFallback),
@@ -430,6 +431,7 @@ export const sanitizePersistedLifeHQState = (
       focusId: project.focusId && validFocusIds.has(project.focusId) ? project.focusId : null,
     }));
   const lifeAreas = sanitizeArray(persistedState.lifeAreas, fallbackState.lifeAreas, (item) => sanitizeLifeArea(item, timestampFallback));
+  const validProjectIds = new Set(projects.map((project) => project.id));
   const migratedState = shouldMigrateLifeAreasToLifeSystems(persistedState)
     ? migrateLifeAreasToLifeSystems({
       lifeAreas,
@@ -451,7 +453,18 @@ export const sanitizePersistedLifeHQState = (
     trueNorths: sanitizeArray(persistedState.trueNorths, fallbackState.trueNorths, (item) => sanitizeTrueNorth(item, timestampFallback)),
     lifeAreas: migratedState.lifeAreas,
     projects: migratedState.projects,
-    tasks: sanitizeArray(persistedState.tasks, fallbackState.tasks, (item) => sanitizeTask(item, timestampFallback)),
+    tasks: sanitizeArray(persistedState.tasks, fallbackState.tasks, (item) => sanitizeTask(item, timestampFallback))
+      .map((task) => {
+        const project = task.projectId && validProjectIds.has(task.projectId)
+          ? migratedState.projects.find((item) => item.id === task.projectId)
+          : undefined;
+
+        return {
+          ...task,
+          projectId: project?.id,
+          lifeSystemId: project?.lifeSystemId ?? (task.lifeSystemId && validLifeSystemIds.has(task.lifeSystemId) ? task.lifeSystemId : undefined),
+        };
+      }),
     milestones: sanitizeArray(persistedState.milestones, fallbackState.milestones, (item) => sanitizeMilestone(item, timestampFallback)),
     historyEntries: sanitizeArray(persistedState.historyEntries, fallbackState.historyEntries, (item) => sanitizeHistoryEntry(item, timestampFallback)),
   };

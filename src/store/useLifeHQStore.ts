@@ -147,6 +147,7 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
     lifeSystems: state.lifeSystems.filter((item) => item.id !== id),
     lifeSystemPhases: state.lifeSystemPhases.filter((item) => item.lifeSystemId !== id),
     projects: state.projects.map((item) => (item.lifeSystemId === id ? withUpdatedAt({ ...item, lifeSystemId: undefined }) : item)),
+    tasks: state.tasks.map((item) => (item.lifeSystemId === id ? withUpdatedAt({ ...item, lifeSystemId: undefined }) : item)),
   })),
   createLifeSystemPhase: (phase: LifeSystemPhase) => set((state) => {
     if (!state.lifeSystems.some((lifeSystem) => lifeSystem.id === phase.lifeSystemId)) {
@@ -420,23 +421,49 @@ const createLifeHQStoreState: StateCreator<LifeHQState, [], []> = (set) => ({
       };
     }),
 
-  addTask: (task: Task) => set((state) => ({
-    tasks: [...state.tasks, task],
-    ...(task.projectId ? {
-      historyEntries: [
-        ...state.historyEntries,
-        createProjectHistoryEntry({
-          projectId: task.projectId,
-          type: 'task_created',
-          taskId: task.id,
-          description: `Task created: ${task.title}.`,
-          date: task.createdAt,
-        }),
-      ],
-    } : {}),
-  })),
+  addTask: (task: Task) => set((state) => {
+    const project = task.projectId ? state.projects.find((item) => item.id === task.projectId) : undefined;
+    const directLifeSystemId = task.lifeSystemId && state.lifeSystems.some((item) => item.id === task.lifeSystemId) ? task.lifeSystemId : undefined;
+    const nextTask = {
+      ...task,
+      lifeSystemId: project?.lifeSystemId ?? directLifeSystemId,
+    };
+
+    return {
+      tasks: [...state.tasks, nextTask],
+      ...(task.projectId ? {
+        historyEntries: [
+          ...state.historyEntries,
+          createProjectHistoryEntry({
+            projectId: task.projectId,
+            type: 'task_created',
+            taskId: task.id,
+            description: `Task created: ${task.title}.`,
+            date: task.createdAt,
+          }),
+        ],
+      } : {}),
+    };
+  }),
   updateTask: (id: string, patch: Partial<Task>) =>
-    set((state) => ({ tasks: state.tasks.map((item) => (item.id === id ? withUpdatedAt({ ...item, ...patch }) : item)) })),
+    set((state) => ({
+      tasks: state.tasks.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
+
+        const projectId = Object.prototype.hasOwnProperty.call(patch, 'projectId') ? patch.projectId : item.projectId;
+        const project = projectId ? state.projects.find((projectItem) => projectItem.id === projectId) : undefined;
+        const directLifeSystemId = Object.prototype.hasOwnProperty.call(patch, 'lifeSystemId') ? patch.lifeSystemId : item.lifeSystemId;
+
+        return withUpdatedAt({
+          ...item,
+          ...patch,
+          projectId,
+          lifeSystemId: project?.lifeSystemId ?? (directLifeSystemId && state.lifeSystems.some((lifeSystem) => lifeSystem.id === directLifeSystemId) ? directLifeSystemId : undefined),
+        });
+      }),
+    })),
   deleteTask: (id: string) => set((state) => ({ tasks: state.tasks.filter((item) => item.id !== id) })),
   updateTaskStatus: (id: string, status: TaskStatus) =>
     set((state) => {
