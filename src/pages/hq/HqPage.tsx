@@ -130,18 +130,18 @@ function VisionHeroSection() {
   };
 
   return (
-    <section className="lifehq-premium-card overflow-hidden border-[#D6AD64]/20 bg-[radial-gradient(circle_at_top_left,rgba(214,173,100,0.16),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(0,0,0,0.18))] p-6 sm:p-8 lg:p-10">
+    <section className="lifehq-motion-section lifehq-premium-card overflow-hidden border-[#D6AD64]/20 bg-[radial-gradient(circle_at_top_left,rgba(214,173,100,0.16),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.055),rgba(0,0,0,0.18))] p-5 sm:p-8 lg:p-10">
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-3xl space-y-5">
           <p className="text-xs uppercase tracking-[0.3em] text-[#D6AD64]/70">Deine langfristige Lebensrichtung</p>
           {!showForm && activeVision ? (
             <div className="space-y-5">
-              <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-5xl lg:text-6xl">{activeVision.title}</h1>
-              {activeVision.description && <p className="max-w-2xl text-lg leading-8 text-[#C9C1B8] sm:text-xl">{activeVision.description}</p>}
+              <h1 className="font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA] sm:text-5xl lg:text-6xl">{activeVision.title}</h1>
+              {activeVision.description && <p className="max-w-2xl text-base leading-7 text-[#C9C1B8] sm:text-xl">{activeVision.description}</p>}
             </div>
           ) : (
             <div className="space-y-4">
-              <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-5xl lg:text-6xl">
+              <h1 className="font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA] sm:text-5xl lg:text-6xl">
                 {activeVision ? 'Vision bearbeiten' : 'Definiere deine Vision'}
               </h1>
               <p className="max-w-2xl text-lg leading-8 text-[#C9C1B8]">Beschreibe, warum du dieses Leben aufbauen möchtest.</p>
@@ -150,7 +150,7 @@ function VisionHeroSection() {
         </div>
 
         {!showForm && activeVision && (
-          <button type="button" onClick={startEditing} className="w-fit rounded-full border border-[#D6AD64]/25 px-5 py-2.5 text-sm font-medium text-[#F5D28B] transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+          <button type="button" onClick={startEditing} className="w-full rounded-full border border-[#D6AD64]/25 px-5 py-2.5 text-center text-sm font-medium text-[#F5D28B] sm:w-fit transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
             Vision bearbeiten
           </button>
         )}
@@ -181,11 +181,11 @@ function VisionHeroSection() {
           </div>
           {error && <p className="text-sm text-red-200">{error}</p>}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <button type="submit" className="rounded-full bg-[#D6AD64] px-5 py-2.5 text-sm font-semibold text-[#1F1A14] transition hover:bg-[#F0C979] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+            <button type="submit" className="min-h-11 rounded-full bg-[#D6AD64] px-5 py-2.5 text-sm font-semibold text-[#1F1A14] transition hover:bg-[#F0C979] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
               Vision speichern
             </button>
             {activeVision && (
-              <button type="button" onClick={cancelEditing} className="rounded-full border border-white/10 px-5 py-2.5 text-sm font-medium text-[#C9C1B8] transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
+              <button type="button" onClick={cancelEditing} className="min-h-11 rounded-full border border-white/10 px-5 py-2.5 text-sm font-medium text-[#C9C1B8] transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
                 Abbrechen
               </button>
             )}
@@ -245,11 +245,11 @@ function ProjectSummaryItem({ project, action }: { project: Project; action: Rea
 
 function LifeSystemCard({ lifeSystem, phases, projectCount, onClick }: { lifeSystem: LifeSystem; phases: LifeSystemPhase[]; projectCount: number; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="lifehq-premium-card w-full border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-5 text-left transition hover:border-[#D6AD64]/30 hover:bg-[#D6AD64]/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70 sm:p-6">
+    <button type="button" onClick={onClick} className="lifehq-motion-card lifehq-premium-card w-full overflow-hidden border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-5 text-left transition hover:border-[#D6AD64]/30 hover:bg-[#D6AD64]/[0.045] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70 sm:p-6">
       <div className="space-y-5">
         <div className="space-y-3">
           <p className="text-xs uppercase tracking-[0.24em] text-[#D6AD64]/60">Life System</p>
-          <h3 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">{lifeSystem.name}</h3>
+          <h3 className="break-words font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA]">{lifeSystem.name}</h3>
           {lifeSystem.description && <p className="text-sm leading-6 text-[#B8B1A7]">{lifeSystem.description}</p>}
         </div>
 
@@ -428,15 +428,15 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
 
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 px-4 py-6 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-labelledby="life-system-modal-title">
-      <div className="lifehq-premium-card max-h-[calc(100vh-3rem)] w-full max-w-2xl overflow-y-auto border-[#D6AD64]/20 bg-[#17130F] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.45)] sm:p-7">
+    <div className="lifehq-motion-modal-overlay fixed inset-0 z-50 flex items-end justify-center overflow-hidden bg-black/70 px-2 py-2 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6" role="dialog" aria-modal="true" aria-labelledby="life-system-modal-title">
+      <div className="lifehq-motion-modal-panel lifehq-premium-card max-h-[calc(100dvh-1rem)] w-full max-w-2xl overflow-y-auto overscroll-contain border-[#D6AD64]/20 bg-[#17130F] p-4 shadow-[0_30px_90px_rgba(0,0,0,0.45)] sm:p-7">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-3">
             <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/65">Life System</p>
-            <h2 id="life-system-modal-title" className="font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA]">{lifeSystem.name}</h2>
+            <h2 id="life-system-modal-title" className="break-words font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA] sm:text-3xl">{lifeSystem.name}</h2>
             {lifeSystem.description && <p className="max-w-xl text-sm leading-6 text-[#B8B1A7]">{lifeSystem.description}</p>}
           </div>
-          <button type="button" onClick={onClose} className="w-fit rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-[#C9C1B8] transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
+          <button type="button" onClick={onClose} className="min-h-11 w-full rounded-full border border-white/10 px-4 py-2 text-center text-sm font-medium text-[#C9C1B8] sm:w-fit transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
             Schließen
           </button>
         </div>
@@ -457,7 +457,7 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
         <section className="mt-7 rounded-3xl border border-white/[0.08] bg-black/15 p-4 sm:p-5">
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.24em] text-[#D6AD64]/60">Projekte</p>
-            <h3 className="font-serif text-2xl font-semibold text-[#F5F1EA]">Projekte</h3>
+            <h3 className="break-words font-serif text-2xl font-semibold text-[#F5F1EA]">Projekte</h3>
             <p className="text-sm leading-6 text-[#B8B1A7]">{assignedProjects.length === 1 ? '1 Projekt ist diesem Lebenssystem zugeordnet.' : `${assignedProjects.length} Projekte sind diesem Lebenssystem zugeordnet.`}</p>
           </div>
 
@@ -470,10 +470,10 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
                 project={project}
                 action={(
                   <div className="flex flex-col gap-2 sm:items-end">
-                    <button type="button" onClick={() => navigate(`/projects/${project.id}`)} className="w-fit rounded-full border border-[#D6AD64]/25 px-4 py-2 text-sm font-medium text-[#F5D28B] transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+                    <button type="button" onClick={() => navigate(`/projects/${project.id}`)} className="min-h-11 w-full rounded-full border border-[#D6AD64]/25 px-4 py-2 text-center text-sm font-medium text-[#F5D28B] sm:w-fit transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
                       Projekt öffnen
                     </button>
-                    <button type="button" onClick={() => removeProjectFromLifeSystem(project.id)} className="w-fit rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-[#C9C1B8] transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
+                    <button type="button" onClick={() => removeProjectFromLifeSystem(project.id)} className="min-h-11 w-full rounded-full border border-white/10 px-4 py-2 text-center text-sm font-medium text-[#C9C1B8] sm:w-fit transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
                       Zuordnung entfernen
                     </button>
                   </div>
@@ -497,7 +497,7 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
                     <option key={project.id} value={project.id}>{project.name}</option>
                   ))}
                 </select>
-                <button type="button" onClick={handleAssignProject} disabled={assignableProjects.length === 0} className="rounded-full border border-[#D6AD64]/25 px-4 py-2 text-sm font-medium text-[#F5D28B] transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+                <button type="button" onClick={handleAssignProject} disabled={assignableProjects.length === 0} className="min-h-11 rounded-full border border-[#D6AD64]/25 px-4 py-2 text-sm font-medium text-[#F5D28B] transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
                   Projekt zuordnen
                 </button>
               </div>
@@ -530,7 +530,7 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
                   aria-label="Projektbeschreibung"
                 />
                 {projectError && <p className="text-sm text-red-200">{projectError}</p>}
-                <button type="submit" className="rounded-full bg-[#D6AD64] px-5 py-2.5 text-sm font-semibold text-[#1F1A14] transition hover:bg-[#F0C979] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+                <button type="submit" className="min-h-11 rounded-full bg-[#D6AD64] px-5 py-2.5 text-sm font-semibold text-[#1F1A14] transition hover:bg-[#F0C979] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
                   Projekt erstellen
                 </button>
               </div>
@@ -542,7 +542,7 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
         <section className="mt-7 rounded-3xl border border-white/[0.08] bg-black/15 p-4 sm:p-5">
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.24em] text-[#D6AD64]/60">Entwicklungsphasen</p>
-            <h3 className="font-serif text-2xl font-semibold text-[#F5F1EA]">Entwicklungsphasen</h3>
+            <h3 className="break-words font-serif text-2xl font-semibold text-[#F5F1EA]">Entwicklungsphasen</h3>
             <p className="text-sm leading-6 text-[#B8B1A7]">{lifeSystem.currentPhaseId ? `Aktuelle Phase: ${currentPhaseLabel}` : 'Keine aktuelle Phase'}</p>
           </div>
 
@@ -590,11 +590,11 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
                       </select>
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         {!isCurrentPhase && (
-                          <button type="button" onClick={() => setCurrentLifeSystemPhase(lifeSystem.id, phase.id)} className="rounded-full border border-[#D6AD64]/25 px-4 py-2 text-sm font-medium text-[#F5D28B] transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+                          <button type="button" onClick={() => setCurrentLifeSystemPhase(lifeSystem.id, phase.id)} className="min-h-11 rounded-full border border-[#D6AD64]/25 px-4 py-2 text-sm font-medium text-[#F5D28B] transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
                             Als aktuelle Phase setzen
                           </button>
                         )}
-                        <button type="button" onClick={() => handleDeletePhase(phase)} className="rounded-full border border-red-300/20 px-4 py-2 text-sm font-medium text-red-100 transition hover:border-red-300/35 hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-200/60">
+                        <button type="button" onClick={() => handleDeletePhase(phase)} className="min-h-11 rounded-full border border-red-300/20 px-4 py-2 text-sm font-medium text-red-100 transition hover:border-red-300/35 hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-200/60">
                           Phase löschen
                         </button>
                       </div>
@@ -625,7 +625,7 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
               aria-label="Beschreibung der neuen Phase"
             />
             {phaseError && <p className="text-sm text-red-200">{phaseError}</p>}
-            <button type="submit" className="rounded-full bg-[#D6AD64] px-5 py-2.5 text-sm font-semibold text-[#1F1A14] transition hover:bg-[#F0C979] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+            <button type="submit" className="min-h-11 rounded-full bg-[#D6AD64] px-5 py-2.5 text-sm font-semibold text-[#1F1A14] transition hover:bg-[#F0C979] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
               Phase erstellen
             </button>
           </form>
@@ -654,10 +654,10 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
           {error && <p className="text-sm text-red-200">{error}</p>}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <button type="submit" className="rounded-full bg-[#D6AD64] px-5 py-2.5 text-sm font-semibold text-[#1F1A14] transition hover:bg-[#F0C979] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+              <button type="submit" className="min-h-11 rounded-full bg-[#D6AD64] px-5 py-2.5 text-sm font-semibold text-[#1F1A14] transition hover:bg-[#F0C979] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
                 Speichern
               </button>
-              <button type="button" onClick={onClose} className="rounded-full border border-white/10 px-5 py-2.5 text-sm font-medium text-[#C9C1B8] transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
+              <button type="button" onClick={onClose} className="min-h-11 rounded-full border border-white/10 px-5 py-2.5 text-sm font-medium text-[#C9C1B8] transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
                 Abbrechen
               </button>
             </div>
@@ -710,15 +710,15 @@ function LifeSystemsGridSection() {
   const selectedLifeSystemPhaseLabel = selectedLifeSystem ? getCurrentPhaseLabel(selectedLifeSystem, phases) : '';
 
   return (
-    <section className="lifehq-premium-card border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-6 sm:p-8">
+    <section className="lifehq-motion-section lifehq-motion-delay-1 lifehq-premium-card border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-6 sm:p-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-2xl space-y-3">
           <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/65">Life Operating System</p>
-          <h2 className="font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA] sm:text-4xl">Life Systems</h2>
+          <h2 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA] sm:text-4xl">Life Systems</h2>
           <p className="text-base leading-7 text-[#B8B1A7] sm:text-lg">Die zentralen Systeme deines Lebens.</p>
         </div>
         {!showCreateForm && (
-          <button type="button" onClick={() => setShowCreateForm(true)} className="w-fit rounded-full border border-[#D6AD64]/25 px-5 py-2.5 text-sm font-medium text-[#F5D28B] transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+          <button type="button" onClick={() => setShowCreateForm(true)} className="w-full rounded-full border border-[#D6AD64]/25 px-5 py-2.5 text-center text-sm font-medium text-[#F5D28B] sm:w-fit transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
             Lebenssystem erstellen
           </button>
         )}
@@ -726,7 +726,7 @@ function LifeSystemsGridSection() {
 
       {lifeSystems.length === 0 && (
         <div className="mt-8 rounded-3xl border border-white/[0.08] bg-black/15 p-5 sm:p-6">
-          <h3 className="font-serif text-2xl font-semibold text-[#F5F1EA]">Baue deine Lebenssysteme auf</h3>
+          <h3 className="break-words font-serif text-2xl font-semibold text-[#F5F1EA]">Baue deine Lebenssysteme auf</h3>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[#B8B1A7]">Lege die zentralen Systeme an, die dein Leben tragen — z. B. Familie, Gesundheit, Zuhause oder Wohlstand.</p>
         </div>
       )}
@@ -756,11 +756,11 @@ function LifeSystemsGridSection() {
           </div>
           {error && <p className="text-sm text-red-200">{error}</p>}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <button type="submit" className="rounded-full bg-[#D6AD64] px-5 py-2.5 text-sm font-semibold text-[#1F1A14] transition hover:bg-[#F0C979] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+            <button type="submit" className="min-h-11 rounded-full bg-[#D6AD64] px-5 py-2.5 text-sm font-semibold text-[#1F1A14] transition hover:bg-[#F0C979] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
               Lebenssystem speichern
             </button>
             {lifeSystems.length > 0 && (
-              <button type="button" onClick={() => { setShowCreateForm(false); setDraft(emptyLifeSystemDraft); setError(undefined); }} className="rounded-full border border-white/10 px-5 py-2.5 text-sm font-medium text-[#C9C1B8] transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
+              <button type="button" onClick={() => { setShowCreateForm(false); setDraft(emptyLifeSystemDraft); setError(undefined); }} className="min-h-11 rounded-full border border-white/10 px-5 py-2.5 text-sm font-medium text-[#C9C1B8] transition hover:border-white/20 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40">
                 Abbrechen
               </button>
             )}
@@ -811,7 +811,7 @@ function FocusCard({ candidate, lifeSystemName, projectName, onOpenProject }: Fo
   const accentClass = candidate.priorityLevel === 'critical' ? 'border-l-red-300/55' : 'border-l-[#D6AD64]/40';
 
   return (
-    <article className={`rounded-3xl border border-white/[0.08] border-l-4 ${accentClass} bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.18))] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.18)] transition hover:border-white/[0.14] hover:bg-[#D6AD64]/[0.035] sm:p-6`}>
+    <article className={`lifehq-motion-card rounded-3xl border border-white/[0.08] border-l-4 ${accentClass} bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.18))] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.18)] transition hover:border-white/[0.14] hover:bg-[#D6AD64]/[0.035] sm:p-6`}>
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1 space-y-4">
           <div className="flex flex-wrap gap-2 text-xs">
@@ -824,7 +824,7 @@ function FocusCard({ candidate, lifeSystemName, projectName, onOpenProject }: Fo
           </div>
 
           <div className="space-y-3">
-            <h3 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA] sm:text-3xl">{candidate.title}</h3>
+            <h3 className="break-words font-serif text-xl font-semibold tracking-tight text-[#F5F1EA] sm:text-3xl">{candidate.title}</h3>
             {candidate.primaryReason && (
               <p className="w-fit rounded-2xl border border-[#D6AD64]/20 bg-[#D6AD64]/[0.07] px-3 py-2 text-sm font-medium text-[#F5D28B]">
                 {candidate.primaryReason}
@@ -835,7 +835,7 @@ function FocusCard({ candidate, lifeSystemName, projectName, onOpenProject }: Fo
         </div>
 
         {onOpenProject && (
-          <button type="button" onClick={onOpenProject} className="w-fit rounded-full border border-[#D6AD64]/25 px-4 py-2 text-sm font-medium text-[#F5D28B] transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
+          <button type="button" onClick={onOpenProject} className="min-h-11 w-full rounded-full border border-[#D6AD64]/25 px-4 py-2 text-center text-sm font-medium text-[#F5D28B] sm:w-fit transition hover:border-[#D6AD64]/45 hover:bg-[#D6AD64]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D6AD64]/70">
             Projekt öffnen
           </button>
         )}
@@ -877,16 +877,16 @@ function FocusDashboardSection() {
   const lifeSystemsById = useMemo(() => new Map(lifeSystems.map((lifeSystem) => [lifeSystem.id, lifeSystem])), [lifeSystems]);
 
   return (
-    <section className="lifehq-premium-card border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-6 sm:p-8">
+    <section className="lifehq-motion-section lifehq-motion-delay-2 lifehq-premium-card border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-6 sm:p-8">
       <div className="max-w-2xl space-y-3">
         <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/65">Life Operating System</p>
-        <h2 className="font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA] sm:text-4xl">Focus</h2>
+        <h2 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA] sm:text-4xl">Focus</h2>
         <p className="text-base leading-7 text-[#B8B1A7] sm:text-lg">Worauf du dich aktuell konzentrieren solltest.</p>
       </div>
 
       {focusCandidates.length === 0 ? (
         <div className="mt-8 rounded-3xl border border-white/[0.08] bg-black/15 p-5 sm:p-6">
-          <h3 className="font-serif text-2xl font-semibold text-[#F5F1EA]">Kein akuter Fokus erkannt</h3>
+          <h3 className="break-words font-serif text-2xl font-semibold text-[#F5F1EA]">Kein akuter Fokus erkannt</h3>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[#B8B1A7]">
             Sobald Projekte, Aufgaben, Fristen oder aktive Lebenssystem-Phasen Aufmerksamkeit benötigen, erscheinen sie hier.
           </p>
@@ -916,7 +916,7 @@ function FocusDashboardSection() {
 
 export function HqPage() {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 pb-[calc(8.5rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 lg:px-8 lg:py-12">
+    <div className="lifehq-motion-page mx-auto flex w-full max-w-5xl flex-1 flex-col pb-[calc(8.5rem+env(safe-area-inset-bottom))] pt-2 sm:pt-4 lg:py-12">
       <main className="space-y-5 sm:space-y-6" aria-label="LifeHQ HQ">
         <VisionHeroSection />
         <LifeSystemsGridSection />
