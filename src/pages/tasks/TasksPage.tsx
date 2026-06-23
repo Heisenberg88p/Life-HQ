@@ -120,6 +120,12 @@ interface TaskContextInfo {
   tone: 'project' | 'lifeSystem' | 'lifeArea' | 'unassigned';
 }
 
+interface TaskLookupMaps {
+  projectsById: Map<string, Project>;
+  lifeAreasById: Map<string, LifeArea>;
+  lifeSystemsById: Map<string, LifeSystem>;
+}
+
 const contextStyles: Record<TaskContextInfo['tone'], string> = {
   project: 'border-[#D6AD64]/20 bg-[#D6AD64]/10 text-[#F5F1EA]',
   lifeSystem: 'border-[#8FBF9F]/20 bg-[#8FBF9F]/10 text-[#DCEBDD]',
@@ -208,12 +214,12 @@ function getVisibleTasks(tasks: Task[], activeView: TaskView): Task[] {
   }
 }
 
-function getTaskContext(task: Task, projects: Project[], lifeAreas: LifeArea[], lifeSystems: LifeSystem[]): TaskContextInfo {
-  const project = task.projectId ? projects.find((item) => item.id === task.projectId) : undefined;
-  const projectLifeArea = project?.lifeAreaId ? lifeAreas.find((item) => item.id === project.lifeAreaId) : undefined;
-  const projectLifeSystem = project?.lifeSystemId ? lifeSystems.find((item) => item.id === project.lifeSystemId) : undefined;
-  const directLifeSystem = task.lifeSystemId ? lifeSystems.find((item) => item.id === task.lifeSystemId) : undefined;
-  const directLifeArea = task.lifeAreaId ? lifeAreas.find((item) => item.id === task.lifeAreaId) : undefined;
+function getTaskContext(task: Task, lookupMaps: TaskLookupMaps): TaskContextInfo {
+  const project = task.projectId ? lookupMaps.projectsById.get(task.projectId) : undefined;
+  const projectLifeArea = project?.lifeAreaId ? lookupMaps.lifeAreasById.get(project.lifeAreaId) : undefined;
+  const projectLifeSystem = project?.lifeSystemId ? lookupMaps.lifeSystemsById.get(project.lifeSystemId) : undefined;
+  const directLifeSystem = task.lifeSystemId ? lookupMaps.lifeSystemsById.get(task.lifeSystemId) : undefined;
+  const directLifeArea = task.lifeAreaId ? lookupMaps.lifeAreasById.get(task.lifeAreaId) : undefined;
 
   if (project) {
     return {
@@ -252,6 +258,7 @@ interface TaskCardProps {
   projects: Project[];
   lifeAreas: LifeArea[];
   lifeSystems: LifeSystem[];
+  lookupMaps: TaskLookupMaps;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onPlanToday: (taskId: string) => void;
   onPlanTomorrow: (taskId: string) => void;
@@ -269,6 +276,7 @@ function TaskCard({
   projects,
   lifeAreas,
   lifeSystems,
+  lookupMaps,
   onStatusChange,
   onPlanToday,
   onPlanTomorrow,
@@ -350,7 +358,7 @@ function TaskCard({
     }
 
     const projectId = editDraft.projectId || undefined;
-    const project = projectId ? projects.find((item) => item.id === projectId) : undefined;
+    const project = projectId ? lookupMaps.projectsById.get(projectId) : undefined;
     const lifeSystemId = project?.lifeSystemId ?? (editDraft.lifeSystemId || undefined);
 
     onUpdateTask(task.id, {
@@ -481,14 +489,14 @@ function TaskCard({
             </label>
             <label className="space-y-2 text-xs text-[#B8B1A7]">
               <span className="lifehq-label">Projekt</span>
-              <select value={editDraft.projectId} onChange={(event) => { const project = projects.find((item) => item.id === event.target.value); updateEditDraft({ projectId: event.target.value, lifeAreaId: event.target.value ? '' : editDraft.lifeAreaId, lifeSystemId: project?.lifeSystemId ?? editDraft.lifeSystemId }); }} className="lifehq-task-form-control min-h-11 px-3 py-2.5 text-sm">
+              <select value={editDraft.projectId} onChange={(event) => { const project = lookupMaps.projectsById.get(event.target.value); updateEditDraft({ projectId: event.target.value, lifeAreaId: event.target.value ? '' : editDraft.lifeAreaId, lifeSystemId: project?.lifeSystemId ?? editDraft.lifeSystemId }); }} className="lifehq-task-form-control min-h-11 px-3 py-2.5 text-sm">
                 <option value="">Kein Projekt</option>
                 {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
               </select>
             </label>
             <label className="space-y-2 text-xs text-[#B8B1A7]">
               <span className="lifehq-label">Lebenssystem</span>
-              <select value={editDraft.lifeSystemId} onChange={(event) => updateEditDraft({ lifeSystemId: event.target.value })} disabled={Boolean(editDraft.projectId && projects.find((project) => project.id === editDraft.projectId)?.lifeSystemId)} className="lifehq-task-form-control min-h-11 px-3 py-2.5 text-sm disabled:cursor-not-allowed disabled:text-[#7E776E]">
+              <select value={editDraft.lifeSystemId} onChange={(event) => updateEditDraft({ lifeSystemId: event.target.value })} disabled={Boolean(editDraft.projectId && lookupMaps.projectsById.get(editDraft.projectId)?.lifeSystemId)} className="lifehq-task-form-control min-h-11 px-3 py-2.5 text-sm disabled:cursor-not-allowed disabled:text-[#7E776E]">
                 <option value="">Kein Lebenssystem</option>
                 {lifeSystems.map((lifeSystem) => <option key={lifeSystem.id} value={lifeSystem.id}>{lifeSystem.name}</option>)}
               </select>
@@ -590,6 +598,7 @@ interface TaskListProps {
   lifeAreas: LifeArea[];
   lifeSystems: LifeSystem[];
   actions: TaskPlanningActions;
+  lookupMaps: TaskLookupMaps;
 }
 
 interface TaskPlanningActions {
@@ -608,17 +617,18 @@ interface WeekTaskSectionProps extends TaskListProps {
   weekDays: string[];
 }
 
-function TaskList({ tasks, projects, lifeAreas, lifeSystems, actions }: TaskListProps) {
+function TaskList({ tasks, projects, lifeAreas, lifeSystems, actions, lookupMaps }: TaskListProps) {
   return (
     <div className="mt-4 grid gap-2.5">
       {tasks.map((task) => (
         <TaskCard
           key={task.id}
           task={task}
-          context={getTaskContext(task, projects, lifeAreas, lifeSystems)}
+          context={getTaskContext(task, lookupMaps)}
           projects={projects}
           lifeAreas={lifeAreas}
           lifeSystems={lifeSystems}
+          lookupMaps={lookupMaps}
           {...actions}
         />
       ))}
@@ -626,16 +636,16 @@ function TaskList({ tasks, projects, lifeAreas, lifeSystems, actions }: TaskList
   );
 }
 
-function WeekTaskSection({ tasks, projects, lifeAreas, lifeSystems, actions, weekDays }: WeekTaskSectionProps) {
-  const unplannedTasks = sortTasksForPlanning(getUnplannedOpenTasks(tasks));
-  const overdueTasks = sortOverdueTasks(getOverdueTasks(tasks));
-  const plannedDayGroups = weekDays
+function WeekTaskSection({ tasks, projects, lifeAreas, lifeSystems, actions, lookupMaps, weekDays }: WeekTaskSectionProps) {
+  const unplannedTasks = useMemo(() => sortTasksForPlanning(getUnplannedOpenTasks(tasks)), [tasks]);
+  const overdueTasks = useMemo(() => sortOverdueTasks(getOverdueTasks(tasks)), [tasks]);
+  const plannedDayGroups = useMemo(() => weekDays
     .map((day, index) => ({
       day,
       label: weekdayLabels[index],
       tasks: sortTasksForPlanning(tasks.filter((task) => task.status !== 'done' && isSameDay(task.plannedDate, day))),
     }))
-    .filter((group) => group.tasks.length > 0);
+    .filter((group) => group.tasks.length > 0), [tasks, weekDays]);
   const hasRelevantWeekTasks = plannedDayGroups.length > 0 || unplannedTasks.length > 0 || overdueTasks.length > 0;
 
   if (!hasRelevantWeekTasks) {
@@ -662,7 +672,7 @@ function WeekTaskSection({ tasks, projects, lifeAreas, lifeSystems, actions, wee
                 </div>
                 <p className="lifehq-label">{formatDateDisplay(group.day)}</p>
               </div>
-              <TaskList tasks={group.tasks} projects={projects} lifeAreas={lifeAreas} lifeSystems={lifeSystems} actions={actions} />
+              <TaskList tasks={group.tasks} projects={projects} lifeAreas={lifeAreas} lifeSystems={lifeSystems} actions={actions} lookupMaps={lookupMaps} />
             </section>
           ))}
         </div>
@@ -672,7 +682,7 @@ function WeekTaskSection({ tasks, projects, lifeAreas, lifeSystems, actions, wee
         <section className="lifehq-week-section">
           <p className="lifehq-label">Ohne geplantes Datum</p>
           <p className="mt-2 text-sm leading-6 text-[#7E776E]">Diese offenen Aufgaben sind noch keinem Tag zugeordnet und bleiben als ruhiger Planungsvorrat sichtbar.</p>
-          <TaskList tasks={unplannedTasks} projects={projects} lifeAreas={lifeAreas} lifeSystems={lifeSystems} actions={actions} />
+          <TaskList tasks={unplannedTasks} projects={projects} lifeAreas={lifeAreas} lifeSystems={lifeSystems} actions={actions} lookupMaps={lookupMaps} />
         </section>
       )}
     </div>
@@ -700,20 +710,31 @@ export function TasksPage() {
   const updateTask = useLifeHQStore((state) => state.updateTask);
   const deleteTask = useLifeHQStore((state) => state.deleteTask);
 
+  const projectsById = useMemo(() => new Map(projects.map((project) => [project.id, project])), [projects]);
+  const lifeAreasById = useMemo(() => new Map(lifeAreas.map((lifeArea) => [lifeArea.id, lifeArea])), [lifeAreas]);
+  const lifeSystemsById = useMemo(() => new Map(lifeSystems.map((lifeSystem) => [lifeSystem.id, lifeSystem])), [lifeSystems]);
+  const lookupMaps = useMemo<TaskLookupMaps>(() => ({ projectsById, lifeAreasById, lifeSystemsById }), [lifeAreasById, lifeSystemsById, projectsById]);
+
   const filteredTasks = useMemo(() => {
     if (!lifeSystemFilterId) {
       return tasks;
     }
 
     return tasks.filter((task) => {
-      const project = task.projectId ? projects.find((item) => item.id === task.projectId) : undefined;
+      const project = task.projectId ? projectsById.get(task.projectId) : undefined;
 
       return project?.lifeSystemId === lifeSystemFilterId || task.lifeSystemId === lifeSystemFilterId;
     });
-  }, [lifeSystemFilterId, projects, tasks]);
+  }, [lifeSystemFilterId, projectsById, tasks]);
   const visibleTasks = useMemo(() => getVisibleTasks(filteredTasks, activeView), [activeView, filteredTasks]);
-  const activeViewMeta = taskViews.find((view) => view.id === activeView) ?? taskViews[0];
-  const taskPlanningActions: TaskPlanningActions = {
+  const taskCountsByView = useMemo(
+    () => new Map(taskViews.map((view) => [view.id, getVisibleTasks(filteredTasks, view.id).length])),
+    [filteredTasks],
+  );
+  const activeViewMeta = useMemo(() => taskViews.find((view) => view.id === activeView) ?? taskViews[0], [activeView]);
+  const currentWeekDays = useMemo(() => getWeekDays(), []);
+  const nextWeekDays = useMemo(() => getNextWeekDays(), []);
+  const taskPlanningActions = useMemo<TaskPlanningActions>(() => ({
     onStatusChange: updateTaskStatus,
     onPlanToday: scheduleTaskForToday,
     onPlanTomorrow: scheduleTaskForTomorrow,
@@ -723,7 +744,17 @@ export function TasksPage() {
     onClearDueDate: clearTaskDueDate,
     onUpdateTask: updateTask,
     onDeleteTask: deleteTask,
-  };
+  }), [
+    clearTaskDueDate,
+    clearTaskPlannedDate,
+    deleteTask,
+    scheduleTaskForToday,
+    scheduleTaskForTomorrow,
+    setTaskDueDate,
+    setTaskPlannedDate,
+    updateTask,
+    updateTaskStatus,
+  ]);
 
   function updateTaskDraft(patch: Partial<TaskDraft>) {
     setTaskDraft((current) => ({ ...current, ...patch }));
@@ -747,7 +778,7 @@ export function TasksPage() {
 
     const createdAt = new Date().toISOString();
     const projectId = taskDraft.projectId || undefined;
-    const project = projectId ? projects.find((item) => item.id === projectId) : undefined;
+    const project = projectId ? projectsById.get(projectId) : undefined;
     const lifeSystemId = project?.lifeSystemId ?? (taskDraft.lifeSystemId || undefined);
 
     addTask({
@@ -854,7 +885,7 @@ export function TasksPage() {
               <span className="lifehq-label">Projekt</span>
               <select
                 value={taskDraft.projectId}
-                onChange={(event) => { const project = projects.find((item) => item.id === event.target.value); updateTaskDraft({ projectId: event.target.value, lifeAreaId: event.target.value ? '' : taskDraft.lifeAreaId, lifeSystemId: project?.lifeSystemId ?? taskDraft.lifeSystemId }); }}
+                onChange={(event) => { const project = projectsById.get(event.target.value); updateTaskDraft({ projectId: event.target.value, lifeAreaId: event.target.value ? '' : taskDraft.lifeAreaId, lifeSystemId: project?.lifeSystemId ?? taskDraft.lifeSystemId }); }}
                 className="lifehq-task-form-control"
               >
                 <option value="">Kein Projekt</option>
@@ -869,7 +900,7 @@ export function TasksPage() {
               <select
                 value={taskDraft.lifeSystemId}
                 onChange={(event) => updateTaskDraft({ lifeSystemId: event.target.value })}
-                disabled={Boolean(taskDraft.projectId && projects.find((project) => project.id === taskDraft.projectId)?.lifeSystemId)}
+                disabled={Boolean(taskDraft.projectId && projectsById.get(taskDraft.projectId)?.lifeSystemId)}
                 className="lifehq-task-form-control disabled:cursor-not-allowed disabled:text-[#7E776E]"
               >
                 <option value="">Kein Lebenssystem</option>
@@ -939,7 +970,7 @@ export function TasksPage() {
               }`}
             >
               <span className="block font-semibold">{view.label}</span>
-              <span className="mt-1 block text-xs opacity-70">{getVisibleTasks(filteredTasks, view.id).length} Aufgaben</span>
+              <span className="mt-1 block text-xs opacity-70">{taskCountsByView.get(view.id) ?? 0} Aufgaben</span>
             </button>
           ))}
         </div>
@@ -967,15 +998,15 @@ export function TasksPage() {
         </div>
 
         {activeView === 'week' ? (
-          <WeekTaskSection tasks={filteredTasks} projects={projects} lifeAreas={lifeAreas} lifeSystems={lifeSystems} actions={taskPlanningActions} weekDays={getWeekDays()} />
+          <WeekTaskSection tasks={filteredTasks} projects={projects} lifeAreas={lifeAreas} lifeSystems={lifeSystems} actions={taskPlanningActions} weekDays={currentWeekDays} lookupMaps={lookupMaps} />
         ) : activeView === 'nextWeek' ? (
-          <WeekTaskSection tasks={filteredTasks} projects={projects} lifeAreas={lifeAreas} lifeSystems={lifeSystems} actions={taskPlanningActions} weekDays={getNextWeekDays()} />
+          <WeekTaskSection tasks={filteredTasks} projects={projects} lifeAreas={lifeAreas} lifeSystems={lifeSystems} actions={taskPlanningActions} weekDays={nextWeekDays} lookupMaps={lookupMaps} />
         ) : visibleTasks.length === 0 ? (
           <p className="lifehq-empty-task-state mt-5">
             {emptyStateMessages[activeView]}
           </p>
         ) : (
-          <TaskList tasks={visibleTasks} projects={projects} lifeAreas={lifeAreas} lifeSystems={lifeSystems} actions={taskPlanningActions} />
+          <TaskList tasks={visibleTasks} projects={projects} lifeAreas={lifeAreas} lifeSystems={lifeSystems} actions={taskPlanningActions} lookupMaps={lookupMaps} />
         )}
         </div>
       )}

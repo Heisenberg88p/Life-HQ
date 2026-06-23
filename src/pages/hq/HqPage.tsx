@@ -303,9 +303,9 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
   const updateLifeSystemPhase = useLifeHQStore((state) => state.updateLifeSystemPhase);
   const deleteLifeSystemPhase = useLifeHQStore((state) => state.deleteLifeSystemPhase);
   const setCurrentLifeSystemPhase = useLifeHQStore((state) => state.setCurrentLifeSystemPhase);
-  const sortedPhases = getSortedLifeSystemPhases(phases);
-  const assignedProjects = projects.filter((project) => project.lifeSystemId === lifeSystem.id);
-  const assignableProjects = projects.filter((project) => !project.lifeSystemId);
+  const sortedPhases = useMemo(() => getSortedLifeSystemPhases(phases), [phases]);
+  const assignedProjects = useMemo(() => projects.filter((project) => project.lifeSystemId === lifeSystem.id), [lifeSystem.id, projects]);
+  const assignableProjects = useMemo(() => projects.filter((project) => !project.lifeSystemId), [projects]);
   const [draft, setDraft] = useState<LifeSystemDraft>({ name: lifeSystem.name, description: lifeSystem.description ?? '' });
   const [error, setError] = useState<string>();
   const [phaseDraft, setPhaseDraft] = useState<LifeSystemPhaseDraft>(emptyLifeSystemPhaseDraft);
@@ -681,6 +681,37 @@ function LifeSystemsGridSection() {
   const [error, setError] = useState<string>();
   const [selectedLifeSystemId, setSelectedLifeSystemId] = useState<string>();
 
+  const projectsByLifeSystemId = useMemo(() => {
+    const projectMap = new Map<string, Project[]>();
+
+    projects.forEach((project) => {
+      if (!project.lifeSystemId) {
+        return;
+      }
+
+      const lifeSystemProjects = projectMap.get(project.lifeSystemId) ?? [];
+      lifeSystemProjects.push(project);
+      projectMap.set(project.lifeSystemId, lifeSystemProjects);
+    });
+
+    return projectMap;
+  }, [projects]);
+  const phasesByLifeSystemId = useMemo(() => {
+    const phaseMap = new Map<string, LifeSystemPhase[]>();
+
+    phases.forEach((phase) => {
+      const lifeSystemPhases = phaseMap.get(phase.lifeSystemId) ?? [];
+      lifeSystemPhases.push(phase);
+      phaseMap.set(phase.lifeSystemId, lifeSystemPhases);
+    });
+
+    phaseMap.forEach((lifeSystemPhases, lifeSystemId) => {
+      phaseMap.set(lifeSystemId, getSortedLifeSystemPhases(lifeSystemPhases));
+    });
+
+    return phaseMap;
+  }, [phases]);
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -705,9 +736,12 @@ function LifeSystemsGridSection() {
     setShowCreateForm(false);
   };
 
-  const selectedLifeSystem = lifeSystems.find((lifeSystem) => lifeSystem.id === selectedLifeSystemId);
-  const selectedLifeSystemProjectCount = selectedLifeSystem ? projects.filter((project) => project.lifeSystemId === selectedLifeSystem.id).length : 0;
-  const selectedLifeSystemPhaseLabel = selectedLifeSystem ? getCurrentPhaseLabel(selectedLifeSystem, phases) : '';
+  const selectedLifeSystem = useMemo(
+    () => lifeSystems.find((lifeSystem) => lifeSystem.id === selectedLifeSystemId),
+    [lifeSystems, selectedLifeSystemId],
+  );
+  const selectedLifeSystemProjectCount = selectedLifeSystem ? (projectsByLifeSystemId.get(selectedLifeSystem.id)?.length ?? 0) : 0;
+  const selectedLifeSystemPhaseLabel = selectedLifeSystem ? getCurrentPhaseLabel(selectedLifeSystem, phasesByLifeSystemId.get(selectedLifeSystem.id) ?? []) : '';
 
   return (
     <section className="lifehq-motion-section lifehq-motion-delay-1 lifehq-premium-card border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-5 sm:p-7">
@@ -771,15 +805,15 @@ function LifeSystemsGridSection() {
       {lifeSystems.length > 0 && (
         <div className="mt-8 grid gap-4 lg:grid-cols-2">
           {lifeSystems.map((lifeSystem) => {
-            const projectCount = projects.filter((project) => project.lifeSystemId === lifeSystem.id).length;
-            const lifeSystemPhases = getSortedLifeSystemPhases(phases.filter((phase) => phase.lifeSystemId === lifeSystem.id));
+            const lifeSystemProjects = projectsByLifeSystemId.get(lifeSystem.id) ?? [];
+            const lifeSystemPhases = phasesByLifeSystemId.get(lifeSystem.id) ?? [];
 
             return (
               <LifeSystemCard
                 key={lifeSystem.id}
                 lifeSystem={lifeSystem}
                 phases={lifeSystemPhases}
-                projectCount={projectCount}
+                projectCount={lifeSystemProjects.length}
                 onClick={() => setSelectedLifeSystemId(lifeSystem.id)}
               />
             );
