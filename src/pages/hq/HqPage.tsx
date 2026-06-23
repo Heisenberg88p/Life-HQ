@@ -463,7 +463,7 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
 
           <div className="mt-5 space-y-3">
             {assignedProjects.length === 0 ? (
-              <p className="rounded-2xl border border-white/[0.08] bg-black/15 px-4 py-3 text-sm leading-6 text-[#B8B1A7]">Noch keine Projekte zugeordnet.</p>
+              <p className="rounded-2xl border border-white/[0.07] bg-black/20 px-4 py-3 text-sm leading-6 text-[#B8B1A7]">Noch keine Projekte zugeordnet.</p>
             ) : assignedProjects.map((project) => (
               <ProjectSummaryItem
                 key={project.id}
@@ -548,7 +548,7 @@ function LifeSystemDetailModal({ lifeSystem, currentPhaseLabel, projectCount, on
 
           <div className="mt-5 space-y-3">
             {sortedPhases.length === 0 ? (
-              <p className="rounded-2xl border border-white/[0.08] bg-black/15 px-4 py-3 text-sm leading-6 text-[#B8B1A7]">Noch keine Entwicklungsphasen angelegt.</p>
+              <p className="rounded-2xl border border-white/[0.07] bg-black/20 px-4 py-3 text-sm leading-6 text-[#B8B1A7]">Noch keine Entwicklungsphasen angelegt.</p>
             ) : sortedPhases.map((phase) => {
               const isCurrentPhase = phase.id === lifeSystem.currentPhaseId;
 
@@ -710,7 +710,7 @@ function LifeSystemsGridSection() {
   const selectedLifeSystemPhaseLabel = selectedLifeSystem ? getCurrentPhaseLabel(selectedLifeSystem, phases) : '';
 
   return (
-    <section className="lifehq-motion-section lifehq-motion-delay-1 lifehq-premium-card border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-6 sm:p-8">
+    <section className="lifehq-motion-section lifehq-motion-delay-1 lifehq-premium-card border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-5 sm:p-7">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-2xl space-y-3">
           <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/65">Life Operating System</p>
@@ -811,7 +811,7 @@ function FocusCard({ candidate, lifeSystemName, projectName, onOpenProject }: Fo
   const accentClass = candidate.priorityLevel === 'critical' ? 'border-l-red-300/55' : 'border-l-[#D6AD64]/40';
 
   return (
-    <article className={`lifehq-motion-card rounded-3xl border border-white/[0.08] border-l-4 ${accentClass} bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.18))] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.18)] transition hover:border-white/[0.14] hover:bg-[#D6AD64]/[0.035] sm:p-6`}>
+    <article className={`lifehq-motion-card rounded-3xl border border-white/[0.08] border-l-4 ${accentClass} bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.18))] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.16)] transition hover:border-white/[0.14] hover:bg-[#D6AD64]/[0.035] sm:p-6`}>
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1 space-y-4">
           <div className="flex flex-wrap gap-2 text-xs">
@@ -844,13 +844,13 @@ function FocusCard({ candidate, lifeSystemName, projectName, onOpenProject }: Fo
       {(lifeSystemName || projectName) && (
         <div className="mt-5 grid gap-3 border-t border-white/[0.08] pt-4 text-sm sm:grid-cols-2">
           {lifeSystemName && (
-            <div className="rounded-2xl border border-white/[0.08] bg-black/15 px-4 py-3">
+            <div className="rounded-2xl border border-white/[0.07] bg-black/20 px-4 py-3">
               <p className="text-xs uppercase tracking-[0.18em] text-[#7E776E]">Life System</p>
               <p className="mt-1 font-medium text-[#C9C1B8]">{lifeSystemName}</p>
             </div>
           )}
           {projectName && (
-            <div className="rounded-2xl border border-white/[0.08] bg-black/15 px-4 py-3">
+            <div className="rounded-2xl border border-white/[0.07] bg-black/20 px-4 py-3">
               <p className="text-xs uppercase tracking-[0.18em] text-[#7E776E]">Projekt</p>
               <p className="mt-1 font-medium text-[#C9C1B8]">{projectName}</p>
             </div>
@@ -877,7 +877,7 @@ function FocusDashboardSection() {
   const lifeSystemsById = useMemo(() => new Map(lifeSystems.map((lifeSystem) => [lifeSystem.id, lifeSystem])), [lifeSystems]);
 
   return (
-    <section className="lifehq-motion-section lifehq-motion-delay-2 lifehq-premium-card border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-6 sm:p-8">
+    <section className="lifehq-motion-section lifehq-motion-delay-2 lifehq-premium-card border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.045),rgba(0,0,0,0.16))] p-5 sm:p-7">
       <div className="max-w-2xl space-y-3">
         <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/65">Life Operating System</p>
         <h2 className="font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA] sm:text-4xl">Focus</h2>

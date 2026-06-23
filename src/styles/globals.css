@@ -38,27 +38,27 @@ textarea {
 
 @layer components {
   .lifehq-panel {
-    @apply min-w-0 rounded-3xl border border-white/10 bg-white/[0.025];
+    @apply min-w-0 rounded-3xl border border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.032),rgba(0,0,0,0.14))] shadow-[0_18px_70px_rgba(0,0,0,0.16)];
   }
 
   .lifehq-panel-strong {
-    @apply min-w-0 rounded-3xl border border-white/10 bg-white/[0.025];
+    @apply min-w-0 rounded-3xl border border-white/[0.09] bg-[linear-gradient(135deg,rgba(255,255,255,0.04),rgba(0,0,0,0.18))] shadow-[0_22px_80px_rgba(0,0,0,0.18)];
   }
 
   .lifehq-card {
-    @apply min-w-0 rounded-2xl border border-white/10 bg-[#0A0A0A];
+    @apply min-w-0 rounded-2xl border border-white/[0.08] bg-[#0A0A0A] shadow-[0_14px_50px_rgba(0,0,0,0.14)];
   }
 
   .lifehq-card-soft {
-    @apply min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.025];
+    @apply min-w-0 rounded-2xl border border-white/[0.07] bg-white/[0.022];
   }
 
   .lifehq-label {
-    @apply text-xs font-medium uppercase tracking-[0.18em] text-[#7E776E];
+    @apply text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[#8A8177];
   }
 
   .lifehq-badge {
-    @apply inline-flex max-w-full items-center break-words rounded-full border border-white/10 bg-white/[0.025] px-2.5 py-1 text-xs font-medium leading-5 text-[#B8B1A7];
+    @apply inline-flex max-w-full items-center break-words rounded-full border border-white/[0.08] bg-white/[0.024] px-3 py-1.5 text-xs font-medium leading-5 text-[#B8B1A7];
   }
 
   .lifehq-badge-attention {
@@ -66,11 +66,11 @@ textarea {
   }
 
   .lifehq-empty-state {
-    @apply min-w-0 rounded-2xl border border-dashed border-white/10 bg-white/[0.025] px-4 py-3 text-sm leading-6 text-[#7E776E];
+    @apply min-w-0 rounded-2xl border border-dashed border-white/[0.09] bg-[linear-gradient(135deg,rgba(255,255,255,0.026),rgba(0,0,0,0.12))] px-4 py-4 text-sm leading-6 text-[#8A8177];
   }
 
   .lifehq-note {
-    @apply min-w-0 rounded-2xl border border-white/10 bg-white/[0.025] px-4 py-3 text-sm leading-6 text-[#B8B1A7];
+    @apply min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.022] px-4 py-4 text-sm leading-6 text-[#B8B1A7];
   }
 
   .lifehq-button-primary {
@@ -91,7 +91,7 @@ textarea {
   }
 
   .lifehq-premium-card {
-    @apply min-w-0 rounded-[1.35rem] border border-white/10 bg-[#090909] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D];
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-[#090909] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:border-[#D6AD64]/30 hover:bg-[#0D0D0D];
   }
 
   .lifehq-attention-card {
@@ -117,7 +117,7 @@ textarea {
   }
 
   .lifehq-domain-card {
-    @apply min-w-0 rounded-[1.35rem] border border-white/10 bg-[#090909] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D] hover:shadow-[0_0_28px_rgba(214,173,100,0.08)];
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-[#090909] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:border-[#D6AD64]/30 hover:bg-[#0D0D0D] hover:shadow-[0_0_28px_rgba(214,173,100,0.08)];
   }
 
   .lifehq-secondary-project-panel {
@@ -150,7 +150,7 @@ textarea {
   }
 
   .lifehq-unassigned-project-card {
-    @apply min-w-0 rounded-[1.25rem] border border-white/10 bg-[#090909] transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D];
+    @apply min-w-0 rounded-[1.25rem] border border-white/10 bg-[#090909] transition-colors hover:border-[#D6AD64]/30 hover:bg-[#0D0D0D];
   }
 }
 
@@ -172,7 +172,7 @@ textarea {
   }
 
   .lifehq-life-area-project-card {
-    @apply flex w-full min-w-0 flex-col gap-4 rounded-[1.35rem] border border-white/10 bg-[#090909] p-5 transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D] sm:flex-row sm:items-start sm:p-6;
+    @apply flex w-full min-w-0 flex-col gap-4 rounded-[1.35rem] border border-white/[0.08] bg-[#090909] p-5 transition-colors hover:border-[#D6AD64]/30 hover:bg-[#0D0D0D] sm:flex-row sm:items-start sm:p-6;
   }
 
   .lifehq-life-area-project-meta {
@@ -284,7 +284,7 @@ textarea {
   }
 
   .lifehq-task-chip {
-    @apply inline-flex max-w-full items-center justify-center break-words rounded-full border border-white/10 bg-white/[0.025] px-2 py-0.5 text-[0.72rem] font-medium leading-5 text-[#B8B1A7];
+    @apply inline-flex max-w-full items-center justify-center break-words rounded-full border border-white/[0.08] bg-white/[0.024] px-2.5 py-1 text-[0.72rem] font-medium leading-5 text-[#B8B1A7];
   }
 
   .lifehq-task-action-button {
@@ -315,11 +315,11 @@ textarea {
   }
 
   .lifehq-task-form-control {
-    @apply min-w-0 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
+    @apply min-w-0 w-full rounded-2xl border border-white/[0.09] bg-black/25 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-[background-color,border-color,box-shadow] duration-200 placeholder:text-[#7E776E] focus:border-[#D6AD64]/45 focus:bg-black/35 focus:shadow-[0_0_0_3px_rgba(214,173,100,0.08)];
   }
 
   .lifehq-empty-task-state {
-    @apply min-w-0 rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-3 text-sm leading-6 text-[#7E776E];
+    @apply min-w-0 rounded-2xl border border-dashed border-white/[0.09] bg-[linear-gradient(135deg,rgba(255,255,255,0.024),rgba(0,0,0,0.14))] px-4 py-4 text-sm leading-6 text-[#8A8177];
   }
 
   .lifehq-task-form-compact {
@@ -337,7 +337,7 @@ textarea {
   }
 
   .lifehq-crud-control {
-    @apply min-w-0 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
+    @apply min-w-0 w-full rounded-2xl border border-white/[0.09] bg-black/25 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-[background-color,border-color,box-shadow] duration-200 placeholder:text-[#7E776E] focus:border-[#D6AD64]/45 focus:bg-black/35 focus:shadow-[0_0_0_3px_rgba(214,173,100,0.08)];
   }
 
   .lifehq-danger-zone {
