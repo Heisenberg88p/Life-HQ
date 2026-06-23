@@ -10,6 +10,13 @@
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: hidden;
+}
+
+#root {
+  min-width: 0;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 * {
@@ -67,11 +74,11 @@ textarea {
   }
 
   .lifehq-button-primary {
-    @apply inline-flex min-h-10 max-w-full items-center justify-center rounded-full border border-[#D6AD64]/35 bg-[#D6AD64]/10 px-4 py-2 text-center text-sm font-medium text-[#F5F1EA] transition-colors hover:border-[#D6AD64]/55 hover:bg-[#D6AD64]/15;
+    @apply inline-flex min-h-11 max-w-full items-center justify-center rounded-full border border-[#D6AD64]/35 bg-[#D6AD64]/10 px-4 py-2.5 text-center text-sm font-medium text-[#F5F1EA] transition-colors hover:border-[#D6AD64]/55 hover:bg-[#D6AD64]/15;
   }
 
   .lifehq-button-secondary {
-    @apply inline-flex min-h-10 max-w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.025] px-4 py-2 text-center text-sm font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/35 hover:bg-white/[0.04] hover:text-[#F5F1EA];
+    @apply inline-flex min-h-11 max-w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.025] px-4 py-2.5 text-center text-sm font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/35 hover:bg-white/[0.04] hover:text-[#F5F1EA];
   }
 
 
@@ -249,11 +256,11 @@ textarea {
   }
 
   .lifehq-task-view-switcher {
-    @apply min-w-0 rounded-[1.6rem] border border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.04),rgba(0,0,0,0.16))] p-2 shadow-[0_20px_70px_rgba(0,0,0,0.18)];
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.04),rgba(0,0,0,0.16))] p-2 sm:rounded-[1.6rem] shadow-[0_20px_70px_rgba(0,0,0,0.18)];
   }
 
   .lifehq-task-view-item {
-    @apply min-h-16 min-w-[9.5rem] rounded-2xl border border-transparent px-4 py-3 text-left text-sm text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/25 hover:bg-white/[0.03] hover:text-[#F5F1EA];
+    @apply min-h-14 min-w-[8.5rem] rounded-2xl border border-transparent px-3.5 py-3 text-left text-sm sm:min-h-16 sm:min-w-[9.5rem] sm:px-4 text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/25 hover:bg-white/[0.03] hover:text-[#F5F1EA];
   }
 
   .lifehq-task-view-item-active {
@@ -261,11 +268,11 @@ textarea {
   }
 
   .lifehq-task-section {
-    @apply min-w-0 rounded-[1.6rem] border border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.16))] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.20)] sm:p-7;
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.16))] p-4 sm:rounded-[1.6rem] shadow-[0_24px_90px_rgba(0,0,0,0.20)] sm:p-7;
   }
 
   .lifehq-task-row {
-    @apply min-w-0 break-words rounded-[1.2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.18))] p-3.5 transition-colors hover:border-[#D6AD64]/25 hover:bg-[#0D0D0D] sm:p-4;
+    @apply min-w-0 break-words rounded-[1.2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.18))] p-4 transition-colors hover:border-[#D6AD64]/25 hover:bg-[#0D0D0D] sm:p-4;
   }
 
   .lifehq-task-status-dot {
@@ -281,7 +288,7 @@ textarea {
   }
 
   .lifehq-task-action-button {
-    @apply inline-flex min-h-8 max-w-full items-center justify-center whitespace-normal rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-center text-xs font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/30 hover:text-[#F5F1EA];
+    @apply inline-flex min-h-10 max-w-full items-center justify-center whitespace-normal rounded-full border border-white/10 bg-black/25 px-3.5 py-2 text-center text-xs font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/30 hover:text-[#F5F1EA];
   }
 
   .lifehq-task-action-button-gold {
@@ -304,7 +311,7 @@ textarea {
 
   .lifehq-task-form,
   .lifehq-week-section {
-    @apply min-w-0 rounded-[1.5rem] border border-white/[0.08] bg-white/[0.018] p-5 sm:p-6;
+    @apply min-w-0 rounded-[1.25rem] border border-white/[0.08] bg-white/[0.018] p-4 sm:rounded-[1.5rem] sm:p-6;
   }
 
   .lifehq-task-form-control {

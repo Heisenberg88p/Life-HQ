@@ -33,14 +33,14 @@ export function MainNavigation({ variant = 'desktop' }: MainNavigationProps) {
   const isMobile = variant === 'mobile';
 
   return (
-    <nav aria-label="Primary navigation" className={isMobile ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-2'}>
+    <nav aria-label="Primary navigation" className={isMobile ? 'grid grid-cols-2 gap-1.5 sm:gap-2' : 'flex flex-col gap-2'}>
       {navigationItems.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
           className={({ isActive }) =>
             `min-w-0 rounded-2xl border text-sm font-medium transition-all focus-visible:outline-offset-4 ${
-              isMobile ? 'min-h-14 px-3 py-3 text-center' : 'min-h-[4.25rem] px-4 py-3.5 text-left'
+              isMobile ? 'min-h-12 px-2.5 py-2.5 text-center sm:min-h-14 sm:px-3 sm:py-3' : 'min-h-[4.25rem] px-4 py-3.5 text-left'
             } ${
               isActive
                 ? 'border-[#D6AD64]/45 bg-[linear-gradient(135deg,rgba(214,173,100,0.18),rgba(214,173,100,0.055))] text-[#F5F1EA] shadow-[0_0_34px_rgba(214,173,100,0.08),inset_3px_0_0_rgba(214,173,100,0.95)]'
@@ -49,7 +49,7 @@ export function MainNavigation({ variant = 'desktop' }: MainNavigationProps) {
           }
         >
           {({ isActive }) => (
-            <span className={`flex min-w-0 items-center ${isMobile ? 'justify-center gap-2' : 'gap-3'}`}>
+            <span className={`flex min-w-0 items-center ${isMobile ? 'justify-center gap-1.5 sm:gap-2' : 'gap-3'}`}>
               <NavigationIcon icon={item.icon} isActive={isActive} />
               <span className="min-w-0">
                 <span className="block truncate font-semibold leading-5">{item.label}</span>

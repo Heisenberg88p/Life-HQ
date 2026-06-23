@@ -403,15 +403,15 @@ function TaskCard({
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2 text-sm text-[#B8B1A7] lg:justify-end">
+        <div className="flex min-w-0 shrink-0 items-center gap-2 text-sm text-[#B8B1A7] lg:justify-end">
           <span className="text-[#7E776E]" aria-hidden="true">◷</span>
-          <span>{formatDateDisplay(task.dueDate ?? task.plannedDate, 'Ohne Termin')}</span>
+          <span className="min-w-0 break-words">{formatDateDisplay(task.dueDate ?? task.plannedDate, 'Ohne Termin')}</span>
         </div>
       </div>
 
       {isDone && task.completedAt && <p className="mt-3 text-xs text-[#7E776E]">Erledigt am {formatDateDisplay(task.completedAt)}</p>}
 
-      <div className="max-h-0 overflow-hidden border-white/[0.07] pt-0 text-xs opacity-0 transition-all duration-200 group-hover:mt-3 group-hover:max-h-24 group-hover:border-t group-hover:pt-3 group-hover:opacity-100 group-focus-within:mt-3 group-focus-within:max-h-24 group-focus-within:border-t group-focus-within:pt-3 group-focus-within:opacity-100">
+      <div className="mt-3 border-t border-white/[0.07] pt-3 text-xs opacity-100 sm:mt-0 sm:max-h-0 sm:overflow-hidden sm:border-transparent sm:pt-0 sm:opacity-0 sm:transition-all sm:duration-200 sm:group-hover:mt-3 sm:group-hover:max-h-24 sm:group-hover:border-white/[0.07] sm:group-hover:pt-3 sm:group-hover:opacity-100 sm:group-focus-within:mt-3 sm:group-focus-within:max-h-24 sm:group-focus-within:border-white/[0.07] sm:group-focus-within:pt-3 sm:group-focus-within:opacity-100">
         <div className="flex flex-wrap gap-1.5" aria-label={`Status und Aktionen für ${task.title}`}>
           {task.status !== 'open' && (
             <button type="button" onClick={() => onStatusChange(task.id, 'open')} className="lifehq-task-action-button">
@@ -519,7 +519,7 @@ function TaskCard({
         </form>
       )}
 
-      <div className="max-h-0 overflow-hidden text-xs opacity-0 transition-all duration-200 group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100 group-focus-within:mt-2 group-focus-within:max-h-12 group-focus-within:opacity-100">
+      <div className="mt-2 text-xs opacity-100 sm:mt-0 sm:max-h-0 sm:overflow-hidden sm:opacity-0 sm:transition-all sm:duration-200 sm:group-hover:mt-2 sm:group-hover:max-h-12 sm:group-hover:opacity-100 sm:group-focus-within:mt-2 sm:group-focus-within:max-h-12 sm:group-focus-within:opacity-100">
         <button type="button" onClick={() => setIsPlanningOpen((current) => !current)} className="lifehq-task-action-button">
           {isPlanningOpen ? 'Planung ausblenden' : 'Planung'}
         </button>
@@ -770,12 +770,12 @@ export function TasksPage() {
   }
 
   return (
-    <section className="space-y-9">
+    <section className="min-w-0 space-y-7 sm:space-y-9">
       <div className="lifehq-tasks-hero">
         <div className="max-w-3xl space-y-4">
           <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/70">OPERATIVE EBENE</p>
           <div className="space-y-3">
-            <h1 className="font-serif text-5xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4.5rem]">Aufgaben</h1>
+            <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4.5rem]">Aufgaben</h1>
             <p className="max-w-2xl text-base leading-7 text-[#B8B1A7]">
               Eine ruhige operative Arbeitsfläche für die nächsten konkreten Schritte.
             </p>
@@ -809,7 +809,7 @@ export function TasksPage() {
                 resetTaskDraft();
                 setIsCreateOpen(false);
               }}
-              className="lifehq-button-secondary w-fit text-xs"
+              className="lifehq-button-secondary w-full text-xs sm:w-fit"
             >
               Abbrechen
             </button>
@@ -919,7 +919,7 @@ export function TasksPage() {
             {createError ? <p className="text-sm text-amber-100">{createError}</p> : <p className="text-sm text-[#7E776E]">Status startet als offen, Priorität standardmäßig mittel.</p>}
             <button
               type="submit"
-              className="lifehq-button-primary w-fit"
+              className="lifehq-button-primary w-full sm:w-fit"
             >
               Aufgabe erstellen
             </button>
@@ -943,7 +943,7 @@ export function TasksPage() {
             </button>
           ))}
         </div>
-        <label className="mt-4 block max-w-xs space-y-1.5 text-sm text-[#B8B1A7]">
+        <label className="mt-4 block max-w-full space-y-1.5 text-sm text-[#B8B1A7] sm:max-w-xs">
           <span className="lifehq-label">Lebenssystem-Filter</span>
           <select value={lifeSystemFilterId} onChange={(event) => setLifeSystemFilterId(event.target.value)} className="lifehq-task-form-control">
             <option value="">Alle Lebenssysteme</option>
@@ -963,7 +963,7 @@ export function TasksPage() {
             <h2 className="mt-2 font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA]">{activeViewMeta.label}</h2>
             <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">{activeViewMeta.description}</p>
           </div>
-          <p className="lifehq-badge w-fit">{visibleTasks.length} sichtbar</p>
+          <p className="lifehq-badge w-fit shrink-0">{visibleTasks.length} sichtbar</p>
         </div>
 
         {activeView === 'week' ? (
