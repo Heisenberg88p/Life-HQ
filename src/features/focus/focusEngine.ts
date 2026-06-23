@@ -218,6 +218,7 @@ export function buildFocusCandidates(
     }
 
     const project = task.projectId ? projectsById.get(task.projectId) : undefined;
+    const lifeSystemId = project?.lifeSystemId ?? task.lifeSystemId;
 
     candidates.push({
       id: `task:${task.id}`,
@@ -225,7 +226,7 @@ export function buildFocusCandidates(
       sourceId: task.id,
       title: task.title,
       description: task.description,
-      lifeSystemId: project?.lifeSystemId,
+      lifeSystemId,
       projectId: task.projectId,
       taskId: task.id,
       reasons,
