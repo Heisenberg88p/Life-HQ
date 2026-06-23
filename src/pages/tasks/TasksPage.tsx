@@ -377,7 +377,7 @@ function TaskCard({
   }
 
   return (
-    <article className={`lifehq-task-row group ${isDone ? 'opacity-65' : ''} ${overdue ? 'border-[#D6AD64]/35' : ''}`}>
+    <article className={`lifehq-motion-card lifehq-task-row group ${isDone ? 'opacity-65' : ''} ${overdue ? 'border-[#D6AD64]/35' : ''}`}>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex min-w-0 flex-1 items-start gap-4">
           <button
@@ -403,16 +403,16 @@ function TaskCard({
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2 text-sm text-[#B8B1A7] lg:justify-end">
+        <div className="flex min-w-0 shrink-0 items-center gap-2 text-sm text-[#B8B1A7] lg:justify-end">
           <span className="text-[#7E776E]" aria-hidden="true">◷</span>
-          <span>{formatDateDisplay(task.dueDate ?? task.plannedDate, 'Ohne Termin')}</span>
+          <span className="min-w-0 break-words">{formatDateDisplay(task.dueDate ?? task.plannedDate, 'Ohne Termin')}</span>
         </div>
       </div>
 
       {isDone && task.completedAt && <p className="mt-3 text-xs text-[#7E776E]">Erledigt am {formatDateDisplay(task.completedAt)}</p>}
 
-      <div className="max-h-0 overflow-hidden border-white/[0.07] pt-0 text-xs opacity-0 transition-all duration-200 group-hover:mt-3 group-hover:max-h-24 group-hover:border-t group-hover:pt-3 group-hover:opacity-100 group-focus-within:mt-3 group-focus-within:max-h-24 group-focus-within:border-t group-focus-within:pt-3 group-focus-within:opacity-100">
-        <div className="flex flex-wrap gap-1.5" aria-label={`Status und Aktionen für ${task.title}`}>
+      <div className="mt-3 border-t border-white/[0.07] pt-3 text-xs opacity-100 sm:mt-0 sm:max-h-0 sm:overflow-hidden sm:border-transparent sm:pt-0 sm:opacity-0 sm:transition-all sm:duration-200 sm:group-hover:mt-3 sm:group-hover:max-h-24 sm:group-hover:border-white/[0.07] sm:group-hover:pt-3 sm:group-hover:opacity-100 sm:group-focus-within:mt-3 sm:group-focus-within:max-h-24 sm:group-focus-within:border-white/[0.07] sm:group-focus-within:pt-3 sm:group-focus-within:opacity-100">
+        <div className="flex flex-wrap gap-2" aria-label={`Status und Aktionen für ${task.title}`}>
           {task.status !== 'open' && (
             <button type="button" onClick={() => onStatusChange(task.id, 'open')} className="lifehq-task-action-button">
               Wieder öffnen
@@ -461,52 +461,52 @@ function TaskCard({
           <div className="mt-3 grid gap-3 lg:grid-cols-2">
             <label className="space-y-2 text-xs text-[#B8B1A7]">
               <span className="lifehq-label">Titel</span>
-              <input value={editDraft.title} onChange={(event) => updateEditDraft({ title: event.target.value })} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs" />
+              <input value={editDraft.title} onChange={(event) => updateEditDraft({ title: event.target.value })} className="lifehq-task-form-control min-h-11 px-3 py-2.5 text-sm" />
             </label>
             <label className="space-y-2 text-xs text-[#B8B1A7]">
               <span className="lifehq-label">Status</span>
-              <select value={editDraft.status} onChange={(event) => updateEditDraft({ status: event.target.value as TaskStatus })} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs">
+              <select value={editDraft.status} onChange={(event) => updateEditDraft({ status: event.target.value as TaskStatus })} className="lifehq-task-form-control min-h-11 px-3 py-2.5 text-sm">
                 {taskStatusOptions.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}
               </select>
             </label>
             <label className="space-y-2 text-xs text-[#B8B1A7] lg:col-span-2">
               <span className="lifehq-label">Beschreibung</span>
-              <textarea value={editDraft.description} onChange={(event) => updateEditDraft({ description: event.target.value })} rows={3} className="lifehq-task-form-control min-h-20 px-3 py-2 text-xs" />
+              <textarea value={editDraft.description} onChange={(event) => updateEditDraft({ description: event.target.value })} rows={3} className="lifehq-task-form-control min-h-24 px-3 py-2.5 text-sm" />
             </label>
             <label className="space-y-2 text-xs text-[#B8B1A7]">
               <span className="lifehq-label">Priorität</span>
-              <select value={editDraft.priority} onChange={(event) => updateEditDraft({ priority: event.target.value as Priority })} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs">
+              <select value={editDraft.priority} onChange={(event) => updateEditDraft({ priority: event.target.value as Priority })} className="lifehq-task-form-control min-h-11 px-3 py-2.5 text-sm">
                 {Object.entries(priorityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
             <label className="space-y-2 text-xs text-[#B8B1A7]">
               <span className="lifehq-label">Projekt</span>
-              <select value={editDraft.projectId} onChange={(event) => { const project = projects.find((item) => item.id === event.target.value); updateEditDraft({ projectId: event.target.value, lifeAreaId: event.target.value ? '' : editDraft.lifeAreaId, lifeSystemId: project?.lifeSystemId ?? editDraft.lifeSystemId }); }} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs">
+              <select value={editDraft.projectId} onChange={(event) => { const project = projects.find((item) => item.id === event.target.value); updateEditDraft({ projectId: event.target.value, lifeAreaId: event.target.value ? '' : editDraft.lifeAreaId, lifeSystemId: project?.lifeSystemId ?? editDraft.lifeSystemId }); }} className="lifehq-task-form-control min-h-11 px-3 py-2.5 text-sm">
                 <option value="">Kein Projekt</option>
                 {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
               </select>
             </label>
             <label className="space-y-2 text-xs text-[#B8B1A7]">
               <span className="lifehq-label">Lebenssystem</span>
-              <select value={editDraft.lifeSystemId} onChange={(event) => updateEditDraft({ lifeSystemId: event.target.value })} disabled={Boolean(editDraft.projectId && projects.find((project) => project.id === editDraft.projectId)?.lifeSystemId)} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:text-[#7E776E]">
+              <select value={editDraft.lifeSystemId} onChange={(event) => updateEditDraft({ lifeSystemId: event.target.value })} disabled={Boolean(editDraft.projectId && projects.find((project) => project.id === editDraft.projectId)?.lifeSystemId)} className="lifehq-task-form-control min-h-11 px-3 py-2.5 text-sm disabled:cursor-not-allowed disabled:text-[#7E776E]">
                 <option value="">Kein Lebenssystem</option>
                 {lifeSystems.map((lifeSystem) => <option key={lifeSystem.id} value={lifeSystem.id}>{lifeSystem.name}</option>)}
               </select>
             </label>
             <label className="space-y-2 text-xs text-[#B8B1A7]">
               <span className="lifehq-label">Lebensbereich</span>
-              <select value={editDraft.lifeAreaId} onChange={(event) => updateEditDraft({ lifeAreaId: event.target.value })} disabled={Boolean(editDraft.projectId)} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:text-[#7E776E]">
+              <select value={editDraft.lifeAreaId} onChange={(event) => updateEditDraft({ lifeAreaId: event.target.value })} disabled={Boolean(editDraft.projectId)} className="lifehq-task-form-control min-h-11 px-3 py-2.5 text-sm disabled:cursor-not-allowed disabled:text-[#7E776E]">
                 <option value="">Kein Lebensbereich</option>
                 {lifeAreas.map((lifeArea) => <option key={lifeArea.id} value={lifeArea.id}>{lifeArea.name}</option>)}
               </select>
             </label>
             <label className="space-y-2 text-xs text-[#B8B1A7]">
               <span className="lifehq-label">Fälligkeit</span>
-              <input type="date" value={editDraft.dueDate} onChange={(event) => updateEditDraft({ dueDate: event.target.value })} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs" />
+              <input type="date" value={editDraft.dueDate} onChange={(event) => updateEditDraft({ dueDate: event.target.value })} className="lifehq-task-form-control min-h-11 px-3 py-2.5 text-sm" />
             </label>
             <label className="space-y-2 text-xs text-[#B8B1A7]">
               <span className="lifehq-label">Geplant</span>
-              <input type="date" value={editDraft.plannedDate} onChange={(event) => updateEditDraft({ plannedDate: event.target.value })} className="lifehq-task-form-control min-h-10 px-3 py-2 text-xs" />
+              <input type="date" value={editDraft.plannedDate} onChange={(event) => updateEditDraft({ plannedDate: event.target.value })} className="lifehq-task-form-control min-h-11 px-3 py-2.5 text-sm" />
             </label>
           </div>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -519,7 +519,7 @@ function TaskCard({
         </form>
       )}
 
-      <div className="max-h-0 overflow-hidden text-xs opacity-0 transition-all duration-200 group-hover:mt-2 group-hover:max-h-12 group-hover:opacity-100 group-focus-within:mt-2 group-focus-within:max-h-12 group-focus-within:opacity-100">
+      <div className="mt-2 text-xs opacity-100 sm:mt-0 sm:max-h-0 sm:overflow-hidden sm:opacity-0 sm:transition-all sm:duration-200 sm:group-hover:mt-2 sm:group-hover:max-h-12 sm:group-hover:opacity-100 sm:group-focus-within:mt-2 sm:group-focus-within:max-h-12 sm:group-focus-within:opacity-100">
         <button type="button" onClick={() => setIsPlanningOpen((current) => !current)} className="lifehq-task-action-button">
           {isPlanningOpen ? 'Planung ausblenden' : 'Planung'}
         </button>
@@ -770,12 +770,12 @@ export function TasksPage() {
   }
 
   return (
-    <section className="space-y-9">
+    <section className="lifehq-motion-page min-w-0 space-y-7 sm:space-y-9">
       <div className="lifehq-tasks-hero">
         <div className="max-w-3xl space-y-4">
           <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/70">OPERATIVE EBENE</p>
           <div className="space-y-3">
-            <h1 className="font-serif text-5xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4.5rem]">Aufgaben</h1>
+            <h1 className="font-serif text-4xl font-semibold tracking-tight text-[#F5F1EA] sm:text-6xl lg:text-[4.5rem]">Aufgaben</h1>
             <p className="max-w-2xl text-base leading-7 text-[#B8B1A7]">
               Eine ruhige operative Arbeitsfläche für die nächsten konkreten Schritte.
             </p>
@@ -794,7 +794,7 @@ export function TasksPage() {
       </div>
 
       {isCreateOpen && (
-        <form id="task-create-form" onSubmit={handleCreateTask} className="lifehq-task-form lifehq-task-form-compact">
+        <form id="task-create-form" onSubmit={handleCreateTask} className="lifehq-motion-section lifehq-task-form lifehq-task-form-compact">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="lifehq-label">Neue Aufgabe</p>
@@ -809,7 +809,7 @@ export function TasksPage() {
                 resetTaskDraft();
                 setIsCreateOpen(false);
               }}
-              className="lifehq-button-secondary w-fit text-xs"
+              className="lifehq-button-secondary w-full text-xs sm:w-fit"
             >
               Abbrechen
             </button>
@@ -919,7 +919,7 @@ export function TasksPage() {
             {createError ? <p className="text-sm text-amber-100">{createError}</p> : <p className="text-sm text-[#7E776E]">Status startet als offen, Priorität standardmäßig mittel.</p>}
             <button
               type="submit"
-              className="lifehq-button-primary w-fit"
+              className="lifehq-button-primary w-full sm:w-fit"
             >
               Aufgabe erstellen
             </button>
@@ -927,7 +927,7 @@ export function TasksPage() {
         </form>
       )}
 
-      <div className="lifehq-task-view-switcher">
+      <div className="lifehq-motion-section lifehq-motion-delay-1 lifehq-task-view-switcher">
         <div className="lifehq-scrollbar-none flex gap-2 overflow-x-auto pb-1 md:grid md:grid-cols-4 md:overflow-visible md:pb-0 xl:grid-cols-7">
           {taskViews.map((view) => (
             <button
@@ -943,7 +943,7 @@ export function TasksPage() {
             </button>
           ))}
         </div>
-        <label className="mt-4 block max-w-xs space-y-1.5 text-sm text-[#B8B1A7]">
+        <label className="mt-4 block max-w-full space-y-1.5 text-sm text-[#B8B1A7] sm:max-w-xs">
           <span className="lifehq-label">Lebenssystem-Filter</span>
           <select value={lifeSystemFilterId} onChange={(event) => setLifeSystemFilterId(event.target.value)} className="lifehq-task-form-control">
             <option value="">Alle Lebenssysteme</option>
@@ -953,17 +953,17 @@ export function TasksPage() {
       </div>
 
       {!isCreateOpen && (
-        <div className="lifehq-task-section">
+        <div className="lifehq-motion-section lifehq-motion-delay-2 lifehq-task-section">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="lifehq-section-title">
               <span aria-hidden="true" />
               <p className="lifehq-label">Aktive Ansicht</p>
             </div>
-            <h2 className="mt-2 font-serif text-3xl font-semibold tracking-tight text-[#F5F1EA]">{activeViewMeta.label}</h2>
+            <h2 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-[#F5F1EA] sm:text-3xl">{activeViewMeta.label}</h2>
             <p className="mt-2 text-sm leading-6 text-[#B8B1A7]">{activeViewMeta.description}</p>
           </div>
-          <p className="lifehq-badge w-fit">{visibleTasks.length} sichtbar</p>
+          <p className="lifehq-badge w-fit shrink-0">{visibleTasks.length} sichtbar</p>
         </div>
 
         {activeView === 'week' ? (

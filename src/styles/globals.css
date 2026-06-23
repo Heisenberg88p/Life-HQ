@@ -10,6 +10,13 @@
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: hidden;
+}
+
+#root {
+  min-width: 0;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 * {
@@ -31,27 +38,27 @@ textarea {
 
 @layer components {
   .lifehq-panel {
-    @apply min-w-0 rounded-3xl border border-white/10 bg-white/[0.025];
+    @apply min-w-0 rounded-3xl border border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.032),rgba(0,0,0,0.14))] shadow-[0_18px_70px_rgba(0,0,0,0.16)];
   }
 
   .lifehq-panel-strong {
-    @apply min-w-0 rounded-3xl border border-white/10 bg-white/[0.025];
+    @apply min-w-0 rounded-3xl border border-white/[0.09] bg-[linear-gradient(135deg,rgba(255,255,255,0.04),rgba(0,0,0,0.18))] shadow-[0_22px_80px_rgba(0,0,0,0.18)];
   }
 
   .lifehq-card {
-    @apply min-w-0 rounded-2xl border border-white/10 bg-[#0A0A0A];
+    @apply min-w-0 rounded-2xl border border-white/[0.08] bg-[#0A0A0A] shadow-[0_14px_50px_rgba(0,0,0,0.14)];
   }
 
   .lifehq-card-soft {
-    @apply min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.025];
+    @apply min-w-0 rounded-2xl border border-white/[0.07] bg-white/[0.022];
   }
 
   .lifehq-label {
-    @apply text-xs font-medium uppercase tracking-[0.18em] text-[#7E776E];
+    @apply text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[#8A8177];
   }
 
   .lifehq-badge {
-    @apply inline-flex max-w-full items-center break-words rounded-full border border-white/10 bg-white/[0.025] px-2.5 py-1 text-xs font-medium leading-5 text-[#B8B1A7];
+    @apply inline-flex max-w-full items-center break-words rounded-full border border-white/[0.08] bg-white/[0.024] px-3 py-1.5 text-xs font-medium leading-5 text-[#B8B1A7];
   }
 
   .lifehq-badge-attention {
@@ -59,19 +66,19 @@ textarea {
   }
 
   .lifehq-empty-state {
-    @apply min-w-0 rounded-2xl border border-dashed border-white/10 bg-white/[0.025] px-4 py-3 text-sm leading-6 text-[#7E776E];
+    @apply min-w-0 rounded-2xl border border-dashed border-white/[0.09] bg-[linear-gradient(135deg,rgba(255,255,255,0.026),rgba(0,0,0,0.12))] px-4 py-4 text-sm leading-6 text-[#8A8177];
   }
 
   .lifehq-note {
-    @apply min-w-0 rounded-2xl border border-white/10 bg-white/[0.025] px-4 py-3 text-sm leading-6 text-[#B8B1A7];
+    @apply min-w-0 rounded-2xl border border-white/[0.08] bg-white/[0.022] px-4 py-4 text-sm leading-6 text-[#B8B1A7];
   }
 
   .lifehq-button-primary {
-    @apply inline-flex min-h-10 max-w-full items-center justify-center rounded-full border border-[#D6AD64]/35 bg-[#D6AD64]/10 px-4 py-2 text-center text-sm font-medium text-[#F5F1EA] transition-colors hover:border-[#D6AD64]/55 hover:bg-[#D6AD64]/15;
+    @apply inline-flex min-h-11 max-w-full items-center justify-center rounded-full border border-[#D6AD64]/35 bg-[#D6AD64]/10 px-4 py-2.5 text-center text-sm font-medium text-[#F5F1EA] transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-[#D6AD64]/55 hover:bg-[#D6AD64]/15 active:scale-[0.98];
   }
 
   .lifehq-button-secondary {
-    @apply inline-flex min-h-10 max-w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.025] px-4 py-2 text-center text-sm font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/35 hover:bg-white/[0.04] hover:text-[#F5F1EA];
+    @apply inline-flex min-h-11 max-w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.025] px-4 py-2.5 text-center text-sm font-medium text-[#B8B1A7] transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-[#D6AD64]/35 hover:bg-white/[0.04] hover:text-[#F5F1EA] active:scale-[0.98];
   }
 
 
@@ -84,7 +91,7 @@ textarea {
   }
 
   .lifehq-premium-card {
-    @apply min-w-0 rounded-[1.35rem] border border-white/10 bg-[#090909] transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D];
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-[#090909] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:border-[#D6AD64]/30 hover:bg-[#0D0D0D];
   }
 
   .lifehq-attention-card {
@@ -110,7 +117,7 @@ textarea {
   }
 
   .lifehq-domain-card {
-    @apply min-w-0 rounded-[1.35rem] border border-white/10 bg-[#090909] transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D] hover:shadow-[0_0_28px_rgba(214,173,100,0.08)];
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-[#090909] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:border-[#D6AD64]/30 hover:bg-[#0D0D0D] hover:shadow-[0_0_28px_rgba(214,173,100,0.08)];
   }
 
   .lifehq-secondary-project-panel {
@@ -143,7 +150,7 @@ textarea {
   }
 
   .lifehq-unassigned-project-card {
-    @apply min-w-0 rounded-[1.25rem] border border-white/10 bg-[#090909] transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D];
+    @apply min-w-0 rounded-[1.25rem] border border-white/10 bg-[#090909] transition-colors hover:border-[#D6AD64]/30 hover:bg-[#0D0D0D];
   }
 }
 
@@ -165,7 +172,7 @@ textarea {
   }
 
   .lifehq-life-area-project-card {
-    @apply flex w-full min-w-0 flex-col gap-4 rounded-[1.35rem] border border-white/10 bg-[#090909] p-5 transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D] sm:flex-row sm:items-start sm:p-6;
+    @apply flex w-full min-w-0 flex-col gap-4 rounded-[1.35rem] border border-white/[0.08] bg-[#090909] p-5 transition-colors hover:border-[#D6AD64]/30 hover:bg-[#0D0D0D] sm:flex-row sm:items-start sm:p-6;
   }
 
   .lifehq-life-area-project-meta {
@@ -249,11 +256,11 @@ textarea {
   }
 
   .lifehq-task-view-switcher {
-    @apply min-w-0 rounded-[1.6rem] border border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.04),rgba(0,0,0,0.16))] p-2 shadow-[0_20px_70px_rgba(0,0,0,0.18)];
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.04),rgba(0,0,0,0.16))] p-2 sm:rounded-[1.6rem] shadow-[0_20px_70px_rgba(0,0,0,0.18)];
   }
 
   .lifehq-task-view-item {
-    @apply min-h-16 min-w-[9.5rem] rounded-2xl border border-transparent px-4 py-3 text-left text-sm text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/25 hover:bg-white/[0.03] hover:text-[#F5F1EA];
+    @apply min-h-14 min-w-[8.5rem] rounded-2xl border border-transparent px-3.5 py-3 text-left text-sm sm:min-h-16 sm:min-w-[9.5rem] sm:px-4 text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/25 hover:bg-white/[0.03] hover:text-[#F5F1EA];
   }
 
   .lifehq-task-view-item-active {
@@ -261,11 +268,11 @@ textarea {
   }
 
   .lifehq-task-section {
-    @apply min-w-0 rounded-[1.6rem] border border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.16))] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.20)] sm:p-7;
+    @apply min-w-0 rounded-[1.35rem] border border-white/[0.08] bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.16))] p-4 sm:rounded-[1.6rem] shadow-[0_24px_90px_rgba(0,0,0,0.20)] sm:p-7;
   }
 
   .lifehq-task-row {
-    @apply min-w-0 break-words rounded-[1.2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.18))] p-3.5 transition-colors hover:border-[#D6AD64]/25 hover:bg-[#0D0D0D] sm:p-4;
+    @apply min-w-0 break-words rounded-[1.2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.18))] p-4 transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:border-[#D6AD64]/25 hover:bg-[#0D0D0D] sm:p-4;
   }
 
   .lifehq-task-status-dot {
@@ -277,11 +284,11 @@ textarea {
   }
 
   .lifehq-task-chip {
-    @apply inline-flex max-w-full items-center justify-center break-words rounded-full border border-white/10 bg-white/[0.025] px-2 py-0.5 text-[0.72rem] font-medium leading-5 text-[#B8B1A7];
+    @apply inline-flex max-w-full items-center justify-center break-words rounded-full border border-white/[0.08] bg-white/[0.024] px-2.5 py-1 text-[0.72rem] font-medium leading-5 text-[#B8B1A7];
   }
 
   .lifehq-task-action-button {
-    @apply inline-flex min-h-8 max-w-full items-center justify-center whitespace-normal rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-center text-xs font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/30 hover:text-[#F5F1EA];
+    @apply inline-flex min-h-10 max-w-full items-center justify-center whitespace-normal rounded-full border border-white/10 bg-black/25 px-3.5 py-2 text-center text-xs font-medium text-[#B8B1A7] transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-[#D6AD64]/30 hover:text-[#F5F1EA] active:scale-[0.98];
   }
 
   .lifehq-task-action-button-gold {
@@ -304,15 +311,15 @@ textarea {
 
   .lifehq-task-form,
   .lifehq-week-section {
-    @apply min-w-0 rounded-[1.5rem] border border-white/[0.08] bg-white/[0.018] p-5 sm:p-6;
+    @apply min-w-0 rounded-[1.25rem] border border-white/[0.08] bg-white/[0.018] p-4 sm:rounded-[1.5rem] sm:p-6;
   }
 
   .lifehq-task-form-control {
-    @apply min-w-0 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
+    @apply min-w-0 w-full rounded-2xl border border-white/[0.09] bg-black/25 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-[background-color,border-color,box-shadow] duration-200 placeholder:text-[#7E776E] focus:border-[#D6AD64]/45 focus:bg-black/35 focus:shadow-[0_0_0_3px_rgba(214,173,100,0.08)];
   }
 
   .lifehq-empty-task-state {
-    @apply min-w-0 rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-3 text-sm leading-6 text-[#7E776E];
+    @apply min-w-0 rounded-2xl border border-dashed border-white/[0.09] bg-[linear-gradient(135deg,rgba(255,255,255,0.024),rgba(0,0,0,0.14))] px-4 py-4 text-sm leading-6 text-[#8A8177];
   }
 
   .lifehq-task-form-compact {
@@ -330,7 +337,7 @@ textarea {
   }
 
   .lifehq-crud-control {
-    @apply min-w-0 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-colors placeholder:text-[#7E776E] focus:border-[#D6AD64]/45;
+    @apply min-w-0 w-full rounded-2xl border border-white/[0.09] bg-black/25 px-4 py-3 text-sm text-[#F5F1EA] outline-none transition-[background-color,border-color,box-shadow] duration-200 placeholder:text-[#7E776E] focus:border-[#D6AD64]/45 focus:bg-black/35 focus:shadow-[0_0_0_3px_rgba(214,173,100,0.08)];
   }
 
   .lifehq-danger-zone {
@@ -460,6 +467,70 @@ textarea {
   }
 }
 
+@keyframes lifehq-fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes lifehq-soft-scale {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes lifehq-overlay-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .lifehq-motion-page {
+    animation: lifehq-fade-up 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .lifehq-motion-section {
+    animation: lifehq-fade-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .lifehq-motion-card {
+    animation: lifehq-fade-up 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .lifehq-motion-modal-overlay {
+    animation: lifehq-overlay-fade 180ms ease-out both;
+  }
+
+  .lifehq-motion-modal-panel {
+    animation: lifehq-soft-scale 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .lifehq-motion-delay-1 {
+    animation-delay: 60ms;
+  }
+
+  .lifehq-motion-delay-2 {
+    animation-delay: 120ms;
+  }
+}
+
 @media (min-width: 640px) and (prefers-reduced-motion: reduce) {
   @keyframes lifehq-launch-brand-reduced {
     0% {
@@ -476,6 +547,25 @@ textarea {
       opacity: 0;
       transform: scale(1.45);
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifehq-motion-page,
+  .lifehq-motion-section,
+  .lifehq-motion-card,
+  .lifehq-motion-modal-overlay,
+  .lifehq-motion-modal-panel {
+    animation: none;
+  }
+
+  .lifehq-button-primary,
+  .lifehq-button-secondary,
+  .lifehq-premium-card,
+  .lifehq-domain-card,
+  .lifehq-task-row,
+  .lifehq-task-action-button {
+    transition-duration: 1ms;
   }
 }
 
