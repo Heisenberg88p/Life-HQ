@@ -29,6 +29,29 @@ export interface PrioritizedFocusCandidate extends FocusCandidate {
   primaryReason?: string;
 }
 
+export type FocusRecommendationReason =
+  | 'overdue-priority-task'
+  | 'due-today-priority-task'
+  | 'critical-candidate'
+  | 'red-project'
+  | 'active-life-system-phase';
+
+export interface FocusRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  candidateId: string;
+  sourceType: FocusCandidateSourceType;
+  sourceId: string;
+  priorityLevel: FocusPriorityLevel;
+  reason: FocusRecommendationReason;
+  lifeSystemId?: string;
+  projectId?: string;
+  taskId?: string;
+  milestoneId?: string;
+  createdAt?: string;
+}
+
 export interface FocusCandidate {
   id: string;
   sourceType: FocusCandidateSourceType;
@@ -389,4 +412,108 @@ export function buildPrioritizedFocusCandidates(
       };
     })
     .sort(comparePrioritizedFocusCandidates);
+}
+
+function hasPriorityReason(candidate: PrioritizedFocusCandidate): boolean {
+  return candidate.reasons.includes('critical-priority') || candidate.reasons.includes('high-priority');
+}
+
+function createFocusRecommendation(
+  candidate: PrioritizedFocusCandidate,
+  reason: FocusRecommendationReason,
+  title: string,
+  description: string,
+): FocusRecommendation {
+  return {
+    id: `recommendation:${reason}:${candidate.id}`,
+    title,
+    description,
+    candidateId: candidate.id,
+    sourceType: candidate.sourceType,
+    sourceId: candidate.sourceId,
+    priorityLevel: candidate.priorityLevel,
+    reason,
+    lifeSystemId: candidate.lifeSystemId,
+    projectId: candidate.projectId,
+    taskId: candidate.taskId,
+    milestoneId: candidate.milestoneId,
+    createdAt: candidate.createdAt,
+  };
+}
+
+function getFocusRecommendation(candidate: PrioritizedFocusCandidate): FocusRecommendation | undefined {
+  if (candidate.priorityLevel === 'low') {
+    return undefined;
+  }
+
+  if (candidate.sourceType === 'task' && hasPriorityReason(candidate) && candidate.reasons.includes('overdue')) {
+    return createFocusRecommendation(
+      candidate,
+      'overdue-priority-task',
+      'Überfällige Aufgabe zuerst klären',
+      'Diese Aufgabe ist überfällig und besitzt hohe Priorität. Prüfe, ob sie heute erledigt oder neu geplant werden muss.',
+    );
+  }
+
+  if (candidate.sourceType === 'task' && hasPriorityReason(candidate) && candidate.reasons.includes('due-today')) {
+    return createFocusRecommendation(
+      candidate,
+      'due-today-priority-task',
+      'Heute fällige Aufgabe einplanen',
+      'Diese Aufgabe ist heute fällig. Kläre den nächsten sinnvollen Schritt und plane realistisch Zeit dafür ein.',
+    );
+  }
+
+  if (
+    (candidate.sourceType === 'project' || candidate.sourceType === 'task')
+    && candidate.reasons.includes('critical-priority')
+  ) {
+    return createFocusRecommendation(
+      candidate,
+      'critical-candidate',
+      'Kritisches Thema fokussieren',
+      'Dieses Thema besitzt kritische Priorität. Prüfe den Kontext und entscheide den nächsten konkreten Schritt.',
+    );
+  }
+
+  if (candidate.sourceType === 'project' && candidate.reasons.includes('red-traffic-light')) {
+    return createFocusRecommendation(
+      candidate,
+      'red-project',
+      'Projekt mit rotem Status prüfen',
+      'Dieses Projekt benötigt aktuell Aufmerksamkeit. Öffne das Projekt und kläre den nächsten sinnvollen Schritt.',
+    );
+  }
+
+  if (candidate.sourceType === 'lifeSystem' && candidate.reasons.includes('active-life-system-phase')) {
+    return createFocusRecommendation(
+      candidate,
+      'active-life-system-phase',
+      'Aktive Lebenssystem-Phase bewusst berücksichtigen',
+      'Diese Lebenssystem-Phase ist aktiv. Prüfe, ob deine aktuellen Aufgaben dazu passen.',
+    );
+  }
+
+  return undefined;
+}
+
+export function buildFocusRecommendations(
+  state: FocusEngineState,
+  options: BuildFocusCandidatesOptions = {},
+): FocusRecommendation[] {
+  const candidates = buildPrioritizedFocusCandidates(state, options);
+  const preferredRecommendations = candidates
+    .filter((candidate) => candidate.priorityLevel === 'critical' || candidate.priorityLevel === 'high')
+    .map(getFocusRecommendation)
+    .filter((recommendation): recommendation is FocusRecommendation => Boolean(recommendation));
+
+  if (preferredRecommendations.length > 0) {
+    return preferredRecommendations.slice(0, 3);
+  }
+
+  return candidates
+    .filter((candidate) => candidate.priorityLevel === 'medium')
+    .map(getFocusRecommendation)
+    .filter((recommendation): recommendation is FocusRecommendation => Boolean(recommendation))
+    .slice(0, 3);
 }
