@@ -74,11 +74,11 @@ textarea {
   }
 
   .lifehq-button-primary {
-    @apply inline-flex min-h-11 max-w-full items-center justify-center rounded-full border border-[#D6AD64]/35 bg-[#D6AD64]/10 px-4 py-2.5 text-center text-sm font-medium text-[#F5F1EA] transition-colors hover:border-[#D6AD64]/55 hover:bg-[#D6AD64]/15;
+    @apply inline-flex min-h-11 max-w-full items-center justify-center rounded-full border border-[#D6AD64]/35 bg-[#D6AD64]/10 px-4 py-2.5 text-center text-sm font-medium text-[#F5F1EA] transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-[#D6AD64]/55 hover:bg-[#D6AD64]/15 active:scale-[0.98];
   }
 
   .lifehq-button-secondary {
-    @apply inline-flex min-h-11 max-w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.025] px-4 py-2.5 text-center text-sm font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/35 hover:bg-white/[0.04] hover:text-[#F5F1EA];
+    @apply inline-flex min-h-11 max-w-full items-center justify-center rounded-full border border-white/10 bg-white/[0.025] px-4 py-2.5 text-center text-sm font-medium text-[#B8B1A7] transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-[#D6AD64]/35 hover:bg-white/[0.04] hover:text-[#F5F1EA] active:scale-[0.98];
   }
 
 
@@ -91,7 +91,7 @@ textarea {
   }
 
   .lifehq-premium-card {
-    @apply min-w-0 rounded-[1.35rem] border border-white/10 bg-[#090909] transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D];
+    @apply min-w-0 rounded-[1.35rem] border border-white/10 bg-[#090909] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D];
   }
 
   .lifehq-attention-card {
@@ -117,7 +117,7 @@ textarea {
   }
 
   .lifehq-domain-card {
-    @apply min-w-0 rounded-[1.35rem] border border-white/10 bg-[#090909] transition-colors hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D] hover:shadow-[0_0_28px_rgba(214,173,100,0.08)];
+    @apply min-w-0 rounded-[1.35rem] border border-white/10 bg-[#090909] transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:border-[#D6AD64]/35 hover:bg-[#0D0D0D] hover:shadow-[0_0_28px_rgba(214,173,100,0.08)];
   }
 
   .lifehq-secondary-project-panel {
@@ -272,7 +272,7 @@ textarea {
   }
 
   .lifehq-task-row {
-    @apply min-w-0 break-words rounded-[1.2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.18))] p-4 transition-colors hover:border-[#D6AD64]/25 hover:bg-[#0D0D0D] sm:p-4;
+    @apply min-w-0 break-words rounded-[1.2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.035),rgba(0,0,0,0.18))] p-4 transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:border-[#D6AD64]/25 hover:bg-[#0D0D0D] sm:p-4;
   }
 
   .lifehq-task-status-dot {
@@ -288,7 +288,7 @@ textarea {
   }
 
   .lifehq-task-action-button {
-    @apply inline-flex min-h-10 max-w-full items-center justify-center whitespace-normal rounded-full border border-white/10 bg-black/25 px-3.5 py-2 text-center text-xs font-medium text-[#B8B1A7] transition-colors hover:border-[#D6AD64]/30 hover:text-[#F5F1EA];
+    @apply inline-flex min-h-10 max-w-full items-center justify-center whitespace-normal rounded-full border border-white/10 bg-black/25 px-3.5 py-2 text-center text-xs font-medium text-[#B8B1A7] transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-[#D6AD64]/30 hover:text-[#F5F1EA] active:scale-[0.98];
   }
 
   .lifehq-task-action-button-gold {
@@ -467,6 +467,70 @@ textarea {
   }
 }
 
+@keyframes lifehq-fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes lifehq-soft-scale {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes lifehq-overlay-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .lifehq-motion-page {
+    animation: lifehq-fade-up 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .lifehq-motion-section {
+    animation: lifehq-fade-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .lifehq-motion-card {
+    animation: lifehq-fade-up 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .lifehq-motion-modal-overlay {
+    animation: lifehq-overlay-fade 180ms ease-out both;
+  }
+
+  .lifehq-motion-modal-panel {
+    animation: lifehq-soft-scale 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .lifehq-motion-delay-1 {
+    animation-delay: 60ms;
+  }
+
+  .lifehq-motion-delay-2 {
+    animation-delay: 120ms;
+  }
+}
+
 @media (min-width: 640px) and (prefers-reduced-motion: reduce) {
   @keyframes lifehq-launch-brand-reduced {
     0% {
@@ -483,6 +547,25 @@ textarea {
       opacity: 0;
       transform: scale(1.45);
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lifehq-motion-page,
+  .lifehq-motion-section,
+  .lifehq-motion-card,
+  .lifehq-motion-modal-overlay,
+  .lifehq-motion-modal-panel {
+    animation: none;
+  }
+
+  .lifehq-button-primary,
+  .lifehq-button-secondary,
+  .lifehq-premium-card,
+  .lifehq-domain-card,
+  .lifehq-task-row,
+  .lifehq-task-action-button {
+    transition-duration: 1ms;
   }
 }
 

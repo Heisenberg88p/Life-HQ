@@ -39,7 +39,7 @@ export function MainNavigation({ variant = 'desktop' }: MainNavigationProps) {
           key={item.to}
           to={item.to}
           className={({ isActive }) =>
-            `min-w-0 rounded-2xl border text-sm font-medium transition-all focus-visible:outline-offset-4 ${
+            `min-w-0 rounded-2xl border text-sm font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-out focus-visible:outline-offset-4 active:scale-[0.98] ${
               isMobile ? 'min-h-12 px-2.5 py-2.5 text-center sm:min-h-14 sm:px-3 sm:py-3' : 'min-h-[4.25rem] px-4 py-3.5 text-left'
             } ${
               isActive

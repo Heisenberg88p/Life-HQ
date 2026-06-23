@@ -377,7 +377,7 @@ function TaskCard({
   }
 
   return (
-    <article className={`lifehq-task-row group ${isDone ? 'opacity-65' : ''} ${overdue ? 'border-[#D6AD64]/35' : ''}`}>
+    <article className={`lifehq-motion-card lifehq-task-row group ${isDone ? 'opacity-65' : ''} ${overdue ? 'border-[#D6AD64]/35' : ''}`}>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex min-w-0 flex-1 items-start gap-4">
           <button
@@ -770,7 +770,7 @@ export function TasksPage() {
   }
 
   return (
-    <section className="min-w-0 space-y-7 sm:space-y-9">
+    <section className="lifehq-motion-page min-w-0 space-y-7 sm:space-y-9">
       <div className="lifehq-tasks-hero">
         <div className="max-w-3xl space-y-4">
           <p className="text-xs uppercase tracking-[0.28em] text-[#D6AD64]/70">OPERATIVE EBENE</p>
@@ -794,7 +794,7 @@ export function TasksPage() {
       </div>
 
       {isCreateOpen && (
-        <form id="task-create-form" onSubmit={handleCreateTask} className="lifehq-task-form lifehq-task-form-compact">
+        <form id="task-create-form" onSubmit={handleCreateTask} className="lifehq-motion-section lifehq-task-form lifehq-task-form-compact">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="lifehq-label">Neue Aufgabe</p>
@@ -927,7 +927,7 @@ export function TasksPage() {
         </form>
       )}
 
-      <div className="lifehq-task-view-switcher">
+      <div className="lifehq-motion-section lifehq-motion-delay-1 lifehq-task-view-switcher">
         <div className="lifehq-scrollbar-none flex gap-2 overflow-x-auto pb-1 md:grid md:grid-cols-4 md:overflow-visible md:pb-0 xl:grid-cols-7">
           {taskViews.map((view) => (
             <button
@@ -953,7 +953,7 @@ export function TasksPage() {
       </div>
 
       {!isCreateOpen && (
-        <div className="lifehq-task-section">
+        <div className="lifehq-motion-section lifehq-motion-delay-2 lifehq-task-section">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="lifehq-section-title">
